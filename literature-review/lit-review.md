@@ -1,3 +1,13 @@
+---
+title: "Introduction to R and RStudio"
+output:
+  html_document:
+    highlight: pygments
+    theme: cerulean
+    toc: true
+    toc_float: true
+---
+
 # Literature Review
 
 * * *
