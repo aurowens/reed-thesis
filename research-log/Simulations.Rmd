@@ -1,0 +1,162 @@
+---
+title: "Simulations"
+author: "Aurora Owens"
+date: "October 3rd, 2016"
+output:
+  html_document:
+    highlight: kate
+    theme: spacelab
+---
+
+```{r loadlib}
+library(ggplot2)
+library(dplyr)
+```
+ 
+#A Very Simple Tree and a Measure of Variable Importance
+
+##Data Simulations
+
+A Three Dimensional Example Where $X_1$ and $X_2$ Are Non-Linearly Correlated
+
+```{r}
+
+set.seed(1)
+
+x1 <- rnorm(1000)
+
+set.seed(2)
+
+x2 <- exp(x1) + rnorm(100)
+
+#x2 <- 5* sin(3*x1) + 2*cos(3*x1+ .5) + rnorm(1000)
+
+set.seed(3)
+
+y <- 4*x1 + 0*x2 + rnorm(100)
+```
+
+We can see by plotting x1 and x2 that their relationship is not linear, but their relationship does still have some positive linear correlation. 
+
+```{r, echo = FALSE}
+data <- data.frame("y" = y, "x1" = x1, "x2" = x2)
+ggplot(aes(x = x1, y = x2), data = data) + 
+  geom_point()+ 
+  ggtitle("Relation of X1 and X2")
+
+cor(x1,x2)
+```
+
+
+Their linear correlation is .7626. 
+
+```{r, echo=FALSE}
+ggplot(aes(x = x1, y = y), data = data) +
+  geom_point()+
+  ggtitle("X1 vs Y")
+
+ggplot(aes(x = x2, y = y), data = data)+
+  geom_point()+
+  ggtitle("X2 vs Y")
+```
+
+Y appears to be correlated with X2 but that is only because they are both so highly correlated with X1. Let's see how this pattern effects a simple tree. 
+
+##A Basic Tree 
+
+
+```{r treeFunctions}
+
+mc <- function(nc, y){ #nc contained in n, nc is the length of leaf c, n is the vector of all ncs
+  return(1/nc * sum(y))
+}
+
+vc <- function(mc, y){ #within leaf variance
+    return(sum((y - mc)^2))
+}
+
+S <- function(n, vc){ #aggregating vc over all leaves
+  return(sum(n*vc))
+}
+
+
+binarySplit <- function(data, x) {
+  S1 <- rep(0, nrow(data))
+  for(i in 1:length(x)){
+    split <- x[i]
+    node1 <- data[x <= split,]
+    node2<- data[x > split,]
+    mc1 <- mc(length(node1$y), node1$y)
+    mc2 <- mc(length(node2$y), node2$y)
+
+    Vc <- c(vc(mc1, node1$y), vc(mc2, node2$y))
+    S1[i] <- S(c(nrow(node1), nrow(node2)), Vc)
+    
+  }
+  S1 <- data.frame(S1, index = seq(1, length(S1), length.out = length(S1)))
+  return(arrange(S1,(S1))[1,])
+}
+
+```
+
+
+The Algorithm, from http://www.stat.cmu.edu/~cshalizi/350-2006/lecture-10.pdf
+
+"1. Start with a single node containing all points. Calculate mc and S.
+2. If all the points in the node have the same value for all the independent variables, stop. Otherwise, search over all binary splits of all variables for the one which will reduce S as much as possible. If the largest decrease in S would be less than some threshold δ, or one of the resulting nodes would contain less than q points, stop. Otherwise, take that split, creating two new nodes.
+3. In each new node, go back to step 1."
+
+**This is still in progress**
+
+```{r}
+treeCreator <- function(data, x1, x2, y) {
+  mco <- mc(length(y), y)
+  So <- S(length(y), vc(length(y), y))
+  
+  
+  minSx1 <- binarySplit(data, x1)
+  minSx2 <- binarySplit(data, x2)
+  
+  if(min(minSx2$S1, minSx1) < So){
+    if(minSx1[1,] > minSx2[1,]) {
+      node1 <- data[x2 <= minSx2[1,],]
+      node2 <- data[x2 > minSx2[1,],]
+       
+      if(nrow(node1) > 10 && nrow(node2)> 10){
+          treeCreator(node1, node1$x1, node1$x2, node1$y)
+          treeCreator(node2, node2$x1, node2$x2, node2$y)
+      } else {
+        return()
+      }
+      
+    } else {
+      node1 <- data[x1 <= minSx1[1,],]
+      node2 <- data[x1 > minSx1[1,],]
+      
+      if(nrow(node1) > 10 && nrow(node2)> 10){
+          treeCreator(node1, node1$x1, node1$x2, node1$y)
+          treeCreator(node2, node2$x1, node2$x2, node2$y)
+      } else {
+        return()
+      }
+    }
+  } else {
+    return()
+  }
+  
+}
+```
+
+Comparing with the `randomForest` package
+
+```{r}
+library(tree)
+set.seed(222)
+tree1 <- tree(x2~x1, data = data)
+
+plot(tree1)
+text(tree1)
+
+tree1$frame
+```
+
