@@ -33,7 +33,7 @@ x2 <- exp(x1) + rnorm(100)
 
 set.seed(3)
 
-y <- 4*x1 + 0*x2 + rnorm(100)
+y <- 5*x1 + 4*x2 + rnorm(100)
 ```
 
 We can see by plotting x1 and x2 that their relationship is not linear, but their relationship does still have some positive linear correlation. 
@@ -48,7 +48,7 @@ cor(x1,x2)
 ```
 
 
-Their linear correlation is .7626. 
+Their linear correlation is .711. 
 
 ```{r, echo=FALSE}
 ggplot(aes(x = x1, y = y), data = data) +
@@ -60,103 +60,117 @@ ggplot(aes(x = x2, y = y), data = data)+
   ggtitle("X2 vs Y")
 ```
 
-Y appears to be correlated with X2 but that is only because they are both so highly correlated with X1. Let's see how this pattern effects a simple tree. 
+Y appears to be correlated with X1 but that is only because they are both so highly correlated with X2. Let's see how this pattern effects a simple tree. 
 
-##A Basic Tree 
-
-
-```{r treeFunctions}
-
-mc <- function(nc, y){ #nc contained in n, nc is the length of leaf c, n is the vector of all ncs
-  return(1/nc * sum(y))
-}
-
-vc <- function(mc, y){ #within leaf variance
-    return(sum((y - mc)^2))
-}
-
-S <- function(n, vc){ #aggregating vc over all leaves
-  return(sum(n*vc))
-}
-
-
-binarySplit <- function(data, x) {
-  S1 <- rep(0, nrow(data))
-  for(i in 1:length(x)){
-    split <- x[i]
-    node1 <- data[x <= split,]
-    node2<- data[x > split,]
-    mc1 <- mc(length(node1$y), node1$y)
-    mc2 <- mc(length(node2$y), node2$y)
-
-    Vc <- c(vc(mc1, node1$y), vc(mc2, node2$y))
-    S1[i] <- S(c(nrow(node1), nrow(node2)), Vc)
-    
-  }
-  S1 <- data.frame(S1, index = seq(1, length(S1), length.out = length(S1)))
-  return(arrange(S1,(S1))[1,])
-}
-
-```
-
-
-The Algorithm, from http://www.stat.cmu.edu/~cshalizi/350-2006/lecture-10.pdf
-
-"1. Start with a single node containing all points. Calculate mc and S.
-2. If all the points in the node have the same value for all the independent variables, stop. Otherwise, search over all binary splits of all variables for the one which will reduce S as much as possible. If the largest decrease in S would be less than some threshold δ, or one of the resulting nodes would contain less than q points, stop. Otherwise, take that split, creating two new nodes.
-3. In each new node, go back to step 1."
-
-**This is still in progress**
+#A new Variable Importance Measure
 
 ```{r}
-treeCreator <- function(data, x1, x2, y) {
-  mco <- mc(length(y), y)
-  So <- S(length(y), vc(length(y), y))
-  
-  
-  minSx1 <- binarySplit(data, x1)
-  minSx2 <- binarySplit(data, x2)
-  
-  if(min(minSx2$S1, minSx1) < So){
-    if(minSx1[1,] > minSx2[1,]) {
-      node1 <- data[x2 <= minSx2[1,],]
-      node2 <- data[x2 > minSx2[1,],]
-       
-      if(nrow(node1) > 10 && nrow(node2)> 10){
-          treeCreator(node1, node1$x1, node1$x2, node1$y)
-          treeCreator(node2, node2$x1, node2$x2, node2$y)
-      } else {
-        return()
-      }
-      
-    } else {
-      node1 <- data[x1 <= minSx1[1,],]
-      node2 <- data[x1 > minSx1[1,],]
-      
-      if(nrow(node1) > 10 && nrow(node2)> 10){
-          treeCreator(node1, node1$x1, node1$x2, node1$y)
-          treeCreator(node2, node2$x1, node2$x2, node2$y)
-      } else {
-        return()
-      }
-    }
-  } else {
-    return()
-  }
-  
+intervalReturn <- function(split.cutleft){ 
+  intervals <- data.frame(split.cutleft)
+  intervals <- filter(intervals, split.cutleft != "")
+  intervals <- select(intervals, split.cutleft)
+  intervals$split.cutleft <- gsub("<", "", intervals$split.cutleft)
+  intervals$split.cutleft <- as.numeric(intervals$split.cutleft)
+  return(arrange(intervals, (split.cutleft)))
 }
 ```
 
-Comparing with the `randomForest` package
 
 ```{r}
 library(tree)
+library(randomForest)
+set.seed(428)
+rfo <- randomForest(y~., data = data[,-4])
+importance(rfo)
+
+
 set.seed(222)
 tree1 <- tree(x2~x1, data = data)
-
 plot(tree1)
 text(tree1)
 
 tree1$frame
+#Partition X2 wrt the splits on X1
+interval <- intervalReturn(tree1$frame$splits[,1])
+
+#This code should be written as a function to handle more cases 
+data$partition.x2 <- ifelse(x1 < interval[1,1], 1, 
+                         ifelse(x1 < interval[2,1], 2, 
+                         ifelse(x1 < interval[3,1], 3,
+                         ifelse(x1 < interval[4,1], 4,
+                         ifelse(x1 < interval[5,1], 5,
+                         ifelse(x1 < interval[6,1], 6, 7))))))
+
+
+#Permute X2 wrt these partitions
+data.permuted.x2 <- data
+
+d1 <- data.permuted.x2[data.permuted.x2$partition.x2 == 1,] 
+d2 <- data.permuted.x2[data.permuted.x2$partition.x2 == 2,] 
+d3 <- data.permuted.x2[data.permuted.x2$partition.x2 == 3,] 
+d4 <- data.permuted.x2[data.permuted.x2$partition.x2 == 4,] 
+d5 <- data.permuted.x2[data.permuted.x2$partition.x2 == 5,] 
+d6 <- data.permuted.x2[data.permuted.x2$partition.x2 == 6,] 
+d7 <- data.permuted.x2[data.permuted.x2$partition.x2 == 7,]
+
+d1$x2 <- sample(d1$x2)
+d2$x2 <- sample(d2$x2)
+d3$x2 <- sample(d3$x2)
+d4$x2 <- sample(d4$x2)
+d5$x2 <- sample(d5$x2)
+d6$x2 <- sample(d6$x2)
+d7$x2 <- sample(d7$x2)
+
+data.permuted.x2 <- rbind(d1,d2,d3,d4,d5,d6,d7)
+
+#Fit a new rf
+set.seed(1)
+rf2 <- randomForest(y~., data = data.permuted.x2[,-4])
+importance(rf2)
+
+#Do the same with X1
+set.seed(222)
+tree2 <- tree(x1~x2, data = data)
+plot(tree2)
+text(tree2)
+
+#tree1$frame
+#Partition X1 wrt the splits on X2
+interval1 <- intervalReturn(tree2$frame$splits[,1])
+
+#This code should be written as a function to handle more cases 
+data$partition.x1 <- ifelse(x2 < interval1[1,1], 1, 
+                         ifelse(x2 < interval1[2,1], 2, 
+                         ifelse(x2 < interval1[3,1], 3,
+                         ifelse(x2 < interval1[4,1], 4,
+                         ifelse(x2 < interval1[5,1], 5,
+                         ifelse(x2 < interval1[6,1], 6, 7))))))
+
+
+#Permute X1 wrt these partitions
+data.permuted.x1 <- data
+
+d1 <- data.permuted.x1[data.permuted.x1$partition.x1 == 1,] 
+d2 <- data.permuted.x1[data.permuted.x1$partition.x1 == 2,] 
+d3 <- data.permuted.x1[data.permuted.x1$partition.x1 == 3,] 
+d4 <- data.permuted.x1[data.permuted.x1$partition.x1 == 4,] 
+d5 <- data.permuted.x1[data.permuted.x1$partition.x1 == 5,] 
+d6 <- data.permuted.x1[data.permuted.x1$partition.x1 == 6,] 
+d7 <- data.permuted.x1[data.permuted.x1$partition.x1 == 7,]
+
+d1$x1 <- sample(d1$x1)
+d2$x1 <- sample(d2$x1)
+d3$x1 <- sample(d3$x1)
+d4$x1 <- sample(d4$x1)
+d5$x1 <- sample(d5$x1)
+d6$x1 <- sample(d6$x1)
+d7$x1 <- sample(d7$x1)
+
+data.permuted.x1 <- rbind(d1,d2,d3,d4,d5,d6,d7)
+#Fit a new rf
+set.seed(1)
+rf1 <- randomForest(y~., data = data.permuted.x1[,c(-4, -5)])
+importance(rf1)
 ```
+
 
