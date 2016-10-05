@@ -22,7 +22,7 @@ library(gridExtra)
  
 #Concerns and Areas to Improve Upon
 
-- The results are really variable. I haven't been able to consistantly get the same results
+- The results are really variable. I haven't been able to consistantly get the same results as to which variable is *more* important and I think that is because the trees generated are slightly different each time. I've tried setting the seed before calling `tree` but maybe I should implement a cv method or do more pruning to see if I can decrease the variability at all. Alternately, maybe something strange is happening in my sample. In the plots `Y ~X1` and `Y ~ X2`, if I were to draw a line representing `Y ~ X2` it would be much steeper and with a greater slope than the line for `Y ~X1`. 
 - Need to find the OOB error for the original tree and the subsequent trees with permuted data. Most things I've found deal with OOB in a random forest, which doesn't seem to apply in the 1- tree case. Maybe $\frac {1} {n} \Sigma_{i}^n I (y_i = \hat{y}_i)$ or $\frac {1} {n} \Sigma_{i}^n |y_i - \hat{y}_i|$ would work here? That's what I've implemented below. 
 - This procedure only applies when
  (1) The predictors are correlated enough for the tree algorithm to pick up on it *Important area for further testing*
@@ -73,11 +73,11 @@ Their linear correlation is .68037
 ```{r, echo=FALSE}
 p <- ggplot(aes(x = x1, y = y), data = data) +
   geom_point(color = "#5F1B2B")+
-  ggtitle("X1 vs Y")
+  ggtitle("Y ~X1")
 
 q <- ggplot(aes(x = x2, y = y), data = data)+
   geom_point(color = "#c34e22")+
-  ggtitle("X2 vs Y")
+  ggtitle("Y ~X2")
 grid.arrange(p, q, ncol=2)
 ```
 
