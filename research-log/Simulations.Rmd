@@ -1,33 +1,41 @@
 ---
-title: "Simulations"
+title: "Conditional Permuation Importance on A Single Tree"
 author: "Aurora Owens"
 date: "October 5th, 2016"
 output:
   html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
     highlight: kate
     theme: spacelab
 ---
 
-```{r loadlib}
+```{r loadlib, warning=FALSE, message=FALSE}
 library(ggplot2)
 library(dplyr)
+library(tree)
+library(randomForest)
+library(maptree)
+library(gridExtra)
 ```
  
-**Current confusions**
+#Concerns and Areas to Improve Upon
 
-- Need to find the OOB error for the original tree and the subsequent trees with permuted data. Most things I've found deal with OOB in a random forest, which doesn't seem to apply in the 1- tree case. Maybe $\frac {1} {n} \Sigma_{i}^n I (y_i = \hat{y}_i)$ or $\frac {1} {n} \Sigma_{i}^n |y_i - \hat{y}_i|$ would work here? That's what I've implemented above. 
+- The results are really variable. I haven't been able to consistantly get the same results
+- Need to find the OOB error for the original tree and the subsequent trees with permuted data. Most things I've found deal with OOB in a random forest, which doesn't seem to apply in the 1- tree case. Maybe $\frac {1} {n} \Sigma_{i}^n I (y_i = \hat{y}_i)$ or $\frac {1} {n} \Sigma_{i}^n |y_i - \hat{y}_i|$ would work here? That's what I've implemented below. 
 - This procedure only applies when
- (1) The predictors are correlated enough for the tree algorithm to pick up on it **Important area for further testing**
+ (1) The predictors are correlated enough for the tree algorithm to pick up on it *Important area for further testing*
  (2) Both predictors are chosen by the tree algorithm as suitable predictors of Y
  
- **To Do**
+##To Do:
 - use `cv.tree` to make sure the trees are the best we can do
+*Didn't seem to make a difference in the trees produced. There aren't many nodes on each tree anyway, most likely because of the linear-ish relationships here*
 - try to fool the system. Can I get the algorithm to select a correlated predictor as significant when in fact it's just close with another predictor?
+ *Looks like yes, as long as the variables are not scaled*
 - function-ize the code so that it can be applied more elegantly
 
-#A Very Simple Tree and a Measure of Variable Importance
-
-##Data Simulations
+#Data Simulation
 
 A Three Dimensional Example Where $X_1$ and $X_2$ Are Non-Linearly Correlated
 
@@ -39,7 +47,7 @@ x1 <- rnorm(1000)
 
 set.seed(2)
 
-x2 <- exp(x1) + rnorm(1000)
+x2 <- exp(x1) +rnorm(1000) 
 
 #x2 <- 5* sin(3*x1) + 2*cos(3*x1+ .5) + rnorm(1000)
 
@@ -53,30 +61,31 @@ We can see by plotting x1 and x2 that their relationship is not linear, but thei
 ```{r, echo = FALSE}
 data <- data.frame("y" = y, "x1" = x1, "x2" = x2)
 ggplot(aes(x = x1, y = x2), data = data) + 
-  geom_point()+ 
+  geom_point(color = "#1B493E")+ 
   ggtitle("Relation of X1 and X2")
 
 cor(x1,x2)
 ```
 
 
-Their linear correlation is .68. 
+Their linear correlation is .68037
 
 ```{r, echo=FALSE}
-ggplot(aes(x = x1, y = y), data = data) +
-  geom_point()+
+p <- ggplot(aes(x = x1, y = y), data = data) +
+  geom_point(color = "#5F1B2B")+
   ggtitle("X1 vs Y")
 
-ggplot(aes(x = x2, y = y), data = data)+
-  geom_point()+
+q <- ggplot(aes(x = x2, y = y), data = data)+
+  geom_point(color = "#c34e22")+
   ggtitle("X2 vs Y")
+grid.arrange(p, q, ncol=2)
 ```
 
-Y appears to be correlated with X1 but that is only because they are both so highly correlated with X2. Let's see how this pattern effects a simple tree. 
+Y appears to be positively correlated with both X1 and X2
 
-#A new Variable Importance Measure
+#Applying the VIM Procedure
 
-```{r}
+```{r, intervalReturn}
 intervalReturn <- function(split.cutleft){ 
   intervals <- data.frame(split.cutleft)
   intervals <- filter(intervals, split.cutleft != "")
@@ -87,21 +96,34 @@ intervalReturn <- function(split.cutleft){
 }
 ```
 
+This measure follows the procedure of permuted variable importance detailed in Strobl et al 2007 and Breiman 2001b but with a new permutation sceme and adapted to fit a single tree. 
+
+First, an initial tree is fit using the out-of-the-box data set. 
 
 ```{r}
-library(tree)
-library(randomForest)
 set.seed(1)
-tree.o <- tree(y~., data = data)
+tree.o <- tree( (y)~  (x1) +  (x2), data = data)
+#tree.o1 <- prune.tree(tree.o, k = 40) Didn't really make a difference in error.o
 yhat.o <- predict(tree.o)
 error.o <- sum(abs(data$y - yhat.o))/nrow(data)
+#draw.tree(tree.o, nodeinfo = FALSE)
 
+plot(tree.o)
+text(tree.o)
+```
+
+Now let's consider the X2. How important is X2 for predicting Y? We know that X2 and X1 are correlated, but instead of that being an issue we can use that for our advantage. Strobl et al used conditional permuation on a grid defined by the splits on the original tree, but here we are using the grid defined by a new tree that models $X2~X1$. 
+
+```{r}
 set.seed(222)
-tree1 <- tree(x2~x1, data = data)
+tree1 <- tree( (x2)~ (x1), data = data)
+#tree.1 <- prune.tree(tree1, k = 4)
 plot(tree1)
 text(tree1)
 
-tree1$frame
+#plot(tree.1)
+#text(tree.1)
+#tree1$frame
 #Partition X2 wrt the splits on X1
 intervalX2 <- intervalReturn(tree1$frame$splits[,1])
 
@@ -113,7 +135,11 @@ data$partition.x2 <- ifelse(x1 < intervalX2[1,1], 1,
                          ifelse(x1 < intervalX2[5,1], 5, 6)))))
 
 
-#Permute X2 wrt these partitions
+```
+
+Now that we have our grid defined by the splits on X1 in the $X2~X1$ tree, we can permute X2 with respect to this grid.  
+
+```{r, X2permutations}
 data.permuted.x2 <- data
 
 d1 <- data.permuted.x2[data.permuted.x2$partition.x2 == 1,] 
@@ -123,6 +149,8 @@ d4 <- data.permuted.x2[data.permuted.x2$partition.x2 == 4,]
 d5 <- data.permuted.x2[data.permuted.x2$partition.x2 == 5,] 
 d6 <- data.permuted.x2[data.permuted.x2$partition.x2 == 6,] 
 d7 <- data.permuted.x2[data.permuted.x2$partition.x2 == 7,]
+d8 <- data.permuted.x2[data.permuted.x2$partition.x2 == 8,]
+d9 <- data.permuted.x2[data.permuted.x2$partition.x2 == 9,]
 
 d1$x2 <- sample(d1$x2)
 d2$x2 <- sample(d2$x2)
@@ -131,19 +159,29 @@ d4$x2 <- sample(d4$x2)
 d5$x2 <- sample(d5$x2)
 d6$x2 <- sample(d6$x2)
 d7$x2 <- sample(d7$x2)
+d8$x2 <- sample(d8$x2)
+d9$x2 <- sample(d9$x2)
 
-data.permuted.x2 <- rbind(d1,d2,d3,d4,d5,d6,d7)
+data.permuted.x2 <- rbind(d1,d2,d3,d4,d5,d6,d7, d8, d9)
+```
 
-#Fit a new tree
+Lastly, we can compare the accuracy of the new tree with permuted data to the accuracy of the original tree to develop a measure of variable importance under the null hypothesis that Y is independent of X2, given that X2 is dependent on X1
+
+```{r}
 set.seed(1)
-t.x2.permuted <- tree(y~., data = data.permuted.x2)
+t.x2.permuted <- tree( (y)~  (x1) +  (x2), data = data.permuted.x2)
 yhat.x2.permuted <- predict(t.x2.permuted)
 error.x2.permuted <- sum(abs(data.permuted.x2$y - yhat.x2.permuted))/nrow(data.permuted.x2)
+x2Imp <- error.x2.permuted- error.o 
+(x2Imp)
+```
 
+As this value is greater than zero, X2 is an important predictor of Y. By running the same procedure on X1 we can compare the VI of the two predictors.
 
+```{r}
 #Do the same with X1
 set.seed(222)
-tree2 <- tree(x1~x2, data = data)
+tree2 <- tree( (x1)~ (x2), data = data)
 plot(tree2)
 text(tree2)
 
@@ -155,7 +193,7 @@ intervalX1 <- intervalReturn(tree2$frame$splits[,1])
 data$partition.x1 <- ifelse(x2 < intervalX1[1,1], 1, 
                          ifelse(x2 < intervalX1[2,1], 2, 
                          ifelse(x2 < intervalX1[3,1], 3,
-                         ifelse(x2 < intervalX1[4,1], 4,5))))
+                         ifelse(x2 < intervalX1[4,1], 4, 5))))
 
 
 #Permute X1 wrt these partitions
@@ -167,7 +205,9 @@ d3 <- data.permuted.x1[data.permuted.x1$partition.x1 == 3,]
 d4 <- data.permuted.x1[data.permuted.x1$partition.x1 == 4,] 
 d5 <- data.permuted.x1[data.permuted.x1$partition.x1 == 5,] 
 d6 <- data.permuted.x1[data.permuted.x1$partition.x1 == 6,] 
-#d7 <- data.permuted.x1[data.permuted.x1$partition.x1 == 7,]
+d7 <- data.permuted.x1[data.permuted.x1$partition.x1 == 7,]
+d8 <- data.permuted.x1[data.permuted.x1$partition.x1 == 8,]
+d9 <- data.permuted.x1[data.permuted.x1$partition.x1 == 9,]
 
 d1$x1 <- sample(d1$x1)
 d2$x1 <- sample(d2$x1)
@@ -175,30 +215,28 @@ d3$x1 <- sample(d3$x1)
 d4$x1 <- sample(d4$x1)
 d5$x1 <- sample(d5$x1)
 d6$x1 <- sample(d6$x1)
-#d7$x1 <- sample(d7$x1)
+d7$x1 <- sample(d7$x1)
+d8$x1 <- sample(d8$x1)
+d9$x1 <- sample(d9$x1)
 
-data.permuted.x1 <- rbind(d1,d2,d3,d4,d5,d6)
+data.permuted.x1 <- rbind(d1,d2,d3,d4,d5,d6,d7, d8, d9)
 
 #Fit a new tree
 set.seed(1)
-t.x1.permuted <- tree(y~., data = data.permuted.x1[,c(-4, -5)])
+t.x1.permuted <- tree( (y)~  (x1) +  (x2), data = data.permuted.x1[,c(-4, -5)])
 yhat.x1.permuted <- predict(t.x1.permuted)
 error.rate.x1.permuted <- sum(abs(data.permuted.x1$y - yhat.x1.permuted))/nrow(data.permuted.x1)
-
+x1Imp <- error.rate.x1.permuted- error.o  
 ```
 
-```{r varImp}
-x1Imp <- error.rate.x1.permuted- error.o  
-x2Imp <- error.x2.permuted- error.o  
+
+```{r, echo=FALSE}
+tt2 <- ttheme_minimal()
+d <- data.frame("variable" = c("x1", "x2"), "variable importance" = c(x1Imp, x2Imp))
+grid.table(d, theme = tt2)
 ```
 
 Now we see that X1 is indeed reported as a more important predictor of Y than X2
 
-###Making Comparisons 
-
-```{r}
-lm <- lm(y~x1 + x2, data = data)
-summary(lm)
-```
 
 
