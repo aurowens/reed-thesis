@@ -1,7 +1,7 @@
 ---
 title: "Simulations"
 author: "Aurora Owens"
-date: "October 3rd, 2016"
+date: "October 5th, 2016"
 output:
   html_document:
     highlight: kate
@@ -13,6 +13,18 @@ library(ggplot2)
 library(dplyr)
 ```
  
+**Current confusions**
+
+- Need to find the OOB error for the original tree and the subsequent trees with permuted data. Most things I've found deal with OOB in a random forest, which doesn't seem to apply in the 1- tree case. Maybe $\frac {1} {n} \Sigma_{i}^n I (y_i = \hat{y}_i)$ or $\frac {1} {n} \Sigma_{i}^n |y_i - \hat{y}_i|$ would work here? That's what I've implemented above. 
+- This procedure only applies when
+ (1) The predictors are correlated enough for the tree algorithm to pick up on it **Important area for further testing**
+ (2) Both predictors are chosen by the tree algorithm as suitable predictors of Y
+ 
+ **To Do**
+- use `cv.tree` to make sure the trees are the best we can do
+- try to fool the system. Can I get the algorithm to select a correlated predictor as significant when in fact it's just close with another predictor?
+- function-ize the code so that it can be applied more elegantly
+
 #A Very Simple Tree and a Measure of Variable Importance
 
 ##Data Simulations
@@ -27,13 +39,13 @@ x1 <- rnorm(1000)
 
 set.seed(2)
 
-x2 <- exp(x1) + rnorm(100)
+x2 <- exp(x1) + rnorm(1000)
 
 #x2 <- 5* sin(3*x1) + 2*cos(3*x1+ .5) + rnorm(1000)
 
 set.seed(3)
 
-y <- 5*x1 + 4*x2 + rnorm(100)
+y <- 5*x1 + 4*x2 + rnorm(1000)
 ```
 
 We can see by plotting x1 and x2 that their relationship is not linear, but their relationship does still have some positive linear correlation. 
@@ -48,7 +60,7 @@ cor(x1,x2)
 ```
 
 
-Their linear correlation is .711. 
+Their linear correlation is .68. 
 
 ```{r, echo=FALSE}
 ggplot(aes(x = x1, y = y), data = data) +
@@ -79,10 +91,10 @@ intervalReturn <- function(split.cutleft){
 ```{r}
 library(tree)
 library(randomForest)
-set.seed(428)
-rfo <- randomForest(y~., data = data[,-4])
-importance(rfo)
-
+set.seed(1)
+tree.o <- tree(y~., data = data)
+yhat.o <- predict(tree.o)
+error.o <- sum(abs(data$y - yhat.o))/nrow(data)
 
 set.seed(222)
 tree1 <- tree(x2~x1, data = data)
@@ -91,15 +103,14 @@ text(tree1)
 
 tree1$frame
 #Partition X2 wrt the splits on X1
-interval <- intervalReturn(tree1$frame$splits[,1])
+intervalX2 <- intervalReturn(tree1$frame$splits[,1])
 
 #This code should be written as a function to handle more cases 
-data$partition.x2 <- ifelse(x1 < interval[1,1], 1, 
-                         ifelse(x1 < interval[2,1], 2, 
-                         ifelse(x1 < interval[3,1], 3,
-                         ifelse(x1 < interval[4,1], 4,
-                         ifelse(x1 < interval[5,1], 5,
-                         ifelse(x1 < interval[6,1], 6, 7))))))
+data$partition.x2 <- ifelse(x1 < intervalX2[1,1], 1, 
+                         ifelse(x1 < intervalX2[2,1], 2, 
+                         ifelse(x1 < intervalX2[3,1], 3,
+                         ifelse(x1 < intervalX2[4,1], 4,
+                         ifelse(x1 < intervalX2[5,1], 5, 6)))))
 
 
 #Permute X2 wrt these partitions
@@ -123,10 +134,12 @@ d7$x2 <- sample(d7$x2)
 
 data.permuted.x2 <- rbind(d1,d2,d3,d4,d5,d6,d7)
 
-#Fit a new rf
+#Fit a new tree
 set.seed(1)
-rf2 <- randomForest(y~., data = data.permuted.x2[,-4])
-importance(rf2)
+t.x2.permuted <- tree(y~., data = data.permuted.x2)
+yhat.x2.permuted <- predict(t.x2.permuted)
+error.x2.permuted <- sum(abs(data.permuted.x2$y - yhat.x2.permuted))/nrow(data.permuted.x2)
+
 
 #Do the same with X1
 set.seed(222)
@@ -134,17 +147,15 @@ tree2 <- tree(x1~x2, data = data)
 plot(tree2)
 text(tree2)
 
-#tree1$frame
+tree1$frame
 #Partition X1 wrt the splits on X2
-interval1 <- intervalReturn(tree2$frame$splits[,1])
+intervalX1 <- intervalReturn(tree2$frame$splits[,1])
 
 #This code should be written as a function to handle more cases 
-data$partition.x1 <- ifelse(x2 < interval1[1,1], 1, 
-                         ifelse(x2 < interval1[2,1], 2, 
-                         ifelse(x2 < interval1[3,1], 3,
-                         ifelse(x2 < interval1[4,1], 4,
-                         ifelse(x2 < interval1[5,1], 5,
-                         ifelse(x2 < interval1[6,1], 6, 7))))))
+data$partition.x1 <- ifelse(x2 < intervalX1[1,1], 1, 
+                         ifelse(x2 < intervalX1[2,1], 2, 
+                         ifelse(x2 < intervalX1[3,1], 3,
+                         ifelse(x2 < intervalX1[4,1], 4,5))))
 
 
 #Permute X1 wrt these partitions
@@ -156,7 +167,7 @@ d3 <- data.permuted.x1[data.permuted.x1$partition.x1 == 3,]
 d4 <- data.permuted.x1[data.permuted.x1$partition.x1 == 4,] 
 d5 <- data.permuted.x1[data.permuted.x1$partition.x1 == 5,] 
 d6 <- data.permuted.x1[data.permuted.x1$partition.x1 == 6,] 
-d7 <- data.permuted.x1[data.permuted.x1$partition.x1 == 7,]
+#d7 <- data.permuted.x1[data.permuted.x1$partition.x1 == 7,]
 
 d1$x1 <- sample(d1$x1)
 d2$x1 <- sample(d2$x1)
@@ -164,13 +175,30 @@ d3$x1 <- sample(d3$x1)
 d4$x1 <- sample(d4$x1)
 d5$x1 <- sample(d5$x1)
 d6$x1 <- sample(d6$x1)
-d7$x1 <- sample(d7$x1)
+#d7$x1 <- sample(d7$x1)
 
-data.permuted.x1 <- rbind(d1,d2,d3,d4,d5,d6,d7)
-#Fit a new rf
+data.permuted.x1 <- rbind(d1,d2,d3,d4,d5,d6)
+
+#Fit a new tree
 set.seed(1)
-rf1 <- randomForest(y~., data = data.permuted.x1[,c(-4, -5)])
-importance(rf1)
+t.x1.permuted <- tree(y~., data = data.permuted.x1[,c(-4, -5)])
+yhat.x1.permuted <- predict(t.x1.permuted)
+error.rate.x1.permuted <- sum(abs(data.permuted.x1$y - yhat.x1.permuted))/nrow(data.permuted.x1)
+
+```
+
+```{r varImp}
+x1Imp <- error.rate.x1.permuted- error.o  
+x2Imp <- error.x2.permuted- error.o  
+```
+
+Now we see that X1 is indeed reported as a more important predictor of Y than X2
+
+###Making Comparisons 
+
+```{r}
+lm <- lm(y~x1 + x2, data = data)
+summary(lm)
 ```
 
 
