@@ -56,7 +56,18 @@ x2 <- exp(x1) +rnorm(1000)
 
 set.seed(3)
 
+#y <- 4*x1 + 0*x2 + rnorm(1000)
+#Works
+
+
+#y <- 0*x1 + 4*x2 + rnorm(1000)
+#Works
+
 y <- 5*x1 + 1*x2 + rnorm(1000)
+#Works
+
+#y <- 5*x1 + 4*x2 + rnorm(1000) 
+#Gives x2 >IM> x1
 ```
 
 We can see by plotting x1 and x2 that their relationship is not linear, but their relationship does still have some positive linear correlation. 
