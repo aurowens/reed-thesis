@@ -1,0 +1,12 @@
+---
+title: "A Potential Measure of Non-linear Correlation"
+author: "Aurora Owens"
+date: "October 5th, 2016"
+output:
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+    highlight: kate
+    theme: spacelab
+---
