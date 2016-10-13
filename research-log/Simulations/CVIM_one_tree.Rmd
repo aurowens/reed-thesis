@@ -1,7 +1,7 @@
 ---
 title: "Conditional Permuation Importance on A Single Tree"
 author: "Aurora Owens"
-date: "October 5th, 2016"
+date: "October 13th, 2016"
 output:
   html_document:
     code_folding: hide
@@ -22,30 +22,24 @@ library(gridExtra)
 
 #To do:
 
-- Check and finish `condPermuter`
-- Impl't the null distribution method to acquire a p value
-- Move all functions over to the package (maybe combine a few of them)
+##Impl't the null distribution method to acquire a p value
 
-#Concerns and Areas to Improve Upon
+- $H_o$ : The true permuted variable importance is 0
 
-- The results are really variable. I haven't been able to consistantly get the same results as to which variable is *more* important and I think that is because the trees generated are slightly different each time. I've tried setting the seed before calling `tree` but maybe I should implement a cv method or do more pruning to see if I can decrease the variability at all. Alternately, maybe something strange is happening in my sample. In the plots `Y ~X1` and `Y ~ X2`, if I were to draw a line representing `Y ~ X2` it would be much steeper and with a greater slope than the line for `Y ~X1`. 
+- $H_a$ : The true permuted variable importance is not equal to 0
 
-**edit** : there seems to be a strange thing that happens when both X1 and X2 have similar (or close) $\beta$ s, in that the algorithm has a difficult time distinguishing them. When I was encountering the problem above, I had $\beta_1 = 5$ and $\beta_2 = 4$ and this allowed X2 to have a greater variable importance than X1. A statistical test is needed to create a confidence interval for the variable importance so that we could distinguish a variable importance value that is significantly different from zero and significantly different from the VI value for another predictor.  
 
-- Need to find the OOB error for the original tree and the subsequent trees with permuted data. Most things I've found deal with OOB in a random forest, which doesn't seem to apply in the 1- tree case. Maybe $\frac {1} {n} \Sigma_{i}^n I (y_i = \hat{y}_i)$ or $\frac {1} {n} \Sigma_{i}^n |y_i - \hat{y}_i|$ would
-- This procedure only applies when
+##Move all functions over to the package (maybe combine a few of them)
+
+#Current hesitations/thoughts
+
+How do I simulate the distribution under H_o?
+
+If I was able to find a p--value of VI for one variable on one tree, would it be valid for models that use ensembles of trees?
+
+This procedure only applies when
  (1) The predictors are correlated enough for the tree algorithm to pick up on it *Important area for further testing*
  (2) Both predictors are chosen by the tree algorithm as suitable predictors of Y
- 
-##To Do:
-- use `cv.tree` to make sure the trees are the best we can do
-*Didn't seem to make a difference in the trees produced. There aren't many nodes on each tree anyway, most likely because of the linear-ish relationships here*
-- try to fool the system. Can I get the algorithm to select a correlated predictor as significant when in fact it's just close with another predictor?
- *Looks like yes, as long as the variables are not scaled*
-- function-ize the code so that it can be applied more elegantly
-
-#Moving Forward
-- look at the null distribution - permute many times and look at CI of error (VIM?) to generate p-val
 
 ```{r function}
 intervalReturn <- function(split.cutleft){ 
@@ -64,6 +58,16 @@ partitionCreator <- function(i = interval, x = data) {
   }
   return(bins$bin)
 }
+
+condPermuter <- function(data1) {
+  data1$p <- factor(data1$p)
+  for(i in 1:length(levels(data1$p))){
+    set.seed(1)
+    data1[data1$p == data1$p[i], 2] <- sample(data1[data1$p== data1$p[i],2])
+  }
+  return(data1)
+}
+
 ```
 
 #Data Simulation
@@ -168,49 +172,12 @@ data$partition.x2 <- partitionCreator(intervalX2, data$x1)
 
 Now that we have our grid defined by the splits on X1 in the $X2~X1$ tree, we can permute X2 with respect to this grid.  
 
-```{r, X2permutations}
-data.permuted.x2 <- data
-
-d1 <- data.permuted.x2[data.permuted.x2$partition.x2 == 1,] 
-d2 <- data.permuted.x2[data.permuted.x2$partition.x2 == 2,] 
-d3 <- data.permuted.x2[data.permuted.x2$partition.x2 == 3,] 
-d4 <- data.permuted.x2[data.permuted.x2$partition.x2 == 4,] 
-d5 <- data.permuted.x2[data.permuted.x2$partition.x2 == 5,] 
-d6 <- data.permuted.x2[data.permuted.x2$partition.x2 == 6,] 
-d7 <- data.permuted.x2[data.permuted.x2$partition.x2 == 7,]
-d8 <- data.permuted.x2[data.permuted.x2$partition.x2 == 8,]
-d9 <- data.permuted.x2[data.permuted.x2$partition.x2 == 9,]
-
-d1$x2 <- sample(d1$x2)
-d2$x2 <- sample(d2$x2)
-d3$x2 <- sample(d3$x2)
-d4$x2 <- sample(d4$x2)
-d5$x2 <- sample(d5$x2)
-d6$x2 <- sample(d6$x2)
-d7$x2 <- sample(d7$x2)
-d8$x2 <- sample(d8$x2)
-d9$x2 <- sample(d9$x2)
-
-data.permuted.x2 <- rbind(d1,d2,d3,d4,d5,d6,d7, d8, d9)
-```
-
 ```{r}
-condPermuter <- function(p = partitions, x, data) {
-  #perm <- data
-  data1 <- data
-  p <- factor(p)
-  for(i in 1:length(levels(p))){
-    perm <- data
-    perm <- perm %>% filter(p == p[i])
-    perm <- perm[sample.int(nrow(perm), size = nrow(perm)),] 
-    data1[p == p[i],] <- perm
-  }
-  return(data)
-}
+data11  <-data.frame("p" = data$partition.x2, "x" = data$x2, "onex" = data$x1, "y" = data$y, "orig.x2" =data$x2)
 
-per <- condPermuter(data.permuted.x2$partition.x2, x = x2, data.permuted.x2)
+per1 <- condPermuter(data11)
 
-#per1 <- condPermuter(c(1,1,1,3,4,1,2,3,3,4), )
+data.permuted.x2 <- per1 %>% rename("partition.x2" = p, "x2.permuted" = x , "x1" = onex)
 ```
 
 
@@ -218,7 +185,7 @@ Lastly, we can compare the accuracy of the new tree with permuted data to the ac
 
 ```{r}
 set.seed(1)
-t.x2.permuted <- tree( (y)~  (x1) +  (x2), data = data.permuted.x2)
+t.x2.permuted <- tree( (y)~  (x1) +  (x2.permuted), data = data.permuted.x2)
 yhat.x2.permuted <- predict(t.x2.permuted)
 error.x2.permuted <- sum(abs(data.permuted.x2$y - yhat.x2.permuted))/nrow(data.permuted.x2)
 x2Imp <- error.x2.permuted- error.o 
@@ -227,6 +194,13 @@ x2Imp <- error.x2.permuted- error.o
 
 As this value is greater than zero, X2 is an important predictor of Y. By running the same procedure on X1 we can compare the VI of the two predictors.
 
+We can repeat this procedure many times to generate the distribution of `x2Imp`
+
+```{r pvalX2}
+
+```
+
+
 ```{r}
 #Do the same with X1
 set.seed(222)
@@ -234,7 +208,7 @@ tree2 <- tree( (x1)~ (x2), data = data)
 plot(tree2)
 text(tree2)
 
-tree1$frame
+#tree1$frame
 #Partition X1 wrt the splits on X2
 intervalX1 <- intervalReturn(tree2$frame$splits[,1])
 
@@ -243,33 +217,18 @@ data$partition.x1 <- partitionCreator(intervalX1, data$x2)
 
 
 #Permute X1 wrt these partitions
-data.permuted.x1 <- data
+ 
+data11  <-data.frame("p" = data$partition.x1, "x" = data$x1, "twox" = data$x2, "y" = data$y, "orig.x1" =data$x1)
 
-d1 <- data.permuted.x1[data.permuted.x1$partition.x1 == 1,] 
-d2 <- data.permuted.x1[data.permuted.x1$partition.x1 == 2,] 
-d3 <- data.permuted.x1[data.permuted.x1$partition.x1 == 3,] 
-d4 <- data.permuted.x1[data.permuted.x1$partition.x1 == 4,] 
-d5 <- data.permuted.x1[data.permuted.x1$partition.x1 == 5,] 
-d6 <- data.permuted.x1[data.permuted.x1$partition.x1 == 6,] 
-d7 <- data.permuted.x1[data.permuted.x1$partition.x1 == 7,]
-d8 <- data.permuted.x1[data.permuted.x1$partition.x1 == 8,]
-d9 <- data.permuted.x1[data.permuted.x1$partition.x1 == 9,]
+per1 <- condPermuter(data11)
 
-d1$x1 <- sample(d1$x1)
-d2$x1 <- sample(d2$x1)
-d3$x1 <- sample(d3$x1)
-d4$x1 <- sample(d4$x1)
-d5$x1 <- sample(d5$x1)
-d6$x1 <- sample(d6$x1)
-d7$x1 <- sample(d7$x1)
-d8$x1 <- sample(d8$x1)
-d9$x1 <- sample(d9$x1)
+data.permuted.x1 <- per1 %>% rename("partition.x1" = p, "x1.permuted" = x , "x2" = twox)
+```
 
-data.permuted.x1 <- rbind(d1,d2,d3,d4,d5,d6,d7, d8, d9)
-
+```{r}
 #Fit a new tree
 set.seed(1)
-t.x1.permuted <- tree( (y)~  (x1) +  (x2), data = data.permuted.x1[,c(-4, -5)])
+t.x1.permuted <- tree( (y)~  (x1.permuted) +  (x2), data = data.permuted.x1)
 yhat.x1.permuted <- predict(t.x1.permuted)
 error.rate.x1.permuted <- sum(abs(data.permuted.x1$y - yhat.x1.permuted))/nrow(data.permuted.x1)
 x1Imp <- error.rate.x1.permuted- error.o  

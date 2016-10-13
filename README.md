@@ -1,8 +1,8 @@
 
 ##Abstract
 
-  To do: Next week (week of 9/26)
-  
+  One of the biggest problems for forest methods is that they are not very interperatable. This project attempts to alieviate this by building on the framework created in Strobl et al 2008 to create a method of assigning p-values to variable importance.     
+   
 ##Outline
 
   To do by December 8th
