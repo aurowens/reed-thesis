@@ -24,9 +24,11 @@ library(gridExtra)
 
 ##Impl't the null distribution method to acquire a p value
 
-- $H_o$ : The true permuted variable importance is 0
+- $H_o$ : The true permuted variable importance is 0 or $X
 
 - $H_a$ : The true permuted variable importance is not equal to 0
+
+
 
 
 ##Move all functions over to the package (maybe combine a few of them)
@@ -50,6 +52,7 @@ intervals$split.cutleft <- gsub("<", "", intervals$split.cutleft)
 intervals$split.cutleft <- as.numeric(intervals$split.cutleft)
 return(arrange(intervals, (split.cutleft)))
 }
+
 partitionCreator <- function(i = interval, x = data) {
   p <- c(1:(1+nrow(i)))
   bins <- data.frame (bin = rep(1, length(x)), x = x)
@@ -62,7 +65,7 @@ partitionCreator <- function(i = interval, x = data) {
 condPermuter <- function(data1) {
   data1$p <- factor(data1$p)
   for(i in 1:length(levels(data1$p))){
-    set.seed(1)
+    #set.seed(1)
     data1[data1$p == data1$p[i], 2] <- sample(data1[data1$p== data1$p[i],2])
   }
   return(data1)
@@ -92,13 +95,13 @@ set.seed(3)
 #Works
 
 
-y <- 0*x1 + 4*x2 + rnorm(1000)
+#y <- 0*x1 + 4*x2 + rnorm(1000)
 #Works
 
 #y <- 5*x1 + 1*x2 + rnorm(1000)
 #Works
 
-#y <- 5*x1 + 4*x2 + rnorm(1000) 
+y <- 5*x1 + 4*x2 + rnorm(1000) 
 #Gives x2 >IM> x1
 ```
 
@@ -165,10 +168,7 @@ intervalX2 <- intervalReturn(split.cutleft = tree1$frame$splits[,1])
 
 #Bin by partition
 data$partition.x2 <- partitionCreator(intervalX2, data$x1)
-
-
 ```
-
 
 Now that we have our grid defined by the splits on X1 in the $X2~X1$ tree, we can permute X2 with respect to this grid.  
 
@@ -179,7 +179,6 @@ per1 <- condPermuter(data11)
 
 data.permuted.x2 <- per1 %>% rename("partition.x2" = p, "x2.permuted" = x , "x1" = onex)
 ```
-
 
 Lastly, we can compare the accuracy of the new tree with permuted data to the accuracy of the original tree to develop a measure of variable importance under the null hypothesis that Y is independent of X2, given that X2 is dependent on X1
 
@@ -197,7 +196,19 @@ As this value is greater than zero, X2 is an important predictor of Y. By runnin
 We can repeat this procedure many times to generate the distribution of `x2Imp`
 
 ```{r pvalX2}
+x2ImpDist <- rep(0,2000)
+set.seed(1)
+for(i in 1:2000) {
+  data11  <-data.frame("p" = data$partition.x2, "x" = data$x2, "onex" = data$x1, "y" = data$y, "orig.x2" =data$x2)
+  per1 <- condPermuter(data11)
+  t <- tree( (y)~  (onex) +  (x), data = per1)
+  yhat <- predict(t)
+  e <- sum(abs(per1$y - yhat))/nrow(per1)
+  x2ImpDist[i] <- e- error.o 
+}
 
+x2ImpDist <- as.data.frame(x2ImpDist)
+ggplot(aes(x2ImpDist), data = x2ImpDist) + geom_histogram(bins = 30) 
 ```
 
 
@@ -243,5 +254,19 @@ grid.table(d, theme = tt2)
 
 Now we see that X1 is indeed reported as a more important predictor of Y than X2
 
+```{r pvalX1}
+x1ImpDist <- rep(0,2000)
+set.seed(1)
+for(i in 1:2000){
+  data111  <-data.frame("p" = data$partition.x1, "x" = data$x1, "twox" = data$x2, "y" = data$y, "orig.x1" =data$x1)
+  per11 <- condPermuter(data111)
+  t1 <- tree( (y)~  (x) +  (twox), data = per11)
+  yhat1 <- predict(t1)
+  e1 <- sum(abs(per11$y - yhat1))/nrow(per11)
+  x1ImpDist[i] <- e1- error.o 
+}
 
+x1ImpDist <- as.data.frame(x1ImpDist)
+ggplot(aes(x1ImpDist), data = x1ImpDist) + geom_histogram(bins = 100) 
 
+```
