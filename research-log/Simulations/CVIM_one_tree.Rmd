@@ -81,11 +81,13 @@ A Three Dimensional Example Where $X_1$ and $X_2$ Are Non-Linearly Correlated
 
 set.seed(1)
 
-x1 <- rnorm(1000) #maybe generate from the uniform
+x2 <- 3*rnorm(5000) #maybe generate from the uniform
 
 set.seed(2)
 
-x2 <- exp(x1) +rnorm(1000) 
+#x2 <- exp(x1) +rnorm(1000) 
+
+x1 <- .5*x2 + rnorm(5000)
 
 #x2 <- 5* sin(3*x1) + 2*cos(3*x1+ .5) + rnorm(1000)
 
@@ -101,7 +103,7 @@ set.seed(3)
 #y <- 5*x1 + 1*x2 + rnorm(1000)
 #Works
 
-y <- 5*x1 + 4*x2 + rnorm(1000) 
+y <- 5*x1 + 4*x2 + rnorm(5000) 
 #Gives x2 >IM> x1
 ```
 
@@ -198,8 +200,10 @@ We can repeat this procedure many times to generate the distribution of `x2Imp`
 ```{r pvalX2}
 x2ImpDist <- rep(0,2000)
 set.seed(1)
+#data11  <-data.frame("p" = data$partition.x2, "x" = data$x2, "onex" = data$x1, "y" = data$y, "orig.x2" =data$x2)
+
+#set.seed(1)
 for(i in 1:2000) {
-  data11  <-data.frame("p" = data$partition.x2, "x" = data$x2, "onex" = data$x1, "y" = data$y, "orig.x2" =data$x2)
   per1 <- condPermuter(data11)
   t <- tree( (y)~  (onex) +  (x), data = per1)
   yhat <- predict(t)
@@ -229,11 +233,11 @@ data$partition.x1 <- partitionCreator(intervalX1, data$x2)
 
 #Permute X1 wrt these partitions
  
-data11  <-data.frame("p" = data$partition.x1, "x" = data$x1, "twox" = data$x2, "y" = data$y, "orig.x1" =data$x1)
+data111  <-data.frame("p" = data$partition.x1, "x" = data$x1, "twox" = data$x2, "y" = data$y, "orig.x1" =data$x1)
 
-per1 <- condPermuter(data11)
+per11 <- condPermuter(data111)
 
-data.permuted.x1 <- per1 %>% rename("partition.x1" = p, "x1.permuted" = x , "x2" = twox)
+data.permuted.x1 <- per11 %>% rename("partition.x1" = p, "x1.permuted" = x , "x2" = twox)
 ```
 
 ```{r}
@@ -256,9 +260,10 @@ Now we see that X1 is indeed reported as a more important predictor of Y than X2
 
 ```{r pvalX1}
 x1ImpDist <- rep(0,2000)
-set.seed(1)
+#set.seed(1)
+#data111  <-data.frame("p" = data$partition.x1, "x" = data$x1, "twox" = data$x2, "y" = data$y, "orig.x1" =data$x1)
 for(i in 1:2000){
-  data111  <-data.frame("p" = data$partition.x1, "x" = data$x1, "twox" = data$x2, "y" = data$y, "orig.x1" =data$x1)
+  #set.seed(1)
   per11 <- condPermuter(data111)
   t1 <- tree( (y)~  (x) +  (twox), data = per11)
   yhat1 <- predict(t1)
