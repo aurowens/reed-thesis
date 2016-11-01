@@ -1,0 +1,134 @@
+---
+title: "Sampling"
+author: "Aurora Owens"
+date: "November 1st, 2016"
+output:
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+    highlight: kate
+    theme: spacelab
+---
+
+
+
+## Setup
+
+```{r loadlib, warning=FALSE, message=FALSE}
+library(ggplot2)
+library(dplyr)
+library(tree)
+library(randomForest)
+library(maptree)
+library(gridExtra)
+```
+
+
+```{r function}
+intervalReturn <- function(split.cutleft){ 
+  intervals <- data.frame(split.cutleft)
+  intervals <- filter(intervals, split.cutleft != "")
+  intervals <- select(intervals, split.cutleft)
+  intervals$split.cutleft <- gsub("<", "", intervals$split.cutleft)
+  intervals$split.cutleft <- as.numeric(intervals$split.cutleft)
+  return(arrange(intervals, (split.cutleft)))
+}
+
+partitionCreator <- function(i = interval, x, data) {
+  p <- c(1:(1+nrow(i)))
+  bins <- data.frame (bin = rep(1, nrow(data)), x = data[,x])
+  for(j in 1:nrow(i)){
+    bins[bins$x > i[j,1],1] <- p[j+ 1]
+  }
+  return(bins$bin)
+}
+
+condPermuter <- function(d2, x) {
+  d2$p <- as.factor(d2$p)
+  for(i in 1:length(levels(d2$p))){
+    #set.seed(1)
+   d2[d2$p == i, x] <- sample(d2[d2$p== i,x])
+  }
+  return(d2[,x])
+}
+
+tree.error <- function(tree, y) { #returns mean squared error
+  yhat <- predict(tree)
+  return(sum(abs(y - yhat)))
+}
+
+variable.importance <- function(formula1, f2, x, y, data){
+  t1 <- tree(formula1, data)
+  #e0 <- tree.error(t1,y)
+  interval <- intervalReturn(t1$frame$splits[,1])
+  data$p <- partitionCreator(interval, x, data)
+  data[,x] <- condPermuter(data, x)
+  t2 <- tree(f2, data)
+  e1 <- tree.error(t2, y)
+  return(e1)
+}
+
+#set.seed(1)
+x1vi <- variable.importance(x1 ~ x2,  y ~ x1 + x2,"x1", y, data)
+x2vi <- variable.importance(y ~ x1 + x2, y ~ x1 + x2, "x2",y, data)
+```
+
+## The data
+
+
+```{r}
+
+set.seed(1)
+
+x1 <- rnorm(5000) #maybe generate from the uniform
+
+set.seed(2)
+
+x2 <- 4+ 3* x1 +rnorm(5000)
+
+set.seed(3)
+
+y <- 5*x1 + 4*x2 + rnorm(5000) 
+
+data <- data.frame(y,x1,x2)
+```
+
+## An Original Tree and Error Associated with it
+
+```{r}
+set.seed(1)
+tree.o <- tree( (y)~  (x1) +  (x2), data = data)
+
+yhat.o <- predict(tree.o)
+error.o <- sum(abs(data$y - yhat.o))/nrow(data)
+
+plot(tree.o)
+text(tree.o)
+```
+
+```{r}
+x1Imp <- variable.importance(y ~ x1 + x2, "x1", data) 
+```
+
+
+## Variable Importance for X1
+
+```{r}
+
+x1ImpDist <- rep(0,2000)
+#set.seed(1)
+#data111  <-data.frame("p" = data$partition.x1, "x" = data$x1, "twox" = data$x2, "y" = data$y, "orig.x1" =data$x1)
+for(i in 1:2000){
+  #set.seed(1)
+  per11 <- condPermuter(data111)
+  t1 <- tree( (y)~  (x) +  (twox), data = per11)
+  yhat1 <- predict(t1)
+  e1 <- sum(abs(per11$y - yhat1))/nrow(per11)
+  x1ImpDist[i] <- e1- error.o 
+}
+
+x1ImpDist <- as.data.frame(x1ImpDist)
+ggplot(aes(x1ImpDist), data = x1ImpDist) + geom_histogram() 
+```
+

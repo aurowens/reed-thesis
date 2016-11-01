@@ -44,6 +44,8 @@ This procedure only applies when
  (2) Both predictors are chosen by the tree algorithm as suitable predictors of Y
 
 ```{r function}
+
+
 intervalReturn <- function(split.cutleft){ 
 intervals <- data.frame(split.cutleft)
 intervals <- filter(intervals, split.cutleft != "")
@@ -71,6 +73,16 @@ condPermuter <- function(data1) {
   return(data1)
 }
 
+condPermuter <- function(data1, x) {
+  data1$p <- factor(data1$p)
+  for(i in 1:length(levels(data1$p))){
+    #set.seed(1)
+    data1[data1$p == data1$p[i], x] <- sample(data1[data1$p== data1$p[i],x])
+  }
+  return(data1)
+}
+
+ 
 ```
 
 #Data Simulation
@@ -104,7 +116,7 @@ set.seed(3)
 #Works
 
 y <- 5*x1 + 4*x2 + rnorm(5000) 
-#Gives x2 >IM> x1
+#Gives x2 > IM > x1
 ```
 
 We can see by plotting x1 and x2 that their relationship is not linear, but their relationship does still have some positive linear correlation. 
@@ -152,7 +164,7 @@ plot(tree.o)
 text(tree.o)
 ```
 
-Now let's consider the X2. How important is X2 for predicting Y? We know that X2 and X1 are correlated, but instead of that being an issue we can use that for our advantage. Strobl et al used conditional permuation on a grid defined by the splits on the original tree, but here we are using the grid defined by a new tree that models $X2~X1$. 
+Now let's consider the X2. How important is X2 for predicting Y? We know that X2 and X1 are correlated, but instead of that being an issue we can use that for our advantage. Strobl et al used conditional permuation on a grid defined by the splits on the original tree, but here we are using the grid defined by a new tree that models $X2$ ~ $X1$. 
 
 ```{r}
 #library(infTrees)
@@ -172,12 +184,12 @@ intervalX2 <- intervalReturn(split.cutleft = tree1$frame$splits[,1])
 data$partition.x2 <- partitionCreator(intervalX2, data$x1)
 ```
 
-Now that we have our grid defined by the splits on X1 in the $X2~X1$ tree, we can permute X2 with respect to this grid.  
+Now that we have our grid defined by the splits on X1 in the $X2$~$X1$ tree, we can permute X2 with respect to this grid.  
 
 ```{r}
 data11  <-data.frame("p" = data$partition.x2, "x" = data$x2, "onex" = data$x1, "y" = data$y, "orig.x2" =data$x2)
 
-per1 <- condPermuter(data11)
+per1 <- condPermuter(data11, x = "x")
 
 data.permuted.x2 <- per1 %>% rename("partition.x2" = p, "x2.permuted" = x , "x1" = onex)
 ```
@@ -212,7 +224,7 @@ for(i in 1:2000) {
 }
 
 x2ImpDist <- as.data.frame(x2ImpDist)
-ggplot(aes(x2ImpDist), data = x2ImpDist) + geom_histogram(bins = 30) 
+ggplot(aes(x2ImpDist), data = x2ImpDist) + geom_histogram() 
 ```
 
 
@@ -272,6 +284,8 @@ for(i in 1:2000){
 }
 
 x1ImpDist <- as.data.frame(x1ImpDist)
-ggplot(aes(x1ImpDist), data = x1ImpDist) + geom_histogram(bins = 100) 
+ggplot(aes(x1ImpDist), data = x1ImpDist) + geom_histogram() 
+
+#+ggtitle()
 
 ```
