@@ -1,0 +1,156 @@
+---
+title: "How Variable are these Trees Anyway?"
+author: "Aurora Owens"
+date: "November 2nd, 2016"
+output:
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+    highlight: kate
+    theme: spacelab
+---
+
+```{r loadlib, warning=FALSE, message=FALSE}
+library(ggplot2)
+library(dplyr)
+library(tree)
+library(randomForest)
+library(maptree)
+library(gridExtra)
+```
+
+One of my main assumptions in the CVIM method is that trees are quite variable. Variable enough that by making small changes in the structure of the data I could derive different values from them. Well, the output from the current code is not as I hoped, distributions are extremely consisitant/ not variable. Is this a bug, or are there larger issues with my assumptions? 
+
+### The Simulated Data
+
+This is taken from 'sampling.Rmd`
+
+```{r}
+set.seed(1)
+
+x1 <- rnorm(5000) 
+
+set.seed(2)
+
+x2 <-  3* x1 +rnorm(5000)
+
+set.seed(3)
+
+y <- 5*x1 + 4*x2 + rnorm(5000) 
+
+data <- data.frame(y,x1,x2)
+```
+
+### Variablilty
+
+There are a number of ways I can think of to measure a tree's variablility, but I'll start with the mean squared predictive error of $Y$ ~ $X_1, X_2$
+
+```{r, warning=FALSE, message=FALSE}
+e <- rep(0,1000)
+
+set.seed(444)
+for(i in 1:1000){
+  t <- tree(y ~x1 + x2, data)
+  yhat <- predict(t)
+  e[i] <- mean((data$y - yhat)^2)
+}
+
+ggplot(data = as.data.frame(e)) + geom_histogram(aes(x = e), fill = "#a16c01") + ggtitle("The Distribution of MSE of 1000 Trees")
+```
+
+There is not much variability in the error term of these trees. Why? Let's first increase the number of predictors to 4. 
+
+
+###Number of splits
+
+Another way we can compare trees for variablity is looking at their number of splits
+
+```{r, warning=FALSE, message=FALSE}
+s <- rep(0,1000)
+
+#set.seed(444)
+for(i in 1:1000){
+  t <- tree(y ~., data)
+  splits.cutleft <- t$frame$splits[,1]
+  splits.cutleft <- gsub("<", "", splits.cutleft)
+  splits.cutleft[splits.cutleft == ""] <- NA
+  s[i]<- length(splits.cutleft[complete.cases(splits.cutleft)])
+}
+
+ggplot(data = as.data.frame(s)) + geom_histogram(aes(x = s), fill = "#99183c" ) +ggtitle("Distribution of the Number of Splits in 1000 Trees")
+```
+
+####First Split
+
+What if we look at which variable was split on first? 
+
+```{r, warning=FALSE, message=FALSE}
+f <- rep("none",1000)
+
+#set.seed(444)
+for(i in 1:1000){
+  t <- tree(y ~., data)
+  f[i] <- as.character(t$frame$var[1])
+}
+
+ggplot(data = as.data.frame(f)) + geom_bar(aes(x = f), fill = "#800000") +ggtitle("The First Split in 1000 Trees")
+
+filter(as.data.frame(f), f != "x2")
+```
+
+These trees all very similar - too similar to create a usefull distribution from their results. 
+
+###Permuting the data
+
+Let's see how these change when x2 is permuted (blindly, not with conditional permutation)
+
+```{r, warning=FALSE, message=FALSE}
+e <- rep(0,1000)
+
+data1 <- data
+
+set.seed(444)
+for(i in 1:1000){
+  data1$x2 <- sample(data1$x2)
+  t <- tree(y ~x1 + x2, data1)
+  yhat <- predict(t)
+  e[i] <- mean((data1$y - yhat)^2)
+}
+
+ggplot(data = as.data.frame(e)) + geom_histogram(aes(x = e), fill = "#a16c01") + ggtitle("The Distribution of MSE of 1000 Trees when X2 is Permuted")
+```
+
+```{r, warning=FALSE, message=FALSE}
+s <- rep(0,1000)
+data2 <- data
+#set.seed(444)
+for(i in 1:1000){
+  data$x2 <- sample(data$x2)
+  t <- tree(y ~., data2)
+  splits.cutleft <- t$frame$splits[,1]
+  splits.cutleft <- gsub("<", "", splits.cutleft)
+  splits.cutleft[splits.cutleft == ""] <- NA
+  s[i]<- length(splits.cutleft[complete.cases(splits.cutleft)])
+}
+
+ggplot(data = as.data.frame(s)) + geom_histogram(aes(x = s), fill = "#99183c" ) +ggtitle("Distribution of the Number of Splits in 1000 Trees when X2 is Permuted")
+```
+
+
+```{r, warning=FALSE, message=FALSE}
+f <- rep("none",1000)
+
+data3 <- data
+#set.seed(444)
+for(i in 1:1000){
+  data3$x2 <- sample(data3$x2)
+  t <- tree(y ~., data3)
+  f[i] <- as.character(t$frame$var[1])
+}
+
+ggplot(data = as.data.frame(f)) + geom_bar(aes(x = f), fill = "#800000") +ggtitle("The First Split in 1000 Trees when X2 is Permuted")
+```
+
+Even when X2 is permuted before creating each tree, the number of splits, the MSE, the first split are all constant. 
+

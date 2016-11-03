@@ -11,6 +11,7 @@ output:
     theme: spacelab
 ---
 
+This isn't going terribly well. I reworked some of the functions from `CVIM_one_tree` but there are still instances where constant values are being returned. See `variability_of_trees.Rmd` for more.  
 
 
 ## Setup
@@ -47,36 +48,34 @@ partitionCreator <- function(i = interval, x, data) {
 condPermuter <- function(d2, x) {
   d2$p <- as.factor(d2$p)
   for(i in 1:length(levels(d2$p))){
-    #set.seed(1)
+   #set.seed(1)
    d2[d2$p == i, x] <- sample(d2[d2$p== i,x])
   }
   return(d2[,x])
 }
 
-tree.error <- function(tree, y) { #returns mean squared error
+tree.error <- function(tree) {  #This function was added 
   yhat <- predict(tree)
-  return(sum(abs(y - yhat)))
+  return(sum(abs(tree$y - yhat)))
 }
 
-variable.importance <- function(formula1, f2, x, y, data){
-  t1 <- tree(formula1, data)
+variable.importance <- function(formula1, x, data){
+  t1 <- tree(formula1, data, y = TRUE) #This is the biggest change from CVIM_one_tree. I added this function variable.importance() to serve as a wrapper for the other functions and I created a new tree with new partitions at each interation
   #e0 <- tree.error(t1,y)
   interval <- intervalReturn(t1$frame$splits[,1])
+  #permed <- data
   data$p <- partitionCreator(interval, x, data)
   data[,x] <- condPermuter(data, x)
-  t2 <- tree(f2, data)
-  e1 <- tree.error(t2, y)
+  t2 <- tree(y ~ x1 + x2, data, y = TRUE)
+  e1 <- tree.error(t2)
+  #rm(t1, t2)
   return(e1)
 }
-
-#set.seed(1)
-x1vi <- variable.importance(x1 ~ x2,  y ~ x1 + x2,"x1", y, data)
-x2vi <- variable.importance(y ~ x1 + x2, y ~ x1 + x2, "x2",y, data)
 ```
 
-## The data
+## linearly related functional forms 
 
-
+### Simulating the data 
 ```{r}
 
 set.seed(1)
@@ -85,7 +84,8 @@ x1 <- rnorm(5000) #maybe generate from the uniform
 
 set.seed(2)
 
-x2 <- 4+ 3* x1 +rnorm(5000)
+x2 <- 3* x1 +rnorm(5000)
+
 
 set.seed(3)
 
@@ -94,41 +94,79 @@ y <- 5*x1 + 4*x2 + rnorm(5000)
 data <- data.frame(y,x1,x2)
 ```
 
-## An Original Tree and Error Associated with it
+### The distribution of conditionally-permuted variable importance
 
 ```{r}
 set.seed(1)
-tree.o <- tree( (y)~  (x1) +  (x2), data = data)
 
-yhat.o <- predict(tree.o)
-error.o <- sum(abs(data$y - yhat.o))/nrow(data)
+t0 <- tree(y ~ x1 + x2, data, y = TRUE)
+e0 <- tree.error(t0)
 
-plot(tree.o)
-text(tree.o)
-```
+#x1vi has a very peaked distribution, even with a relatively small sample size
 
-```{r}
-x1Imp <- variable.importance(y ~ x1 + x2, "x1", data) 
-```
+x1vi <- rep(0,50)
+x2vi <- rep(0,50)
 
-
-## Variable Importance for X1
-
-```{r}
-
-x1ImpDist <- rep(0,2000)
-#set.seed(1)
-#data111  <-data.frame("p" = data$partition.x1, "x" = data$x1, "twox" = data$x2, "y" = data$y, "orig.x1" =data$x1)
-for(i in 1:2000){
-  #set.seed(1)
-  per11 <- condPermuter(data111)
-  t1 <- tree( (y)~  (x) +  (twox), data = per11)
-  yhat1 <- predict(t1)
-  e1 <- sum(abs(per11$y - yhat1))/nrow(per11)
-  x1ImpDist[i] <- e1- error.o 
+set.seed(1)
+for (i in 1:500){
+x1vi[i] <- variable.importance(x1~x2, "x1", data)
 }
 
-x1ImpDist <- as.data.frame(x1ImpDist)
-ggplot(aes(x1ImpDist), data = x1ImpDist) + geom_histogram() 
+set.seed(1)
+for(i in 1:500){
+x2vi[i] <- variable.importance(x2~x1, "x2", data)
+}
+
+plot(x1vi)
+plot(x2vi)
+
+hist(x1vi)
+p <- ggplot(as.data.frame(x1vi)) + geom_histogram(aes(x = x1vi), binwidth = 100) + geom_vline(xintercept  = e0, color = "red")
+q <- ggplot(as.data.frame(x2vi)) + geom_histogram(aes(x = x2vi)) +  geom_vline(xintercept  = e0, color = "red")
+
+grid.arrange(p,q)
+```
+
+
+
+## sampling from the uniform distribution
+
+```{r}
+x1 <- runif(1000)
+
+x2 <- 2*x1 + rnorm(1000)
+
+y <- 4*x1 + 5* x2 + rnorm(1000)
+
+sim2 <- data.frame(y,x1,x2)
+
+set.seed(1)
+
+t0 <- tree(y ~ x1 + x2, sim2)
+e0 <- tree.error(t0)
+
+x1vi <- rep(0,500)
+x2vi <- rep(0,500)
+
+set.seed(1) 
+for (i in 1:500){
+x1vi[i] <- variable.importance(x1~x2, "x1",  sim2)
+}
+
+set.seed(1)
+for(i in 1:500){
+x2vi[i] <- variable.importance(x2~x1, "x2", sim2)
+}
+
+plot(x1vi)
+plot(x2vi)
+
+plot(x2~x1)
+
+hist(x1vi)
+p <- ggplot(as.data.frame(x1vi)) + stat_density(aes(x = x1vi)) + geom_vline(xintercept  = e0, color = "red")
+q <- ggplot(as.data.frame(x2vi)) + stat_density(aes(x = x2vi)) +  geom_vline(xintercept  = e0, color = "red")
+
+grid.arrange(p,q)
 ```
 
