@@ -11,12 +11,11 @@ output:
     theme: spacelab
 ---
 
-This isn't going terribly well. I reworked some of the functions from `CVIM_one_tree` but there are still instances where constant values are being returned. See `variability_of_trees.Rmd` for more.  
-
 
 ## Setup
 
 ```{r loadlib, warning=FALSE, message=FALSE}
+library(MASS)
 library(ggplot2)
 library(dplyr)
 library(tree)
@@ -30,7 +29,7 @@ library(gridExtra)
 intervalReturn <- function(split.cutleft){ 
   intervals <- data.frame(split.cutleft)
   intervals <- filter(intervals, split.cutleft != "")
-  intervals <- select(intervals, split.cutleft)
+  intervals <- dplyr::select(intervals, split.cutleft)
   intervals$split.cutleft <- gsub("<", "", intervals$split.cutleft)
   intervals$split.cutleft <- as.numeric(intervals$split.cutleft)
   return(arrange(intervals, (split.cutleft)))
@@ -59,114 +58,120 @@ tree.error <- function(tree) {  #This function was added
   return(sum(abs(tree$y - yhat)))
 }
 
-variable.importance <- function(formula1, x, data){
-  t1 <- tree(formula1, data, y = TRUE) #This is the biggest change from CVIM_one_tree. I added this function variable.importance() to serve as a wrapper for the other functions and I created a new tree with new partitions at each interation
+variable.importance <- function(formula1, x, d){
+  t1 <- tree(formula1, data = d, y = TRUE) #This is the biggest change from CVIM_one_tree. I added this function variable.importance() to serve as a wrapper for the other functions and I created a new tree with new partitions at each interation
   #e0 <- tree.error(t1,y)
   interval <- intervalReturn(t1$frame$splits[,1])
   #permed <- data
-  data$p <- partitionCreator(interval, x, data)
-  data[,x] <- condPermuter(data, x)
-  t2 <- tree(y ~ x1 + x2, data, y = TRUE)
+  d$p <- partitionCreator(interval, x, d)
+  d[,x] <- condPermuter(d, x)
+  t2 <- tree(y ~ ., data = d, y = TRUE)
   e1 <- tree.error(t2)
   #rm(t1, t2)
   return(e1)
 }
 ```
 
-## linearly related functional forms 
+#Using the sampling scheme from Strobl et al, see `literature-review`
 
-### Simulating the data 
+#### Simulation
+
+Using `mvrnorm` from the MASS package:
+
 ```{r}
+rep(0, 12) -> mu #mean of each variable
 
-set.seed(1)
-
-x1 <- rnorm(5000) #maybe generate from the uniform
-
-set.seed(2)
-
-x2 <- 3* x1 +rnorm(5000)
-
-
-set.seed(3)
-
-y <- 5*x1 + 4*x2 + rnorm(5000) 
-
-data <- data.frame(y,x1,x2)
+diag(12) -> sigma #creates a 12 by 12 diagonal matrix with 1's down the diagonal
 ```
 
-### The distribution of conditionally-permuted variable importance
+Long, messy way to define $\Sigma$
+```{r}
+sigma -> sigma1
+.9 -> sigma1[1,2]
+.9 -> sigma1[2,1] #adding the block correlation between the first four variables
+.9 -> sigma1[1,3]
+.9 -> sigma1[3,1]
+.9 -> sigma1[3,2]
+.9 -> sigma1[2,3]
+.9 -> sigma1[1,4]
+.9 -> sigma1[4,1]
+.9 -> sigma1[2,4]
+.9 -> sigma1[4,2]
+.9 -> sigma1[4,3]
+.9 -> sigma1[3,4]
+
+sigma1
+```
+
+Sampling
+```{r}
+1000 -> n
+set.seed(1)
+mvrnorm(n =n, mu = mu, Sigma = sigma1) -> sim1000 
+```
+
+Getting the ys
+```{r}
+c(5,5,2,0,-5,-5,-2,0,0,0,0,0) -> bts #these are the betas 
+
+rnorm(1000, mean = 0, sd = .5) -> e #error terms
+
+rep(0, 1000) -> ys #init a vector of zeros
+
+for( i in 1:1000){ #go row by row and create the ys based on the function of e, bts, and sim1000
+ys[i] <- sim1000[i,1]*bts[1]+
+    sim1000[i,2]*bts[2]+ 
+    sim1000[i,3]*bts[3]+ 
+    sim1000[i,4]*bts[4]+ 
+    sim1000[i,5]*bts[5]+ 
+    sim1000[i,6]*bts[6]+
+    sim1000[i,7]*bts[7]+ 
+    sim1000[i,8]*bts[8]+ 
+    sim1000[i,9]*bts[9]+ 
+    sim1000[i,10]*bts[10]+ 
+    sim1000[i,11]*bts[11]+ 
+    sim1000[i,12]*bts[12] +
+    e[i]
+}
+
+mvn.data <- as.data.frame(sim1000)
+mvn.data$y <- ys
+```
+
+#### A tree based on `mvn.data`
 
 ```{r}
+t1 <- tree(y ~., data = mvn.data)
+
+plot(t1)
+text(t1)
+ 
+tree.error(t1)
+```
+
+#### Distribution of Variable Importance for V1 and V2
+
+```{r}
+v1vi <- rep(0,50)
+v2vi <- rep(0,50)
+v3vi <- rep(0,50)
+v4vi <- rep(0,50)
+
+
+d = mvn.data
 set.seed(1)
-
-t0 <- tree(y ~ x1 + x2, data, y = TRUE)
-e0 <- tree.error(t0)
-
-#x1vi has a very peaked distribution, even with a relatively small sample size
-
-x1vi <- rep(0,50)
-x2vi <- rep(0,50)
-
-set.seed(1)
-for (i in 1:500){
-x1vi[i] <- variable.importance(x1~x2, "x1", data)
+for (i in 1:50){
+v1vi[i] <- variable.importance(V1~., "V1", d = mvn.data)
+#d <- select(mvn.data, -p)
 }
+
+qplot(v1vi, main = "Distribution of Tree Error when V1 is Permuted wrt All Other Variables",geom = "histogram")
 
 set.seed(1)
 for(i in 1:500){
-x2vi[i] <- variable.importance(x2~x1, "x2", data)
+v2vi[i] <- variable.importance(V2~., "V2",  d=  mvn.data)
 }
 
-plot(x1vi)
-plot(x2vi)
+qplot(v2vi, main = "Distribution of Tree Error when V2 is Permuted wrt All Other Variables", geom = "histogram")
 
-hist(x1vi)
-p <- ggplot(as.data.frame(x1vi)) + geom_histogram(aes(x = x1vi), binwidth = 100) + geom_vline(xintercept  = e0, color = "red")
-q <- ggplot(as.data.frame(x2vi)) + geom_histogram(aes(x = x2vi)) +  geom_vline(xintercept  = e0, color = "red")
-
-grid.arrange(p,q)
 ```
-
-
-
-## sampling from the uniform distribution
-
-```{r}
-x1 <- runif(1000)
-
-x2 <- 2*x1 + rnorm(1000)
-
-y <- 4*x1 + 5* x2 + rnorm(1000)
-
-sim2 <- data.frame(y,x1,x2)
-
-set.seed(1)
-
-t0 <- tree(y ~ x1 + x2, sim2)
-e0 <- tree.error(t0)
-
-x1vi <- rep(0,500)
-x2vi <- rep(0,500)
-
-set.seed(1) 
-for (i in 1:500){
-x1vi[i] <- variable.importance(x1~x2, "x1",  sim2)
-}
-
-set.seed(1)
-for(i in 1:500){
-x2vi[i] <- variable.importance(x2~x1, "x2", sim2)
-}
-
-plot(x1vi)
-plot(x2vi)
-
-plot(x2~x1)
-
-hist(x1vi)
-p <- ggplot(as.data.frame(x1vi)) + stat_density(aes(x = x1vi)) + geom_vline(xintercept  = e0, color = "red")
-q <- ggplot(as.data.frame(x2vi)) + stat_density(aes(x = x2vi)) +  geom_vline(xintercept  = e0, color = "red")
-
-grid.arrange(p,q)
-```
-
