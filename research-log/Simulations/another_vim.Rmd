@@ -1,0 +1,15 @@
+---
+title: "Another Variable Importance Measure to Consider"
+author: "Aurora Owens"
+date: "November 16st, 2016"
+output:
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+    highlight: kate
+    theme: spacelab
+---
+
+In the previous documents the variable importance measure was defined as difference in the mean squared error of the tree before permutating the variable in question and after. Here, we'll look at a variable importance measure that uses the built in deviance data in a `tree` object. 
+
