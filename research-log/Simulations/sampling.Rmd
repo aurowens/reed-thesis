@@ -12,8 +12,6 @@ output:
 ---
 
 
-## Setup
-
 ```{r loadlib, warning=FALSE, message=FALSE}
 library(MASS)
 library(ggplot2)
@@ -72,7 +70,7 @@ variable.importance <- function(formula1, x, d){
 }
 ```
 
-#Using the sampling scheme from Strobl et al, see `literature-review`
+Using the sampling scheme from Strobl et al, see `literature-review`
 
 #### Simulation
 
@@ -84,7 +82,6 @@ rep(0, 12) -> mu #mean of each variable
 diag(12) -> sigma #creates a 12 by 12 diagonal matrix with 1's down the diagonal
 ```
 
-Long, messy way to define $\Sigma$
 ```{r}
 sigma -> sigma1
 .9 -> sigma1[1,2]
@@ -103,14 +100,19 @@ sigma -> sigma1
 sigma1
 ```
 
-Sampling
+
 ```{r}
-1000 -> n
+1000 -> n #number of observations
 set.seed(1)
-mvrnorm(n =n, mu = mu, Sigma = sigma1) -> sim1000 
+mvrnorm(n =n, mu = mu, Sigma = sigma1) -> sim1000 #sampling from the multivariate normal 
 ```
 
-Getting the ys
+$Y$ is linearly related to the predictor variables $V_1,...,V_12$ through the following equation:
+
+$$Y = 5 \cdot V_1 + 5 \cdot V_2 + 2 \cdot V_3 + 0 \cdot V_4 + -5 \cdot V_5 + -5\cdot V_6 + 0\cdot V_7 + 0 \cdot ..... + E$$
+
+Where the coefficents for variables 7-12 are all zero and $E$ ~ $N(0,\frac 1 2 )$. 
+
 ```{r}
 c(5,5,2,0,-5,-5,-2,0,0,0,0,0) -> bts #these are the betas 
 
@@ -140,38 +142,182 @@ mvn.data$y <- ys
 
 #### A tree based on `mvn.data`
 
-```{r}
-t1 <- tree(y ~., data = mvn.data)
+This is the tree that corresponds to the model we would like to create, i.e. $Y$ ~ $V_1 +... +V_{12}$
 
+```{r}
+set.seed(1)
+t1 <- tree(y ~., data = mvn.data)
 plot(t1)
 text(t1)
  
-tree.error(t1)
+eo <- tree.error(t1)
 ```
 
-#### Distribution of Variable Importance for V1 and V2
+The base error for this tree is:
 
 ```{r}
-v1vi <- rep(0,50)
-v2vi <- rep(0,50)
-v3vi <- rep(0,50)
-v4vi <- rep(0,50)
+(eo)
+```
 
+
+#### Distribution of Variable Importance for $V_1,..., V_7$
+
+```{r, warning=FALSE, message=FALSE}
+v1vi <- rep(0,100)#init a vector for variable importance
+v2vi <- rep(0,100)
+v3vi <- rep(0,100)
+v4vi <- rep(0,100)
+v5vi <- rep(0,100)
+v6vi <- rep(0,100)
+v7vi <- rep(0,100)
 
 d = mvn.data
 set.seed(1)
-for (i in 1:50){
+for (i in 1:100){
 v1vi[i] <- variable.importance(V1~., "V1", d = mvn.data)
 #d <- select(mvn.data, -p)
 }
 
-qplot(v1vi, main = "Distribution of Tree Error when V1 is Permuted wrt All Other Variables",geom = "histogram")
+#qplot(v1vi, main = "Distribution of Tree Error when V1 is Permuted wrt All Other Variables",geom = "histogram")
 
+ggplot(data = as.data.frame(v1vi), aes(x = v1vi)) + 
+  geom_density(fill = "#29211F")+
+  ggtitle("Distribution of Tree Error when V1 is Permuted wrt All Other Variables")+
+  geom_vline(xintercept =  eo, color = "#C27D38")+
+  geom_vline(xintercept = mean(v1vi) + 2*sd(v1vi), color = "#798E87")+
+  geom_vline(xintercept = mean(v1vi) - 2*sd(v1vi), color = "#798E87")
+  
+  
 set.seed(1)
-for(i in 1:500){
+for(i in 1:100){
 v2vi[i] <- variable.importance(V2~., "V2",  d=  mvn.data)
 }
 
-qplot(v2vi, main = "Distribution of Tree Error when V2 is Permuted wrt All Other Variables", geom = "histogram")
+ggplot(data = as.data.frame(v2vi), aes(x = v2vi)) + 
+  geom_density(fill = "#29211F")+
+  ggtitle("Distribution of Tree Error when V2 is Permuted wrt All Other Variables")+
+  geom_vline(xintercept =  eo, color = "#C27D38")+
+  geom_vline(xintercept = mean(v2vi) + 2*sd(v2vi), color = "#798E87")+
+  geom_vline(xintercept = mean(v2vi) - 2*sd(v2vi), color = "#798E87")
 
+set.seed(1)
+for(i in 1:100){
+v3vi[i] <- variable.importance(V3~., "V3",  d=  mvn.data)
+}
+
+ggplot(data = as.data.frame(v3vi), aes(x = v3vi)) + 
+  geom_density(fill = "#29211F")+
+  ggtitle("Distribution of Tree Error when V3 is Permuted wrt All Other Variables")+
+  geom_vline(xintercept =  eo, color = "#C27D38")+
+  geom_vline(xintercept = mean(v3vi) + 2*sd(v3vi), color = "#798E87")+
+  geom_vline(xintercept = mean(v3vi) - 2*sd(v3vi), color = "#798E87")
+
+set.seed(1)
+for(i in 1:100){
+v4vi[i] <- variable.importance(V4~., "V4",  d=  mvn.data)
+}
+
+ggplot(data = as.data.frame(v4vi), aes(x = v4vi)) + 
+  geom_density(fill = "#29211F")+
+  ggtitle("Distribution of Tree Error when V4 is Permuted wrt All Other Variables")+
+  geom_vline(xintercept =  eo, color = "#C27D38")+
+  geom_vline(xintercept = mean(v4vi) + 2*sd(v4vi), color = "#798E87")+
+  geom_vline(xintercept = mean(v4vi) - 2*sd(v4vi), color = "#798E87")
+
+
+set.seed(1)
+for(i in 1:100){
+v5vi[i] <- variable.importance(V5~., "V5",  d=  mvn.data)
+}
+
+ggplot(data = as.data.frame(v5vi), aes(x = v5vi)) + 
+  geom_density(fill = "#29211F")+
+  ggtitle("Distribution of Tree Error when V5 is Permuted wrt All Other Variables")+
+  geom_vline(xintercept =  eo, color = "#C27D38")+
+  geom_vline(xintercept = mean(v5vi) - 2*sd(v5vi), color = "#798E87")+
+  geom_vline(xintercept = mean(v5vi) + 2*sd(v5vi), color = "#798E87")
+
+set.seed(1)
+for(i in 1:100){
+v6vi[i] <- variable.importance(V6~., "V6",  d=  mvn.data)
+}
+
+ggplot(data = as.data.frame(v6vi), aes(x = v6vi)) + 
+  geom_density(fill = "#29211F")+
+  ggtitle("Distribution of Tree Error when V6 is Permuted wrt All Other Variables")+
+  geom_vline(xintercept =  eo, color = "#C27D38")+
+  geom_vline(xintercept = mean(v6vi) + 2*sd(v6vi), color = "#798E87")+
+  geom_vline(xintercept = mean(v6vi) - 2*sd(v6vi), color = "#798E87")
+
+set.seed(1)
+for(i in 1:100){
+v7vi[i] <- variable.importance(V7~., "V7",  d=  mvn.data)
+}
+
+ggplot(data = as.data.frame(v7vi), aes(x = v7vi)) + #unsure why this outputs a black box instead of a really peaked distribution like in V4
+  geom_density(fill = "#29211F")+
+  ggtitle("Distribution of Tree Error when V7 is Permuted wrt All Other Variables")+
+  geom_vline(xintercept =  eo, color = "#C27D38")+
+  geom_vline(xintercept = mean(v7vi) + 2*sd(v7vi), color = "#798E87")+
+  geom_vline(xintercept = mean(v7vi) - 2*sd(v7vi), color = "#798E87")
 ```
+
+The light line corresponds to the base error rate of the original tree and the darker lines correspond roughly to $+/- 2* SD$ of the permuted error distribution. As you can see, most of the variables that had non-zero coeffecients would be deemed "not important" by this method. Is this because of the rampant correlation? Here's what the distributions would look like when the block correlation is .3 instead of .9:
+
+
+```{r}
+sigma -> sigma2
+.3 -> sigma2[1,2]
+.3 -> sigma2[2,1] #adding the block correlation between the first four variables
+.3 -> sigma2[1,3]
+.3 -> sigma2[3,1]
+.3 -> sigma2[3,2]
+.3 -> sigma2[2,3]
+.3 -> sigma2[1,4]
+.3 -> sigma2[4,1]
+.3 -> sigma2[2,4]
+.3 -> sigma2[4,2]
+.3 -> sigma2[4,3]
+.3 -> sigma2[3,4]
+
+
+set.seed(1)
+mvrnorm(n =n, mu = mu, Sigma = sigma2) -> secondsim1000 #sampling from the multivariate normal 
+
+for( i in 1:1000){ #go row by row and create the ys based on the function of e, bts, and sim1000
+ys[i] <- secondsim1000[i,1]*bts[1]+
+    secondsim1000[i,2]*bts[2]+ 
+    secondsim1000[i,3]*bts[3]+ 
+    secondsim1000[i,4]*bts[4]+ 
+    secondsim1000[i,5]*bts[5]+ 
+    secondsim1000[i,6]*bts[6]+
+    secondsim1000[i,7]*bts[7]+ 
+    secondsim1000[i,8]*bts[8]+ 
+    secondsim1000[i,9]*bts[9]+ 
+    secondsim1000[i,10]*bts[10]+ 
+    secondsim1000[i,11]*bts[11]+ 
+    secondsim1000[i,12]*bts[12] +
+    e[i]
+}
+
+mvn.data_3 <- as.data.frame(secondsim1000)
+mvn.data_3$y <- ys
+
+v1vi2 <- rep(0,100)
+
+d = mvn.data_3
+set.seed(1)
+for (i in 1:100){
+v1vi2[i] <- variable.importance(V1~., "V1", d = mvn.data_3)
+#d <- select(mvn.data, -p)
+}
+
+#qplot(v1vi, main = "Distribution of Tree Error when V1 is Permuted wrt All Other Variables",geom = "histogram")
+
+ggplot(data = as.data.frame(v1vi2), aes(x = v1vi2)) + 
+  geom_density(fill = "#29211F")+
+  ggtitle("Distribution of Tree Error when V1 is Permuted wrt All Other Variables")+
+  geom_vline(xintercept =  eo, color = "#C27D38")+
+  geom_vline(xintercept = mean(v1vi2) + 2*sd(v1vi2), color = "#798E87")+
+  geom_vline(xintercept = mean(v1vi2) - 2*sd(v1vi2), color = "#798E87")
+  
