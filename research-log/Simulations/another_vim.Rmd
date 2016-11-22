@@ -1,7 +1,7 @@
 ---
 title: "Another Variable Importance Measure to Consider"
 author: "Aurora Owens"
-date: "November 16st, 2016"
+date: "November 22nd, 2016"
 output:
   html_document:
     code_folding: hide
@@ -10,6 +10,14 @@ output:
     highlight: kate
     theme: spacelab
 ---
+* * * 
+**Notes/ To Do** 
+
+ - Decide if/if not to wrap the distribution procedure inside of a function
+ - Automatically compute another type of VIM for cases where the variable is not correlated with other predictors
+ - Move toward a bagged forest
+
+* * *
 
 In the previous documents the variable importance measure was defined as difference in the mean squared error of the tree before permutating the variable in question and after. Here, we'll look at a variable importance measure that uses the built in deviance data in a `tree` object. 
 
@@ -18,8 +26,57 @@ library(MASS)
 library(ggplot2)
 library(dplyr)
 library(tree)
+library(grid)
+library(gridExtra)
 ```
 
+```{r}
+# Multiple plot function
+#
+# ggplot objects can be passed in ..., or to plotlist (as a list of ggplot objects)
+# - cols:   Number of columns in layout
+# - layout: A matrix specifying the layout. If present, 'cols' is ignored.
+#
+# If the layout is something like matrix(c(1,2,3,3), nrow=2, byrow=TRUE),
+# then plot 1 will go in the upper left, 2 will go in the upper right, and
+# 3 will go all the way across the bottom.
+#
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  library(grid)
+
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+
+  numPlots = length(plots)
+
+  # If layout is NULL, then use 'cols' to determine layout
+  if (is.null(layout)) {
+    # Make the panel
+    # ncol: Number of columns of plots
+    # nrow: Number of rows needed, calculated from # of cols
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                    ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+
+ if (numPlots==1) {
+    print(plots[[1]])
+
+  } else {
+    # Set up the page
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+      # Get the i,j matrix positions of the regions that contain this subplot
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
+}
+```
 
 ```{r getData}
 
@@ -95,6 +152,7 @@ set.seed(1)
 for(i in 1:12) {
   as.data.frame(t$frame)[,c(1,3)] %>% filter(var == name[i]) %>% dplyr::summarise(sum = sum(dev)) -> base.vi[i]
 }
+
 ```
 
 The variable importance before permuation for each variable is: 
@@ -149,21 +207,22 @@ VIdev<- function(t2, x){
   return(as.data.frame(t2$frame)[,c(1,3)] %>% filter(var == x) %>% dplyr::summarise(sum = sum(dev)))
 }
 
-variable.importance.dev <- function(formula1, x, d){
-  t1 <- tree(formula1, data = d, y = TRUE) #This is the biggest change from CVIM_one_tree. I added this function variable.importance() to serve as a wrapper for the other functions and I created a new tree with new partitions at each interation
-  #e0 <- tree.error(t1,y)
+variable.importance.dev <- function(t1, x, d){
+  if(length(t1$frame$splits[,1]) == 1) {
+    stop(paste(x, "is not correlated strongly with the other predictors, try another variable importance procedure"))
+  } else {
   interval <- intervalReturn(t1$frame$splits[,1])
-  #permed <- data
   d$p <- partitionCreator(interval, x, d)
   d[,x] <- condPermuter(d, x)
   t2 <- tree(y ~ ., data = d, y = TRUE)
   v1 <- VIdev(t2, x)
   #rm(t1, t2)
   return(v1)
+  }
 }
 ```
 
-```{r}
+```{r varIMPDIST}
 v1vi <- rep(0,500)#init a vector for variable importance
 v2vi <- rep(0,500)
 v3vi <- rep(0,500)
@@ -181,119 +240,143 @@ p.vi <- rep(0,12)
 
 d = mvn.data
 set.seed(1)
+t1 <- tree(V1 ~., data = mvn.data[,-13])
 for (i in 1:500){
-v1vi[i] <- variable.importance.dev(V1~., "V1", d = mvn.data)
+v1vi[i] <- variable.importance.dev(t1, "V1", d = mvn.data)
 #d <- select(mvn.data, -p)
 }
 
-ggplot(data = as.data.frame(t(as.data.frame(v1vi))), aes(x = V1)) + 
-  geom_density(fill = "#29211F")+
-  ggtitle("Distribution of Variable Importance When V1 is Permuted")+
-  geom_vline(xintercept =  base.vi[[1]], color = "#C27D38")
-
-p.vi[1] <- mean(as.data.frame(t(as.data.frame(v1vi)))$V1)
+p.vi[1] <- median(as.data.frame(t(as.data.frame(v1vi)))$V1)
 
 set.seed(1)
+t2 <- tree(V2 ~., data = mvn.data[,-13])
 for (i in 1:500){
-v2vi[i] <- variable.importance.dev(V2~., "V2", d = mvn.data)
+v2vi[i] <- variable.importance.dev(t2, "V2", d = mvn.data)
 #d <- select(mvn.data, -p)
 }
-p.vi[2] <- mean(as.data.frame(t(as.data.frame(v2vi)))$V1)
+p.vi[2] <- median(as.data.frame(t(as.data.frame(v2vi)))$V1)
 
 set.seed(1)
+t3 <- tree(V3 ~., data = mvn.data[,-13])
 for (i in 1:500){
-v3vi[i] <- variable.importance.dev(V3~., "V3", d = mvn.data)
+v3vi[i] <- variable.importance.dev(t3, "V3", d = mvn.data)
 #d <- select(mvn.data, -p)
 }
-p.vi[3] <- mean(as.data.frame(t(as.data.frame(v3vi)))$V1)
+p.vi[3] <- median(as.data.frame(t(as.data.frame(v3vi)))$V1)
 
 set.seed(1)
+t4 <- tree(V4 ~., data = mvn.data[,-13])
 for (i in 1:500){
-v4vi[i] <- variable.importance.dev(V4~., "V4", d = mvn.data)
+v4vi[i] <- variable.importance.dev(t4, "V4", d = mvn.data)
 #d <- select(mvn.data, -p)
 }
-p.vi[4] <- mean(as.data.frame(t(as.data.frame(v4vi)))$V1)
+p.vi[4] <- median(as.data.frame(t(as.data.frame(v4vi)))$V1)
 
-ggplot(data = as.data.frame(t(as.data.frame(v4vi))), aes(x = V1)) + 
-  geom_density(fill = "#29211F")+
-  ggtitle("Distribution of Variable Importance When V4 is Permuted")+
-  geom_vline(xintercept =  base.vi[[4]], color = "#C27D38")
 
-set.seed(1)
-for (i in 1:500){
-v5vi[i] <- variable.importance.dev(V5~., "V5", d = mvn.data)
-#d <- select(mvn.data, -p)
-}
-p.vi[5] <- mean(as.data.frame(t(as.data.frame(v5vi)))$V1)
-
-set.seed(1)
-for (i in 1:500){
-v6vi[i] <- variable.importance.dev(V6~., "V6", d = mvn.data)
-#d <- select(mvn.data, -p)
-}
-p.vi[6] <- mean(as.data.frame(t(as.data.frame(v6vi)))$V1)
-
-set.seed(1)
-for (i in 1:500){
-v7vi[i] <- variable.importance.dev(V7~., "V7", d = mvn.data)
-#d <- select(mvn.data, -p)
-}
-p.vi[7] <- mean(as.data.frame(t(as.data.frame(v7vi)))$V1)
-
-set.seed(1)
-for (i in 1:500){
-v8vi[i] <- variable.importance.dev(V8~., "V8", d = mvn.data)
-#d <- select(mvn.data, -p)
-}
-p.vi[8] <- mean(as.data.frame(t(as.data.frame(v8vi)))$V1)
-
-#set.seed(1)
-#for (i in 1:500){
-#v9vi[i] <- variable.importance.dev(V9~., "V9", d = mvn.data)
-#d <- select(mvn.data, -p)
-#}
-#p.vi[9] <- mean(as.data.frame(t(as.data.frame(v9vi)))$V1)
-
-#set.seed(1)
-#for (i in 1:500){
-#v10vi[i] <- variable.importance.dev(V10~., "V10", d = mvn.data)
-#d <- select(mvn.data, -p)
-#}
-#p.vi[10] <- mean(as.data.frame(t(as.data.frame(v10vi)))$V1)
-
-#set.seed(1)
-#for (i in 1:500){
-#v11vi[i] <- variable.importance.dev(V11~., "V11", d = mvn.data)
-#d <- select(mvn.data, -p)
-#}
-#p.vi[11] <- mean(as.data.frame(t(as.data.frame(v11vi)))$V1)
-
-#set.seed(1)
-#for (i in 1:500){
-#v12vi[i] <- variable.importance.dev(V12~., "V12", d = mvn.data)
-#d <- select(mvn.data, -p)
-#}
-#p.vi[12] <- mean(as.data.frame(t(as.data.frame(v12vi)))$V1)
+# set.seed(1)
+# t5 <- tree(V5 ~., data = mvn.data[,-13])
+# for (i in 1:500){
+# v5vi[i] <- variable.importance.dev(t5, "V5", d = mvn.data)
+# #d <- select(mvn.data, -p)
+# }
+# p.vi[5] <- mean(as.data.frame(t(as.data.frame(v5vi)))$V1)
+# 
+# set.seed(1)
+# t6 <- tree(V6 ~., data = mvn.data[,-13])
+# for (i in 1:500){
+# v6vi[i] <- variable.importance.dev(t6, "V6", d = mvn.data)
+# #d <- select(mvn.data, -p)
+# }
+# p.vi[6] <- mean(as.data.frame(t(as.data.frame(v6vi)))$V1)
+# 
+# set.seed(1)
+# t7 <- tree(V7 ~., data = mvn.data[,-13])
+# for (i in 1:500){
+# v7vi[i] <- variable.importance.dev(t7, "V7", d = mvn.data)
+# #d <- select(mvn.data, -p)
+# }
+# p.vi[7] <- mean(as.data.frame(t(as.data.frame(v7vi)))$V1)
+# 
+# set.seed(1)
+# t8 <- tree(V8 ~., data = mvn.data[,-13])
+# for (i in 1:500){
+# v8vi[i] <- variable.importance.dev(t8, "V8", d = mvn.data)
+# #d <- select(mvn.data, -p)
+# }
+# p.vi[8] <- mean(as.data.frame(t(as.data.frame(v8vi)))$V1)
+# 
+# #set.seed(1)
+# #for (i in 1:500){
+# #v9vi[i] <- variable.importance.dev(V9~., "V9", d = mvn.data)
+# #d <- select(mvn.data, -p)
+# #}
+# #p.vi[9] <- mean(as.data.frame(t(as.data.frame(v9vi)))$V1)
+# 
+# #set.seed(1)
+# #for (i in 1:500){
+# #v10vi[i] <- variable.importance.dev(V10~., "V10", d = mvn.data)
+# #d <- select(mvn.data, -p)
+# #}
+# #p.vi[10] <- mean(as.data.frame(t(as.data.frame(v10vi)))$V1)
+# 
+# #set.seed(1)
+# #for (i in 1:500){
+# #v11vi[i] <- variable.importance.dev(V11~., "V11", d = mvn.data)
+# #d <- select(mvn.data, -p)
+# #}
+# #p.vi[11] <- mean(as.data.frame(t(as.data.frame(v11vi)))$V1)
+# 
+# #set.seed(1)
+# #for (i in 1:500){
+# #v12vi[i] <- variable.importance.dev(V12~., "V12", d = mvn.data)
+# #d <- select(mvn.data, -p)
+# #}
+# #p.vi[12] <- mean(as.data.frame(t(as.data.frame(v12vi)))$V1)
 
 p.vi
 
 
 ```
+```{r plotDist}
 
-The the mean is taken of these distributions and compared with the original VI:
+
+p <- ggplot(data = as.data.frame(t(as.data.frame(v1vi))), aes(x = V1)) + 
+  geom_density(fill = "#29211F")+
+  xlab("Variable Importance of V1 When Permuted Conditionally")+
+  geom_vline(xintercept =  base.vi[[1]], color = "#C27D38") 
+
+q <- ggplot(data = as.data.frame(t(as.data.frame(v2vi))), aes(x = V1)) + 
+  geom_density(fill = "#29211F")+
+  xlab("Variable Importance of V2 When Permuted Conditionally")+
+  geom_vline(xintercept =  base.vi[[2]], color = "#C27D38")
+r <- ggplot(data = as.data.frame(t(as.data.frame(v3vi))), aes(x = V1)) + 
+  geom_density(fill = "#29211F")+
+  xlab("Variable Importance of V3 When Permuted Conditionally")+
+  geom_vline(xintercept =  base.vi[[3]], color = "#C27D38")
+s <- ggplot(data = as.data.frame(t(as.data.frame(v4vi))), aes(x = V1)) + 
+  geom_density(fill = "#29211F")+
+  geom_vline(xintercept =  base.vi[[4]], color = "#C27D38")+
+  xlab("Variable Importance of V4 When Permuted Conditionally")
+#grid.arrange(p, q, r, s, ncol = 2, main = "Distribution of Variable Importance for the Block Correlated Variables")
+
+plots <- list()  # new empty list
+plots[[1]] <- p
+plots[[2]] <- q
+plots[[3]] <- r
+plots[[4]] <- s
+
+multiplot(plotlist = plots, cols = 2)
+
+```
+
+If we consider our new permuted variable importance to be the distance from the median value of the permuted distribution to the original variable importance, we can compare the two. 
 
 | Variable | Original VI | Linear Coefficient | Permuted VI |
 |:--------:|:-----------:|:------------------:|:-----------:|
-|    V1    |    328277   |          5         |  30177.3102 |
-|    V2    |      0      |          5         |  8777.0152  |
-|    V3    |     4680    |          2         |   484.4009  |
-|    V4    |    48716    |          0         |   681.6613  |
-|    V5    |    44573    |         -5         |   36639.53  |
-|    V6    |      0      |         -5         |   58792.18  |
-|    V7    |      0      |         -2         |      0      |
-|    V8    |      0      |          0         |      0      |
-|    V9    |      0      |          0         |      0      |
-|    V10   |      0      |          0         |      0      |
-|    V11   |      0      |          0         |      0      |
-|    V12   |      0      |          0         |      0      |
+|    V1    |  251886.80  |          5         |  251885.80  |
+|    V2    |   75891.39  |          5         |   75891.39  |
+|    V3    |   13147.07  |          2         |   13147.07  |
+|    V4    |      0      |          0         |      0      |
+
+As the median is always zero for each of these variables, the permuted VI defined in this way is always equal to the original. 
 

@@ -1,0 +1,23 @@
+---
+title: "Table Of Contents"
+output: html_document
+---
+
+**To be included in the thesis document**
+
+##Chapter 1: Literature Review/Introduction
+  1.1 A brief overview of trees and tree-based methods   
+  1.2 The Problem   
+  1.3 Proposed solutions to this problem
+  
+ - Breiman + Strobl   
+ 
+ - Other attempts at VIM   
+ 
+  1.4 Another take on conditionally permuted variable importance   
+
+##Chapter 2: Applying This New Method to Trees 
+
+##Chapter 3: Moving Beyond Single Trees into Bagged and Boosted Models
+
+##Conclusions 
