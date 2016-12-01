@@ -1,0 +1,212 @@
+---
+title: "Moving Beyond Tree Variable Importance: Bagged Trees"
+author: "Aurora Owens"
+date: "December 1st, 2016"
+output:
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+    highlight: kate
+    theme: spacelab
+---
+
+```{r loadlib, message=FALSE, warning=FALSE}
+library(MASS)
+library(ggplot2)
+library(dplyr)
+library(tree)
+library(grid)
+library(gridExtra)
+library(ipred)
+```
+
+```{r multiplot}
+# Multiple plot function
+#
+# ggplot objects can be passed in ..., or to plotlist (as a list of ggplot objects)
+# - cols:   Number of columns in layout
+# - layout: A matrix specifying the layout. If present, 'cols' is ignored.
+#
+# If the layout is something like matrix(c(1,2,3,3), nrow=2, byrow=TRUE),
+# then plot 1 will go in the upper left, 2 will go in the upper right, and
+# 3 will go all the way across the bottom.
+#
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  library(grid)
+
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+
+  numPlots = length(plots)
+
+  # If layout is NULL, then use 'cols' to determine layout
+  if (is.null(layout)) {
+    # Make the panel
+    # ncol: Number of columns of plots
+    # nrow: Number of rows needed, calculated from # of cols
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                    ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+
+ if (numPlots==1) {
+    print(plots[[1]])
+
+  } else {
+    # Set up the page
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+      # Get the i,j matrix positions of the regions that contain this subplot
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
+}
+```
+
+```{r functionsVIM}
+intervalReturn <- function(split.cutleft){ 
+  intervals <- data.frame(split.cutleft)
+  intervals <- filter(intervals, split.cutleft != "")
+  intervals <- dplyr::select(intervals, split.cutleft)
+  intervals$split.cutleft <- gsub("<", "", intervals$split.cutleft)
+  intervals$split.cutleft <- as.numeric(intervals$split.cutleft)
+  return(arrange(intervals, (split.cutleft)))
+}
+
+partitionCreator <- function(i = interval, x, data) {
+  p <- c(1:(1+nrow(i)))
+  bins <- data.frame (bin = rep(1, nrow(data)), x = data[,x])
+  for(j in 1:nrow(i)){
+    bins[bins$x > i[j,1],1] <- p[j+ 1]
+  }
+  return(bins$bin)
+}
+
+condPermuter <- function(d2, x) {
+  d2$p <- as.factor(d2$p)
+  for(i in 1:length(levels(d2$p))){
+   #set.seed(1)
+   d2[d2$p == i, x] <- sample(d2[d2$p== i,x])
+  }
+  return(d2[,x])
+}
+
+VIdevBagged<- function(b, x){
+  return(as.numeric(as.data.frame(b$mtrees[[1]]$btree$frame)[,c(1,4)] %>% filter(var == x) %>% dplyr::summarise(sum = sum(dev))))
+}
+
+variable.importance.dev <- function(t1, x, d){
+  if(length(t1$frame$splits[,1]) == 1) {
+    stop(paste(x, "is not correlated strongly with the other predictors, try another variable importance procedure"))
+  } else {
+  interval <- intervalReturn(t1$frame$splits[,1])
+  d$p <- partitionCreator(interval, x, d)
+  d[,x] <- condPermuter(d, x)
+  t2 <- tree(y ~ ., data = d, y = TRUE)
+  v1 <- VIdevBagged(t2, x)
+  #rm(t1, t2)
+  return(v1)
+  }
+}
+```
+
+
+```{r getData}
+
+#same process as in `sampling.Rmd`
+rep(0, 12) -> mu #mean of each variable
+
+diag(12) -> sigma #creates a 12 by 12 diagonal matrix with 1's down the diagonal
+
+sigma -> sigma1
+.9 -> sigma1[1,2]
+.9 -> sigma1[2,1] #adding the block correlation between the first four variables
+.9 -> sigma1[1,3]
+.9 -> sigma1[3,1]
+.9 -> sigma1[3,2]
+.9 -> sigma1[2,3]
+.9 -> sigma1[1,4]
+.9 -> sigma1[4,1]
+.9 -> sigma1[2,4]
+.9 -> sigma1[4,2]
+.9 -> sigma1[4,3]
+.9 -> sigma1[3,4]
+
+#sigma1
+
+1000 -> n #number of observations
+set.seed(1)
+mvrnorm(n =n, mu = mu, Sigma = sigma1) -> sim1000 #sampling from the multivariate normal 
+
+c(5,5,2,0,-5,-5,-2,0,0,0,0,0) -> bts #these are the betas 
+
+rnorm(1000, mean = 0, sd = .5) -> e #error terms
+
+rep(0, 1000) -> ys #init a vector of zeros
+
+for( i in 1:1000){ #go row by row and create the ys based on the function of e, bts, and sim1000
+ys[i] <- sim1000[i,1]*bts[1]+
+    sim1000[i,2]*bts[2]+ 
+    sim1000[i,3]*bts[3]+ 
+    sim1000[i,4]*bts[4]+ 
+    sim1000[i,5]*bts[5]+ 
+    sim1000[i,6]*bts[6]+
+    sim1000[i,7]*bts[7]+ 
+    sim1000[i,8]*bts[8]+ 
+    sim1000[i,9]*bts[9]+ 
+    sim1000[i,10]*bts[10]+ 
+    sim1000[i,11]*bts[11]+ 
+    sim1000[i,12]*bts[12] +
+    e[i]
+}
+
+mvn.data <- as.data.frame(sim1000)
+mvn.data$y <- ys
+```
+
+This report will use the same data as the previous files, so that there are 12 predictors where the first four are block correlated to each other with $\rho = .9$. They are related to $Y$ by the linear equation: $$Y = 5 \cdot V_1 + 5 \cdot V_2 + 2 \cdot V_3 + 0 \cdot V_4 + -5 \cdot V_5 + -5\cdot V_6 + 0\cdot V_7 + 0 \cdot ..... + E$$ Where the coefficents for variables 7-12 are all zero and $E$ ~ $N(0,\frac 1 2 )$. 
+
+The initial tree of the model $Y$ ~$X_1, X_2, ..., X_{12}$ in `another_vim.Rmd` was very variable. To get a more stable initial variable importance, we'll introduce a bagged model. 
+
+```{r}
+b <- bagging(y ~., mvn.data)
+#btree <- as.data.frame(b$mtrees[[1]]$btree$frame)
+
+v0 <- list(rep(0,25), rep(0,25),rep(0,25),rep(0,25),rep(0,25),rep(0,25),
+           rep(0,25),rep(0,25),rep(0,25),rep(0,25),rep(0,25),rep(0,25))
+
+vs <- names(mvn.data[,-13])
+
+for(j in 1:12){
+  v <- rep(0,25)
+  for(i in 1:25){
+   as.numeric(as.data.frame(b$mtrees[[i]]$btree$frame)[,c(1,4)] %>% 
+                filter(var == vs[j]) %>% 
+                dplyr::summarise(sum = sum(dev))) -> v[i]
+  }
+  v0[[j]] <- (v)
+  rm(v) 
+}
+```
+**Non-Permuted Variable Importance of the first 10 Bagged Trees**
+
+|      Bagged Tree      |     V1     |      V2      |     V3     |    V4    |     V5    |    V6    | V7 | V8 | V9 | V10 | V11 | V12 |
+|:---------------------:|:----------:|:------------:|:----------:|:--------:|:---------:|:--------:|:--:|:--:|:--:|:---:|:---:|:---:|
+|           1           |  203726.09 |  117195.788  | 14420.756  |     0    | 36013.22  | 48139.37 |  0 |  0 |  0 |  0  |  0  |  0  |
+|           2           |  37875.12  |  278403.597  |      0     |     0    | 42828.19  | 38683.29 |  0 |  0 |  0 |  0  |  0  |  0  |
+|           3           |  312004.01 |      0       |  5642.170  | 6370.531 | 60627.11  | 22928.16 |  0 |  0 |  0 |  0  |  0  |  0  |
+|           4           |  71653.62  |  245228.504  |  22561.345 |     0    | 48500.97  | 29829.11 |  0 |  0 |  0 |  0  |  0  |  0  |
+|           5           | 240861.08  |   50524.628  |  6535.479  |     0    | 36298.52  | 51793.57 |  0 |  0 |  0 |  0  |  0  |  0  |
+|           6           | 108356.37  |  220651.893  |     0      | 7362.526 | 48477.18  | 48179.97 |  0 |  0 |  0 |  0  |  0  |  0  |
+|           7           | 254026.51  |       0      |  55727.322 |     0    | 44607.51  | 37730.76 |  0 |  0 |  0 |  0  |  0  |  0  |
+|           8           | 127419.42  |  216383.575  |      0     |     0    | 25382.48  | 41084.73 |  0 |  0 |  0 |  0  |  0  |  0  |
+|           9           | 319015.03  |   10417.410  | 15760.648  |     0    | 34298.68  | 33702.96 |  0 |  0 |  0 |  0  |  0  |  0  |
+|           10          |  68920.82  |  220037.046  |  55502.950 |     0    |  53128.59 | 45627.94 |  0 |  0 |  0 |  0  |  0  |  0  |
+| Original Coefficients |      5     |       5      |      2     |     0    |     -5    |    -5    | 0 |  0 |  0 |  0  |  0  |  0  |
+
