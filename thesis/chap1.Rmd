@@ -1,0 +1,198 @@
+---
+output: pdf_document
+---
+<!--
+The {#rmd-basics} text after the chapter declaration will allow us to link throughout the document back to the beginning of Chapter 1.  These labels will automatically be generated (if not specified) by changing the spaces to hyphens and capital letters to lowercase.  Look for the reference to this label at the beginning of Chapter 2.
+-->
+
+#Chapter 1
+
+###1.1 A brief overview of trees and tree-based methods 
+####Trees
+Any discussion of tree-based statistical methods must begin with a single tree. Even at the first glance, a tree is fairly easy to interpret. Here we have an example using the `mtcars` dataset from the `MASS` package. 
+
+```{r, echo=FALSE}
+library(MASS)
+library(tree)
+
+data("mtcars")
+
+mpg <- mtcars$mpg
+weight <- mtcars$wt
+
+tree1 <- tree(mpg ~ weight) #Maybe use a different package. One with titles?
+plot(tree1)
+text(tree1)
+```
+
+*Include another diagram of the splits*
+
+The diagram gives the whole model. It predicts that for cars weighing less than 2,260lbs, the MPG will be 30.07, for cars weighing less than 3,325lbs but more than 2,260lbs the MPG will be 21.18, etc. Each phrase "weight < X" is called a *split* and each prediction Y is called a *node*. Trees are primarily predictive models, so a good way to test ours is to find the Mean Squared Error. The MSE is the mean, squared difference between the Y values we would expect given our model and the actual values of Y we observed. 
+$$MSE = \frac 1 n \sum_{1}^n (\hat{Y} - Y)^2$$ 
+In this case, $Y$ is vector of recorded values for MPG and $\hat{Y}$ is the predictions we get from our model. $\hat{Y}$ only has four possible values, $30.07, 21.18, 17.8,$ and $14.7$. The MSE for this tree is:
+```{r}
+mse <- mean((mpg - predict(tree1))^2)
+mse
+```
+There are some apparent downsides to this model that should be apparent. It is difficult to tell how well it is performing. 5.349 seems like a fine number but we would need to use a more rigorous method, like cross validation, to check this intuition. *Add another?*
+
+We can also check how well this model is performing by plotting the predicted points on top of the observed ones:
+
+```{r}
+library(ggplot2)
+
+fspl <- data.frame(x = c(1.513, 2.26), y = c(30.07, 30.07))
+fspl2 <- data.frame(x = c(2.26, 3.325), y = c(21.18, 21.18))
+fspl3 <- data.frame(x = c(3.325, 3.49), y = c(17.8, 17.8))
+fspl4 <- data.frame(x = c(3.49, 5.424), y = c(14.7, 14.7))
+
+ggplot(data = mtcars, aes(x = mtcars$wt)) +
+  geom_point(aes(y = mtcars$mpg))+
+  geom_vline(xintercept = 2.26, color = "#02401B")+
+  geom_vline(xintercept = 3.325, color = "#02401B")+
+  geom_vline(xintercept = 3.49, color = "#02401B")+
+  geom_segment(aes(x = x[1], y = y[1], xend = x[2], yend = y[2]), data = fspl, color = "#D8B70A")+
+  geom_segment(aes(x = x[1], y = y[1], xend = x[2], yend = y[2]), data = fspl2, color = "#D8B70A")+
+  geom_segment(aes(x = x[1], y = y[1], xend = x[2], yend = y[2]), data = fspl3, color = "#D8B70A")+
+  geom_segment(aes(x = x[1], y = y[1], xend = x[2], yend = y[2]), data = fspl4, color = "#D8B70A")+
+  ggtitle("Visualizing the Model's Splits on the Feature Space")+
+  xlab("weight")+
+  ylab("mpg")
+```
+
+**Tree Algorithm**
+
+To get any further on this topic, we must develop the framework behind trees, namely the splitting algorithm. 
+
+**Random Forests**
+
+**Variable Importance Measures**
+
+###1.2 The Problem   
+
+Tree-based methods are a novel way of creating models with great predictive power, but they have some downsides when compared to other models. Namely, it is difficult to interpret them in any rigorous manner. There are severe different ways to measure *variable importance* but few move beyond heuristics. When looking at a linear model, one gets several pieces of useful information. One, there is a roughly standardization coefficient for each variable so that comparisons are possible between variables, and two, a p-value which one can use to claim that a variable is unimportant. However, there is some arbitrariness in this approach as well; the typical significance level at p = .05 is simply tradition at this point and correlation between the predictors could cause the coefficient estimates to be variable.**expand** If there was some way to get a variable importance measure that was backed by a statistical test, it would greatly improve the interpret ability of these methods. 
+
+###1.3 Proposed solutions to this problem
+  
+ - Breiman + Strobl   *add graphics for partitions* 
+  http://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-9-307
+  
+*motivate conditional variable importance by impln Breiman's naively and compare*
+
+
+```{r}
+rep(0, 12) -> mu #mean of each variable
+
+diag(12) -> sigma #creates a 12 by 12 diagonal matrix with 1's down the diagonal
+sigma -> sigma1
+.9 -> sigma1[1,2]
+.9 -> sigma1[2,1] #adding the block correlation between the first four variables
+.9 -> sigma1[1,3]
+.9 -> sigma1[3,1]
+.9 -> sigma1[3,2]
+.9 -> sigma1[2,3]
+.9 -> sigma1[1,4]
+.9 -> sigma1[4,1]
+.9 -> sigma1[2,4]
+.9 -> sigma1[4,2]
+.9 -> sigma1[4,3]
+.9 -> sigma1[3,4]
+
+1000 -> n #number of observations
+set.seed(1)
+mvrnorm(n =n, mu = mu, Sigma = sigma1) -> sim1000 #sampling from the multivariate normal 
+
+c(5,5,2,0,-5,-5,-2,0,0,0,0,0) -> bts #these are the betas 
+
+rnorm(1000, mean = 0, sd = .5) -> e #error terms
+
+rep(0, 1000) -> ys #init a vector of zeros
+
+for( i in 1:1000){ #go row by row and create the ys based on the function of e, bts, and sim1000
+ys[i] <- sim1000[i,1]*bts[1]+
+    sim1000[i,2]*bts[2]+ 
+    sim1000[i,3]*bts[3]+ 
+    sim1000[i,4]*bts[4]+ 
+    sim1000[i,5]*bts[5]+ 
+    sim1000[i,6]*bts[6]+
+    sim1000[i,7]*bts[7]+ 
+    sim1000[i,8]*bts[8]+ 
+    sim1000[i,9]*bts[9]+ 
+    sim1000[i,10]*bts[10]+ 
+    sim1000[i,11]*bts[11]+ 
+    sim1000[i,12]*bts[12] +
+    e[i]
+}
+
+mvn.data <- as.data.frame(sim1000)
+mvn.data$y <- ys
+```
+
+Implementing Breiman's method
+
+```{r}
+library(randomForest)
+
+rf_0 <- randomForest(y ~., data = mvn.data)
+v0 <- importance(rf_0)
+v0
+```
+
+Brieman and Cutler motivated this debate by releasing their method called *permuted variable importance* **add cite**. 
+
+**The Algorithm**
+1. For each tree, $t$, calculate
+
+
+```{r}
+#fit a new rf after permuting each v
+
+vnames <- names(mvn.data[,-13])
+#Does `importanceSD` do this?
+viB <- as.data.frame(randomForest(y ~., data = mvn.data, importance = TRUE))$importanceSD
+viB <- t(as.data.frame.list(viB))
+viB
+```
+
+Strobl et al from the University of Munich critisize this method in their 2008 paper, *Danger: High Power! – Exploring the Statistical Properties of a Test for Random Forest Variable Importance*. One, this method has the downside of increasing power with increasing numbers of trees in the forest. This is a more or less arbitrary parameter which we would hope would not affect our importance estimates. Secondly, the null hypothesis under Breiman and Cutler's stradegy is that the variable importance $V$ for any variable $X_j$ is not equal to zero given $Y$, the response. Because random forests are most often used in situations with multicolinearity that would make other methods like the linear model difficult, Strobl argues that any variable importance measure worth its salt should not be mislead by correlation within the predictors. 
+
+The researchers at the University of Munich published a fully fleshed response to the Breiman and Cutler method in 2008, titled *Conditional Variable Importance for Random Forests* that address these issues. Strobl et al propose restructuring the Breiman and Cutler algorithm to account for conditional dependence among the predictors. Their algorithm looks like this:
+
+1. Fit a random forest to the model, $R_0$, and calculate base variable importance for each variable $V$ 
+2. For every predictor $X_j \in X_1,...,X_n$:
++ 2a. Conditionally permute $X_j$ given the splits found in $R_0$
++ 2b. Fit a new random forest $R_j$ with the permuted data
++ 2c. Calculate a new variable importance $\hat{V}_j$
+3. For every variable $X_1,..., X_n$, $$CV(X_j) = \hat{V}_j - V_j$$
+
+The null hypothesis is that $CV(X_j) = 0$ given the predictor $Y$ *and all other predictors* $X_1,..X_n$.This accounts for interactions between $X_j$ and the other predictors. Using the simulated data from the previous example, here's an implementation of the algorithm outlined here as it is in the `party` package. 
+
+```{r}
+library(party)
+
+rf_2 <- cforest(y~., data = mvn.data[c(1:100),])
+varimp(rf_2, conditional = TRUE) 
+```
+
+**Coupla things**
+
+1. V4 is *still* important 
+2. This takes SO long
+
+How long does `varimp` really take:
+```{r}
+
+t <- data.frame(seconds = rep(0,100), sample = rep(0,100))
+
+for(i in 1:40){
+  rf_i <- cforest(y~., data = mvn.data[c(1:(30 + i)),])
+  t1 <- Sys.time()
+  (varimp(rf_i, conditional = TRUE)) 
+  t$seconds[i] <- Sys.time() - t1
+  t$sample[i] <- i + 30
+}  
+
+ggplot(data = t, aes(x = sample, y = seconds)) + geom_point(color = "darkgreen")
+```
+
+ 
