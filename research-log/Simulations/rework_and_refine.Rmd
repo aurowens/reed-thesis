@@ -1,0 +1,149 @@
+---
+title: "Re-Working inftrees to Use RPART"
+author: "Aurora Owens"
+date: "December 21st, 2016"
+output:
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+    highlight: kate
+    theme: spacelab
+---
+
+
+The function `tree` was used in previous iterations of these functions but following the guidance of the MASS textbook, I am reworking them to use `rpart`. The process for simulating the data is the same as in previous reports. 
+
+```{r loadlib, message=FALSE, warning=FALSE}
+library(MASS)
+library(ggplot2)
+library(dplyr)
+library(tree)
+library(grid)
+library(gridExtra)
+library(ipred)
+```
+
+
+```{r functionsVIM}
+intervalReturn <- function(split.cutleft){ 
+  intervals <- data.frame(split.cutleft)
+  intervals <- filter(intervals, split.cutleft != "")
+  intervals <- dplyr::select(intervals, split.cutleft)
+  intervals$split.cutleft <- gsub("<", "", intervals$split.cutleft)
+  intervals$split.cutleft <- as.numeric(intervals$split.cutleft)
+  return(arrange(intervals, (split.cutleft)))
+}
+
+partitionCreator <- function(i = interval, x, data) {
+  p <- c(1:(1+nrow(i)))
+  bins <- data.frame (bin = rep(1, nrow(data)), x = data[,x])
+  for(j in 1:nrow(i)){
+    bins[bins$x > i[j,1],1] <- p[j+ 1]
+  }
+  return(bins$bin)
+}
+
+condPermuter <- function(d2, x) {
+  d2$p <- as.factor(d2$p)
+  for(i in 1:length(levels(d2$p))){
+   #set.seed(1)
+   d2[d2$p == i, x] <- sample(d2[d2$p== i,x])
+  }
+  return(d2[,x])
+}
+
+VIdevBagged<- function(b, x){
+  return(as.numeric(as.data.frame(b$mtrees[[1]]$btree$frame)[,c(1,4)] %>% filter(var == x) %>% dplyr::summarise(sum = sum(dev))))
+}
+
+variable.importance.dev <- function(t1, x, d){
+  if(length(t1$frame$splits[,1]) == 1) {
+    stop(paste(x, "is not correlated strongly with the other predictors, try another variable importance procedure"))
+  } else {
+  interval <- intervalReturn(t1$frame$splits[,1])
+  d$p <- partitionCreator(interval, x, d)
+  d[,x] <- condPermuter(d, x)
+  t2 <- tree(y ~ ., data = d, y = TRUE)
+  v1 <- VIdevBagged(t2, x)
+  #rm(t1, t2)
+  return(v1)
+  }
+}
+
+cond.varImp <- function(xs, data) {
+  x <- names(xs)
+  x <- as.factor(x)
+  vi <- rep(0,length(x))
+  
+  for(i in 1:length(x)){
+    ti <- tree(x[i]~., xs)
+    vi[i] <- variable.importance.dev(ti, x[i],data)
+  }
+
+}
+
+```
+
+
+
+```{r getData}
+
+#same process as in `sampling.Rmd`
+rep(0, 12) -> mu #mean of each variable
+
+diag(12) -> sigma #creates a 12 by 12 diagonal matrix with 1's down the diagonal
+
+sigma -> sigma1
+.9 -> sigma1[1,2]
+.9 -> sigma1[2,1] #adding the block correlation between the first four variables
+.9 -> sigma1[1,3]
+.9 -> sigma1[3,1]
+.9 -> sigma1[3,2]
+.9 -> sigma1[2,3]
+.9 -> sigma1[1,4]
+.9 -> sigma1[4,1]
+.9 -> sigma1[2,4]
+.9 -> sigma1[4,2]
+.9 -> sigma1[4,3]
+.9 -> sigma1[3,4]
+
+#sigma1
+
+1000 -> n #number of observations
+set.seed(1)
+mvrnorm(n =n, mu = mu, Sigma = sigma1) -> sim1000 #sampling from the multivariate normal 
+
+c(5,5,2,0,-5,-5,-2,0,0,0,0,0) -> bts #these are the betas 
+
+rnorm(1000, mean = 0, sd = .5) -> e #error terms
+
+rep(0, 1000) -> ys #init a vector of zeros
+
+for( i in 1:1000){ #go row by row and create the ys based on the function of e, bts, and sim1000
+ys[i] <- sim1000[i,1]*bts[1]+
+    sim1000[i,2]*bts[2]+ 
+    sim1000[i,3]*bts[3]+ 
+    sim1000[i,4]*bts[4]+ 
+    sim1000[i,5]*bts[5]+ 
+    sim1000[i,6]*bts[6]+
+    sim1000[i,7]*bts[7]+ 
+    sim1000[i,8]*bts[8]+ 
+    sim1000[i,9]*bts[9]+ 
+    sim1000[i,10]*bts[10]+ 
+    sim1000[i,11]*bts[11]+ 
+    sim1000[i,12]*bts[12] +
+    e[i]
+}
+
+mvn.data <- as.data.frame(sim1000)
+mvn.data$y <- ys
+```
+
+```{r}
+a <- tree(y~., data = mvn.data)
+
+varim <- cond.varImp(mvn.data)
+
+```
+
