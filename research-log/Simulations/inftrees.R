@@ -2,6 +2,11 @@ library(tidyverse)
 library(randomForest)
 library(tree)
 
+#################################################################################################
+######################################INF TREES##################################################
+#################################################################################################
+
+
 intervalReturn <- function(split.cutleft){ 
   intervals <- data.frame(split.cutleft)
   intervals <- filter(intervals, split.cutleft != "")
@@ -52,9 +57,8 @@ cp.importance <- function(fo, df){
   vi <- data.frame("variable" = names.xs, 
                    "cp.importance" = rep(0,length(names.xs)), 
                    "base.importance" = rep(0, length(names.xs)))
-  #pdf <- df
   
-  vi[,3] <- t(as.data.frame.list(importance(rf0)))[,1]
+  vi[,3] <- t(as.data.frame.list(importance(rf0)))[,1] 
   
   for(i in 1:nrow(vi)) {
     pdf <- df
