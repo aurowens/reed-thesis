@@ -21,49 +21,22 @@ library(party)
 
 ###Trees
 
-  Decision trees may be familiar to many with a background in the social or medical sciences as convenient ways to represent data and can assist in decision making. Morgan and Sonquist (1963) derived a way for constructing trees motivated by the specific feature space of data collected from interviews and surveys. Unlike, say agricultural data which involves mostly numerical variables like rainfall, the data collected from interviews is mostly categorical. On top of this issue, the datasets Morgan and Sonquist dealt with had few participants (n) and much data collected on them (p). To continue with their list of difficulties, there was reason to believe that there were lurking errors in the variables that would be hard identify and quantify. Lastly, many of the predictors were correlated and Morgan and Sonquist doubted that the additive assumptions of many models would be appropriate for this data. Morgan and Sonquist noted that while many statistical methods would have a difficult time accurately parsing this data, a clever researcher with quite a lot of time could create a suitable model simply by grouping values in the feature space and predicting that the response corresponding to these values would be the mean of the observed responses given the grouped conditions. Their formalization of this procedure in terms of "decision rules" laid the ground work for future research on decision trees. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Decision trees may be familiar to many with a background in the social or medical sciences as convenient ways to represent data and can assist in decision making. Morgan and Sonquist (1963) derived a way for constructing trees motivated by the specific feature space of data collected from interviews and surveys. Unlike, say agricultural data which involves mostly numerical variables like rainfall, the data collected from interviews is mostly categorical. On top of this issue, the datasets Morgan and Sonquist dealt with had few participants (n) and much data collected on them (p). To continue with their list of difficulties, there was reason to believe that there were lurking errors in the variables that would be hard identify and quantify. Lastly, many of the predictors were correlated and Morgan and Sonquist doubted that the additive assumptions of many models would be appropriate for this data. Morgan and Sonquist noted that while many statistical methods would have a difficulty accurately parsing this data, a clever researcher with quite a lot of time could create a suitable model simply by grouping values in the feature space and predicting that the response corresponding to these values would be the mean of the observed responses given the grouped conditions. Their formalization of this procedure in terms of "decision rules" laid the ground work for future research on decision trees. 
 
-  In 1984, Breiman et al introduces a revolutionary new algorithm for trees. **Need to acquire** _Classification and Regression Trees_  **to make sure the method discused in MASS is the same that Breiman uses/is used in** `randomForest`
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Later researchers proposed new methods for creating trees that improved upon the Morgan and Sonquist model. Leo Breiman et al 1984 proposed an algorithm called CART, *classification and regression trees*, that would allow trees to be fit on various types of data. An alternative to this method is conditional inference trees. Torsten Hothorn, Kurt Hornik, Achim Zeileis argue in their 2006 paper **Unbiased Recursive Partitioning: A Conditional Inference Framework**, CART has a selection bias toward variables with either missing values or a great number of possible splits. This bias can effect the interpretability of all tree models fit using this method. As an alternative to CART and other algorithms, Hothorn et al propose a new method, conditional inference trees.   
 
-**Tree Algorithm** CART?
- 
-Begin by considering the entire feature space $X_1, ..., X_n$. Then:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; There is a limit to the predictive capabilities of a single tree as they suffer from high variance. To alleviate this, random forests are often used instead. They function by enlisting the help of many trees, and then by aggregating the responses over all of them but with a subtle trick that ensures the trees will be independent of each other. At each split only *m* variables are considered as possible candidates.  
 
-1. Consider every possible pair of partitions of this feature space, $P_1, P_2$, so that if $X_1 = x_1 , X_2 = x_2,..., X_n = x_n$ where ${x_1,...,x_n}  \in P_1$ then our prediction is the mean value of $y$ given $x_1,..,x_n \in P_1$. 
+##1.2 What We Mean When We Talk About Inference
 
-2. Choose the partitions that minimize RSS 
+###Inferential vs Descriptive Statistics
 
-3. For each new partition, repeat steps 1 and 2 until some stopping condition is reached. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; A note should be made of the difference between inferential and descriptive statistics. This paper's aim is to describe a process of making inferential claims using random forests, not descriptive ones. Descriptive statistics describe the data at hand without making any reference to a larger data generating system that they come from. It follows that inferential statistics then make claims about the data generating system given the data at hand. 
 
-An alternative to this method is conditional inference trees. Torsten Hothorn, Kurt Hornik, Achim Zeileis argue in their 2006 paper **Unbiased Recursive Partitioning: A Conditional Inference Framework**, CART has a selection bias toward variables with either missing values or a great number of possible splits. This bias can effect the interpretability of all tree models fit using this method. As an alternative to CART and other algorithms, Hothorn et al propose a new method, conditional inference trees.   
+###Frequentist vs Bayesian
 
-1. For case weights  $w$  test the global null hypothesis of independence between any of the m covariates and the response. Stop if this hypothesis cannot be rejected. Otherwise select the  $j_{th}$  covariate  $Xj$  with strongest association to  $Y$.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; There is some debate about interpreting inferential statistics. On one hand, we have the Bayesian model
 
-2. Choose a set  $A \subset X_{j}$  in order to split  $X_{j}$  into two disjoint sets  $A$  and  $X_{j}$ \ $A$.  The case weights  $w_{left}$  and  $w_{right}$  determine the two subgroups with  $w_{left,i} = w_iI(X_{j\cdot i} \in A)$  and  $w_{right,i} = w_iI(X_{ji} \in A)$ for all $i = 1,...,n$  ( $I(·)$  denotes the indicator function). 
-
-3. Recursively repeat steps 1 and 2 with modified case weights  $w_left$  and  $w_right$, respectively. 
-
- from  https://eeecon.uibk.ac.at/~zeileis/papers/Hothorn+Hornik+Zeileis-2006.pdf
-
-After step 1 is completed, any goodness of fit method can be used to generate the split and choose the set $A$. Note that in this method the splitting is done separately from the variable selection. 
-
-###Random Forests
-
-  There is a limit to the predictive capabilities of a single tree; they suffer from high variance. To alleviate this, random forests are often used instead. They function by enlisting the help of many trees, and then by aggregating the responses over all of them. 
-
-  
-- history
-
-- algorithm
-
-- uses
-
-
-##1.x What We Mean When We Talk About Inference
-
-- Inferential vs Descriptive
-
-- Frequentist vs Bayesian
 
 ##1.x Permutations and Populations
 
@@ -77,6 +50,7 @@ The permutation family of methods, on the other hand, only assumes that the obse
 ### The Problem   
 
 Random forests create models with great predictive-, but poor inferential capabilities. A single tree is simple to i
+
 ### Proposed solutions to this problem
 
 Statisticians Leo Breiman and ___ Cutler proposed a method of permuted variable importance that hoped to answer this problem. Their method compares the variable importance for each variable in a tree-wise manner. For each tree, the permuted variable importance of the variable $X_j$ is:
