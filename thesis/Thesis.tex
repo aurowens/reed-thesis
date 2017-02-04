@@ -221,56 +221,37 @@ starts here.
   table of figures, etc. should make it of great benefit to nearly anyone
   writing a thesis project.
   
-  \section{1.1 Trees and Random Forests}\label{trees-and-random-forests}
+  \section{Trees and Random Forests}\label{trees-and-random-forests}
   
   \subsection{Trees}\label{trees}
   
-  Decision trees may be familiar to many with a background in the social
-  or medical sciences as convenient ways to represent data and can assist
-  in decision making. Morgan and Sonquist (1963) derived a way for
+  ~~~~~Decision trees may be familiar to many with a background in the
+  social or medical sciences as convenient ways to represent data and can
+  assist in decision making. Morgan and Sonquist (1963) derived a way for
   constructing trees motivated by the specific feature space of data
   collected from interviews and surveys. Unlike, say agricultural data
   which involves mostly numerical variables like rainfall, the data
   collected from interviews is mostly categorical. On top of this issue,
-  the datasets Morgan and Sonquist dealt with had few participants (n) and
-  much data collected on them (p). To continue with their list of
-  difficulties, there was reason to believe that there were lurking errors
-  in the variables that would be hard identify and quantify. Lastly, many
-  of the predictors were correlated and Morgan and Sonquist doubted that
-  the additive assumptions of many models would be appropriate for this
-  data. Morgan and Sonquist noted that while many statistical methods
-  would have a difficult time accurately parsing this data, a clever
-  researcher with quite a lot of time could create a suitable model simply
-  by grouping values in the feature space and predicting that the response
-  corresponding to these values would be the mean of the observed
-  responses given the grouped conditions. Their formalization of this
-  procedure in terms of ``decision rules'' laid the ground work for future
-  research on decision trees.
+  the datasets Morgan and Sonquist dealt with had few participants,
+  \emph{n}, and much data collected on them, \emph{p}. To continue with
+  their list of difficulties, there was reason to believe that there were
+  lurking errors in the variables that would be hard identify and
+  quantify. Lastly, many of the predictors were correlated and Morgan and
+  Sonquist doubted that the additive assumptions of many models would be
+  appropriate for this data. Morgan and Sonquist noted that while many
+  statistical methods would have a difficulty accurately parsing this
+  data, a clever researcher with quite a lot of time could create a
+  suitable model simply by grouping values in the feature space and
+  predicting that the response corresponding to these values would be the
+  mean of the observed responses given the grouped conditions. Their
+  formalization of this procedure in terms of ``decision rules'' laid the
+  ground work for future research on decision trees.
   
-  In 1984, Breiman et al introduces a revolutionary new algorithm for
-  trees. \textbf{Need to acquire} \emph{Classification and Regression
-  Trees} \textbf{to make sure the method discused in MASS is the same that
-  Breiman uses/is used in} \texttt{randomForest}
-  
-  \textbf{Tree Algorithm} CART?
-  
-  Begin by considering the entire feature space \(X_1, ..., X_n\). Then:
-  
-  \begin{enumerate}
-  \def\labelenumi{\arabic{enumi}.}
-  \item
-    Consider every possible pair of partitions of this feature space,
-    \(P_1, P_2\), so that if \(X_1 = x_1 , X_2 = x_2,..., X_n = x_n\)
-    where \({x_1,...,x_n} \in P_1\) then our prediction is the mean value
-    of \(y\) given \(x_1,..,x_n \in P_1\).
-  \item
-    Choose the partitions that minimize RSS
-  \item
-    For each new partition, repeat steps 1 and 2 until some stopping
-    condition is reached.
-  \end{enumerate}
-  
-  An alternative to this method is conditional inference trees. Torsten
+  ~~~~~Later researchers proposed new methods for creating trees that
+  improved upon the Morgan and Sonquist model. Leo Breiman et al 1984
+  proposed an algorithm called CART, \emph{classification and regression
+  trees}, that would allow trees to be fit on various types of data. An
+  alternative to this method is conditional inference trees. Torsten
   Hothorn, Kurt Hornik, Achim Zeileis argue in their 2006 paper
   \textbf{Unbiased Recursive Partitioning: A Conditional Inference
   Framework}, CART has a selection bias toward variables with either
@@ -279,123 +260,105 @@ starts here.
   an alternative to CART and other algorithms, Hothorn et al propose a new
   method, conditional inference trees.
   
-  \begin{enumerate}
-  \def\labelenumi{\arabic{enumi}.}
-  \item
-    For case weights \(w\) test the global null hypothesis of independence
-    between any of the m covariates and the response. Stop if this
-    hypothesis cannot be rejected. Otherwise select the \(j_{th}\)
-    covariate \(Xj\) with strongest association to \(Y\).
-  \item
-    Choose a set \(A \subset X_{j}\) in order to split \(X_{j}\) into two
-    disjoint sets \(A\) and \(X_{j}\) ~\(A\). The case weights
-    \(w_{left}\) and \(w_{right}\) determine the two subgroups with
-    \(w_{left,i} = w_iI(X_{j\cdot i} \in A)\) and
-    \(w_{right,i} = w_iI(X_{ji} \in A)\) for all \(i = 1,...,n\) (
-    \(I(·)\) denotes the indicator function).
-  \item
-    Recursively repeat steps 1 and 2 with modified case weights \(w_left\)
-    and \(w_right\), respectively.
-  \end{enumerate}
+  ~~~~~ There is a limit to the predictive capabilities of a single tree
+  as they suffer from high variance. To alleviate this, random forests are
+  often used instead. They function by enlisting the help of many trees,
+  and then by aggregating the responses over all of them but with a subtle
+  trick that ensures the trees will be independent of each other. At each
+  split only \emph{m} variables are considered as possible candidates.
   
-  from
-  \url{https://eeecon.uibk.ac.at/~zeileis/papers/Hothorn+Hornik+Zeileis-2006.pdf}
+  \section{What We Mean When We Talk About
+  Inference}\label{what-we-mean-when-we-talk-about-inference}
   
-  After step 1 is completed, any goodness of fit method can be used to
-  generate the split and choose the set \(A\). Note that in this method
-  the splitting is done separately from the variable selection.
+  \subsection{Inferential vs Descriptive
+  Statistics}\label{inferential-vs-descriptive-statistics}
   
-  \subsection{Random Forests}\label{random-forests}
+  ~~~~~ A note should be made of the difference between inferential and
+  descriptive statistics. This paper's aim is to describe a process of
+  making inferential claims using random forests, not descriptive ones.
+  Descriptive statistics describe the data at hand without making any
+  reference to a larger data generating system that they come from. It
+  follows that inferential statistics then make claims about the data
+  generating system given the data at hand.
   
-  There is a limit to the predictive capabilities of a single tree; they
-  suffer from high variance. To alleviate this, random forests are often
-  used instead. They function by enlisting the help of many trees, and
-  then by aggregating the responses over all of them.
+  --Frequentist vs Bayesian--
   
-  \begin{itemize}
-  \item
-    history
-  \item
-    algorithm
-  \item
-    uses
-  \end{itemize}
+  ~~~~~ --There is some debate about interpreting inferential statistics.
+  On one hand, we have the Bayesian model--
   
-  \section{1.x What We Mean When We Talk About
-  Inference}\label{x-what-we-mean-when-we-talk-about-inference}
+  \emph{Need a better way to discuss inference than Bayes/frequentist}
   
-  \begin{itemize}
-  \item
-    Inferential vs Descriptive
-  \item
-    Frequentist vs Bayesian
-  \end{itemize}
+  \section{Permutations and
+  Populations}\label{permutations-and-populations}
   
-  \section{1.x Permutations and
-  Populations}\label{x-permutations-and-populations}
+  ~~~~~ As stated in the introduction of the \textbf{Chronical of
+  Permutations Statistical Methods} by KJ Berry et al, 2014, there are two
+  models of statistical inference. One is the population model, where we
+  assume that the data was randomly sampled from one (or more)
+  populations. Under this model, we assume that the data generated follows
+  some known distribution. ``Under the population model, the level of
+  statistical significance that results from applying a statistical test
+  to the results of an experiment or a survey corresponds to the frequency
+  with which the null hypothesis would be rejected in repeated random
+  samplings from the same specified population(s)'', (Berry et al, 2014).
   
-  As stated in the introduction of the \emph{Chronical of Permutations
-  Statistical Methods} by KJ Berry et al, 2014, there are two models of
-  statistical inference. One is the population model, where we assume that
-  the data was randomly sampled from one (or more) populations. Under this
-  model, we assume that the data generated follows some known
-  distribution. ``Under the population model, the level of statistical
-  significance that results from applying a statistical test to the
-  results of an experiment or a survey corresponds to the frequency with
-  which the null hypothesis would be rejected in repeated random samplings
-  from the same specified population(s)'', (Berry et al, 2014).
+  ~~~~~The permutation family of methods, on the other hand, only assumes
+  that the observed result was caused by experimental variability. The
+  test statistics is first calculated for the observed data, then the data
+  is permuted a number of times. The statistic is calculated after each
+  permutation to dervive a distribution of possible values. Then the
+  original test statistic is tested against this distribution. If it is
+  exceptionally rare, then there is evidence that our observation was not
+  simply experimental variability.
   
-  The permutation family of methods, on the other hand, only assumes that
-  the observed result was caused by experimental variability.
-  
-  \section{1.x Inference on Random
-  Forests}\label{x-inference-on-random-forests}
+  \section{Inference on Random Forests}\label{inference-on-random-forests}
   
   \subsection{The Problem}\label{the-problem}
   
-  Random forests create models with great predictive-, but poor
-  inferential capabilities. A single tree is simple to i \#\#\# Proposed
-  solutions to this problem
+  ~~~~~Random forests create models with great predictive-, but poor
+  inferential capabilities. A single tree is simple to i
   
-  Statisticians Leo Breiman and \_\_\_ Cutler proposed a method of
-  permuted variable importance that hoped to answer this problem. Their
-  method compares the variable importance for each variable in a tree-wise
-  manner. For each tree, the permuted variable importance of the variable
-  \(X_j\) is:
+  \subsection{Proposed solutions to this
+  problem}\label{proposed-solutions-to-this-problem}
+  
+  ~~~~~Statisticians Breiman and Cutler proposed a method of permuted
+  variable importance to answer this problem. Their method compares the
+  variable importance for each variable in a tree-wise manner. For each
+  tree, the permuted variable importance of the variable \(X_j\) is:
   
   \[PV^t(x_j) = \frac{\sum_{i \in |B|} {y} - \hat{y}^t}{|B|} - \frac{\sum_{i \in |*B|} {y} - \hat{*y}^t}{|*B|} \]
   
-  Where \(B\) is the matrix representing the feature space, \(|B|\) is the
-  number of observations, \(*B\) is the matrix of predictors but with
-  \(X_j\) permuted, \(\hat{y}\) is the predicted outcome, and
+  ~~~~~ Where \(B\) is the matrix representing the feature space, \(|B|\)
+  is the number of observations, \(*B\) is the matrix of predictors but
+  with \(X_j\) permuted, \(\hat{y}\) is the predicted outcome, and
   \(\hat{*y}^t\) is the predicted outcomes after variable \(X_j\) has been
   permuted. This value is averaged over all the trees. It's important to
   note that if the variable \(X_j\) is not split on in the tree \(t\), the
   tree-wise variable importance will be 0.
   
-  Creating a permutation-based method is certainly an attractive solution
-  to our problem. One, it allows us to estimate the distribution of
-  variable importance and generate a Z score under the null hypothesis
+  ~~~~~ Creating a permutation-based method is certainly an attractive
+  solution to our problem. One, it allows us to estimate the distribution
+  of variable importance and generate a Z score under the null hypothesis
   that \(PV = 0\).
   
   \[PV(x_j) = \frac{\sum_1^ntree PV^t(x_j)}{\frac{\hat{\sigma}}{\sqrt{ntree}}}\]
   
-  Strobl et al from the University of Munich criticize this method in
-  their 2008 technical report, \emph{Danger: High Power! -- Exploring the
-  Statistical Properties of a Test for Random Forest Variable Importance}.
-  One, this method has the downside of increasing power with increasing
-  numbers of trees in the forest. This is a more or less arbitrary
-  parameter which we would hope would not affect our importance estimates.
-  Secondly, the null hypothesis under Breiman and Cutler's strategy is
-  that the variable importance \(V\) for any variable \(X_j\) is not equal
-  to zero given \(Y\), the response. Because random forests are most often
-  used in situations with multicolinearity that would make other methods
-  like the linear model difficult, Strobl argues that any variable
-  importance measure worth its salt should not be mislead by correlation
-  within the predictors.
+  ~~~~~ Strobl et al from the University of Munich criticize this method
+  in their 2008 technical report, \emph{Danger: High Power! -- Exploring
+  the Statistical Properties of a Test for Random Forest Variable
+  Importance}. One, this method has the downside of increasing power with
+  increasing numbers of trees in the forest. This is a more or less
+  arbitrary parameter which we would hope would not affect our importance
+  estimates. Secondly, the null hypothesis under Breiman and Cutler's
+  strategy is that the variable importance \(V\) for any variable \(X_j\)
+  is not equal to zero given \(Y\), the response. Because random forests
+  are most often used in situations with multicolinearity that would make
+  other methods like the linear model difficult, Strobl argues that any
+  variable importance measure worth its salt should not be mislead by
+  correlation within the predictors.
   
-  The researchers at the University of Munich published a fully fleshed
-  response to the Breiman and Cutler method in 2008, titled
+  ~~~~~ The researchers at the University of Munich published a fully
+  fleshed response to the Breiman and Cutler method in 2008, titled
   \emph{Conditional Variable Importance for Random Forests} that address
   these issues. Strobl et al propose restructuring the Breiman and Cutler
   algorithm to account for conditional dependence among the predictors.
@@ -429,25 +392,73 @@ starts here.
     For every variable \(X_1,..., X_n\), \[CV(X_j) = \hat{V}_j - V_j\]
   \end{enumerate}
   
-  The null hypothesis is that \(CV(X_j) = 0\) given the predictor \(Y\)
-  \emph{and all other predictors} \(X_1,..X_n\).This accounts for
+  ~~~~~ The null hypothesis is that \(CV(X_j) = 0\) given the predictor
+  \(Y\) \emph{and all other predictors} \(X_1,..X_n\).This accounts for
   interactions between \(X_j\) and the other predictors. Using the
   simulated data from the previous example, here's an implementation of
   the algorithm outlined here as it is in the \texttt{party} package.
   
-  This paper aims to provide a response to this method. One the
+  ~~~~~This paper aims to provide a response to this method. One the
   conditional permutation algorithm is notoriously slow with any dataset
   of a size that is appropriate for a random forest. Two, the partitions
   are made from the random forest corresponding to the formula of
   \(Y~X_1,...,X_n\) instead of a model of \(X_j~X_1,...,X_n\).
   
-  \chapter{Permuatations Tests Theory and Application to Conditional
-  Variable
-  Importance}\label{permuatations-tests-theory-and-application-to-conditional-variable-importance}
+  \chapter{Simulations and Comparisons}\label{simulations-and-comparisons}
+  
+  In 1984, Breiman et al introduces a revolutionary new algorithm for
+  trees. \textbf{Need to acquire} \emph{Classification and Regression
+  Trees} \textbf{to make sure the method discused in MASS is the same that
+  Breiman uses/is used in} \texttt{randomForest}
+  
+  \textbf{Tree Algorithm} CART?
+  
+  Begin by considering the entire feature space \(X_1, ..., X_n\). Then:
+  
+  \begin{enumerate}
+  \def\labelenumi{\arabic{enumi}.}
+  \item
+    Consider every possible pair of partitions of this feature space,
+    \(P_1, P_2\), so that if \(X_1 = x_1 , X_2 = x_2,..., X_n = x_n\)
+    where \({x_1,...,x_n} \in P_1\) then our prediction is the mean value
+    of \(y\) given \(x_1,..,x_n \in P_1\).
+  \item
+    Choose the partitions that minimize RSS
+  \item
+    For each new partition, repeat steps 1 and 2 until some stopping
+    condition is reached.
+  \end{enumerate}
+  
+  CI trees 1. For case weights \(w\) test the global null hypothesis of
+  independence between any of the m covariates and the response. Stop if
+  this hypothesis cannot be rejected. Otherwise select the \(j_{th}\)
+  covariate \(Xj\) with strongest association to \(Y\).
+  
+  \begin{enumerate}
+  \def\labelenumi{\arabic{enumi}.}
+  \setcounter{enumi}{1}
+  \item
+    Choose a set \(A \subset X_{j}\) in order to split \(X_{j}\) into two
+    disjoint sets \(A\) and \(X_{j}\) ~\(A\). The case weights
+    \(w_{left}\) and \(w_{right}\) determine the two subgroups with
+    \(w_{left,i} = w_iI(X_{j\cdot i} \in A)\) and
+    \(w_{right,i} = w_iI(X_{ji} \in A)\) for all \(i = 1,...,n\) (
+    \(I(·)\) denotes the indicator function).
+  \item
+    Recursively repeat steps 1 and 2 with modified case weights \(w_left\)
+    and \(w_right\), respectively.
+  \end{enumerate}
+  
+  from
+  \url{https://eeecon.uibk.ac.at/~zeileis/papers/Hothorn+Hornik+Zeileis-2006.pdf}
+  
+  After step 1 is completed, any goodness of fit method can be used to
+  generate the split and choose the set \(A\). Note that in this method
+  the splitting is done separately from the variable selection.
   
   \chapter{Permuatations Tests Theory and Application to Conditional
   Variable
-  Importance}\label{permuatations-tests-theory-and-application-to-conditional-variable-importance-1}
+  Importance}\label{permuatations-tests-theory-and-application-to-conditional-variable-importance}
   
   \chapter{Implementation of Our
   Method}\label{implementation-of-our-method}
