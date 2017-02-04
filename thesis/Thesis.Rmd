@@ -6,7 +6,7 @@ advisor: 'Andrew Bray'
 #altadvisor: 'Your Other Advisor'
 # Delete line 6 if you only have one advisor
 department: 'Mathematics'
-title: 'My Final College Paper'
+title: 'Statistical Inference on Random Forests'
 abstract: >
   `r paste(readLines('abstract.Rmd'), collapse = ' ')`
 # If you'd rather include the preliminary content in files instead of inline

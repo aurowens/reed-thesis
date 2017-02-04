@@ -68,7 +68,7 @@
 
 
 % To pass between YAML and LaTeX the dollar signs are added by CII
-\title{My Final College Paper}
+\title{Statistical Inference on Random Forests}
 \author{Aurora Owens}
 % The month and year that you submit your FINAL draft TO THE LIBRARY (May or December)
 \date{May 2017}
@@ -281,10 +281,10 @@ starts here.
   follows that inferential statistics then make claims about the data
   generating system given the data at hand.
   
-  --Frequentist vs Bayesian--
+  ---Frequentist vs Bayesian---
   
-  ~~~~~ --There is some debate about interpreting inferential statistics.
-  On one hand, we have the Bayesian model--
+  ~~~~~ ---There is some debate about interpreting inferential statistics.
+  On one hand, we have the Bayesian model---
   
   \emph{Need a better way to discuss inference than Bayes/frequentist}
   
@@ -316,7 +316,20 @@ starts here.
   \subsection{The Problem}\label{the-problem}
   
   ~~~~~Random forests create models with great predictive-, but poor
-  inferential capabilities. A single tree is simple to i
+  inferential capabilities. After Morgan and Sonquist initial development
+  of decision trees, they quickly moved to the domain of machine learning
+  and away from statistics, thus, researchers focused on bettering
+  predictions and improving run times and less on the statistics behind
+  them. Inferential statistics with random forests is usually treated as a
+  variable selection problem, and generally falls behind the predictions
+  in importance. This has limited the applications of random forests in
+  certain fields, as to many the question of ``why'' the data is the way
+  it is, is just, if not more, important as the predictions. There are
+  several means of performing descriptive statistics with random forests
+  that could be interpreted incorrectly as attempting to answer this,
+  namely base variable importance, but without a statistically backed
+  method for performing variable importance, the use of random forest is
+  limited to prediction-only settings.
   
   \subsection{Proposed solutions to this
   problem}\label{proposed-solutions-to-this-problem}
@@ -344,7 +357,7 @@ starts here.
   \[PV(x_j) = \frac{\sum_1^ntree PV^t(x_j)}{\frac{\hat{\sigma}}{\sqrt{ntree}}}\]
   
   ~~~~~ Strobl et al from the University of Munich criticize this method
-  in their 2008 technical report, \emph{Danger: High Power! -- Exploring
+  in their 2008 technical report, \textbf{Danger: High Power! -- Exploring
   the Statistical Properties of a Test for Random Forest Variable
   Importance}. One, this method has the downside of increasing power with
   increasing numbers of trees in the forest. This is a more or less
