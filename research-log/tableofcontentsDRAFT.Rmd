@@ -6,7 +6,7 @@ output: html_document
 **To be included in the thesis document**
 
 ##Chapter 1: Literature Review/Introduction
-  1.1 A brief overview of trees and tree-based methods   
+  1.1 A brief overview of trees and tree-based methods    
   1.2 The Problem   
   1.3 Proposed solutions to this problem
   
@@ -18,10 +18,12 @@ output: html_document
  
   1.4 Another take on conditionally permuted variable importance *move this to CH 2*  
 
-##Chapter 2: Permuatations Tests Theory and Application to Conditional Variable Importance
+##Chapter 2: Simulations and Direct Comparisons 
 
-##Chapter 3: Implementation of Our Method
+##Chapter 3: Permuatations Tests Theory and Application to Conditional Variable Importance
 
-##Chapter 4: Direct Comparisons 
+##Chapter 4: Implementation of Our Method
+
+
 
 ##Conclusions 

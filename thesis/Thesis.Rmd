@@ -1,8 +1,8 @@
 ---
-author: 'Your R. Name'
-date: 'May 20xx'
+author: 'Aurora Owens'
+date: 'May 2017'
 division: 'Mathematics and Natural Sciences'
-advisor: 'Advisor F. Name'
+advisor: 'Andrew Bray'
 #altadvisor: 'Your Other Advisor'
 # Delete line 6 if you only have one advisor
 department: 'Mathematics'
@@ -85,6 +85,10 @@ Immediately below is the chunk for Chapter 2.
 
 ```{r chapter3, child = 'chap3.Rmd'}
 ```
+
+```{r chapter4, child = 'chap4.Rmd'}
+```
+
 
 <!--
 Add other chunks here for other chapters in your thesis.  Note that if you use the `child =` parameter, you can't include anything else in your chunk.

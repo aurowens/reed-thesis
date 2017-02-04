@@ -69,11 +69,11 @@
 
 % To pass between YAML and LaTeX the dollar signs are added by CII
 \title{My Final College Paper}
-\author{Your R. Name}
+\author{Aurora Owens}
 % The month and year that you submit your FINAL draft TO THE LIBRARY (May or December)
-\date{May 20xx}
+\date{May 2017}
 \division{Mathematics and Natural Sciences}
-\advisor{Advisor F. Name}
+\advisor{Andrew Bray}
 %If you have two advisors for some reason, you can use the following
 % Uncommented out by CII
 % End of CII addition
@@ -220,8 +220,6 @@ starts here.
   figures, automatically generate a table of contents, index, references,
   table of figures, etc. should make it of great benefit to nearly anyone
   writing a thesis project.
-  
-  \chapter{Chapter 1}\label{chapter-1}
   
   \section{1.1 Trees and Random Forests}\label{trees-and-random-forests}
   
@@ -443,353 +441,16 @@ starts here.
   are made from the random forest corresponding to the formula of
   \(Y~X_1,...,X_n\) instead of a model of \(X_j~X_1,...,X_n\).
   
-  \section{Permuatations Tests Theory and Application to Conditional
+  \chapter{Permuatations Tests Theory and Application to Conditional
   Variable
   Importance}\label{permuatations-tests-theory-and-application-to-conditional-variable-importance}
   
-  \hypertarget{ref_labels}{\chapter{Tables, Graphics, References, and
-  Labels}\label{ref_labels}}
+  \chapter{Permuatations Tests Theory and Application to Conditional
+  Variable
+  Importance}\label{permuatations-tests-theory-and-application-to-conditional-variable-importance-1}
   
-  \section{Tables}\label{tables}
-  
-  In addition to the tables that can be automatically generated from a
-  data frame in \textbf{R} that you saw in {[}R Markdown Basics{]} using
-  the \texttt{kable} function, you can also create tables using
-  \emph{pandoc}. (More information is available at
-  \url{http://pandoc.org/README.html\#tables}.) This might be useful if
-  you don't have values specifically stored in \textbf{R}, but you'd like
-  to display them in table form. Below is an example. Pay careful
-  attention to the alignment in the table and hyphens to create the rows
-  and columns.
-  
-  \begin{longtable}[]{@{}ccc@{}}
-  \caption{Correlation of Inheritance Factors for Parents and Child
-  \label{tab:inher}}\tabularnewline
-  \toprule
-  \begin{minipage}[b]{0.29\columnwidth}\centering\strut
-  Factors\strut
-  \end{minipage} & \begin{minipage}[b]{0.47\columnwidth}\centering\strut
-  Correlation between Parents \& Child\strut
-  \end{minipage} & \begin{minipage}[b]{0.16\columnwidth}\centering\strut
-  Inherited\strut
-  \end{minipage}\tabularnewline
-  \midrule
-  \endfirsthead
-  \toprule
-  \begin{minipage}[b]{0.29\columnwidth}\centering\strut
-  Factors\strut
-  \end{minipage} & \begin{minipage}[b]{0.47\columnwidth}\centering\strut
-  Correlation between Parents \& Child\strut
-  \end{minipage} & \begin{minipage}[b]{0.16\columnwidth}\centering\strut
-  Inherited\strut
-  \end{minipage}\tabularnewline
-  \midrule
-  \endhead
-  \begin{minipage}[t]{0.29\columnwidth}\centering\strut
-  Education\strut
-  \end{minipage} & \begin{minipage}[t]{0.47\columnwidth}\centering\strut
-  -0.49\strut
-  \end{minipage} & \begin{minipage}[t]{0.16\columnwidth}\centering\strut
-  Yes\strut
-  \end{minipage}\tabularnewline
-  \begin{minipage}[t]{0.29\columnwidth}\centering\strut
-  Socio-Economic Status\strut
-  \end{minipage} & \begin{minipage}[t]{0.47\columnwidth}\centering\strut
-  0.28\strut
-  \end{minipage} & \begin{minipage}[t]{0.16\columnwidth}\centering\strut
-  Slight\strut
-  \end{minipage}\tabularnewline
-  \begin{minipage}[t]{0.29\columnwidth}\centering\strut
-  Income\strut
-  \end{minipage} & \begin{minipage}[t]{0.47\columnwidth}\centering\strut
-  0.08\strut
-  \end{minipage} & \begin{minipage}[t]{0.16\columnwidth}\centering\strut
-  No\strut
-  \end{minipage}\tabularnewline
-  \begin{minipage}[t]{0.29\columnwidth}\centering\strut
-  Family Size\strut
-  \end{minipage} & \begin{minipage}[t]{0.47\columnwidth}\centering\strut
-  0.18\strut
-  \end{minipage} & \begin{minipage}[t]{0.16\columnwidth}\centering\strut
-  Slight\strut
-  \end{minipage}\tabularnewline
-  \begin{minipage}[t]{0.29\columnwidth}\centering\strut
-  Occupational Prestige\strut
-  \end{minipage} & \begin{minipage}[t]{0.47\columnwidth}\centering\strut
-  0.21\strut
-  \end{minipage} & \begin{minipage}[t]{0.16\columnwidth}\centering\strut
-  Slight\strut
-  \end{minipage}\tabularnewline
-  \bottomrule
-  \end{longtable}
-  
-  We can also create a link to the table by doing the following:
-  \autoref{tab:inher}. If you go back to {[}Loading and exploring data{]}
-  and look at the \texttt{kable} function code, you'll see that I added in
-  a similar \texttt{\textbackslash{}\textbackslash{}label} to be able to
-  reference that table later. (The extra backslash there is a way that
-  \emph{Markdown} interfaces with \LaTeX.) We can create a reference to
-  the max delays table: \autoref{tab:max_delay}.
-  
-  The addition of the \texttt{\textbackslash{}label\{\}} option to the end
-  of the table caption allows us to then use the \LaTeX~\texttt{autoref}
-  function to produce the link. The \texttt{ref} function in \textbf{R}
-  allows for tables and figures to be referenced in the document easily
-  without having to directly use the \texttt{autoref} function. It will
-  automatically add ``Table'' before your number if you add the ``tab:''
-  prefix to your label. Note that this reference could appear anywhere
-  throughout the document.
-  
-  \clearpage
-  
-  \section{Figures}\label{figures}
-  
-  If your thesis has a lot of figures, \emph{R Markdown} might behave
-  better for you than that other word processor. One perk is that it will
-  automatically number the figures accordingly in each chapter. You'll
-  also be able to create a label for each figure, add a caption, and then
-  reference the figure in a way similar to what we saw with tables
-  earlier. If you label your figures, you can move the figures around and
-  \emph{R Markdown} will automatically adjust the numbering for you. No
-  need for you to remember! So that you don't have to get too far into
-  \LaTeX~to do this, a couple \textbf{R} functions have been created for
-  you to assist. You'll see their use below.
-  
-  In the \textbf{R} chunk below, we will load in a picture stored as
-  \texttt{reed.jpg} in our main directory. We then give it the caption of
-  ``Reed logo'', the label of ``reed'', and specify that this is a figure.
-  Note again the use of the \texttt{results\ =\ "asis"} specification to
-  automatically include and compile the \LaTeX~code.
-  
-  \begin{Shaded}
-  \begin{Highlighting}[]
-  \KeywordTok{label}\NormalTok{(}\DataTypeTok{path =} \StringTok{"figure/reed.jpg"}\NormalTok{, }\DataTypeTok{caption =} \StringTok{"Reed logo"}\NormalTok{, }
-        \DataTypeTok{label =} \StringTok{"reed"}\NormalTok{, }\DataTypeTok{type =} \StringTok{"figure"}\NormalTok{)}
-  \end{Highlighting}
-  \end{Shaded}
-  
-  \begin{figure}[h!tbp]
-  \centering
-  \includegraphics[angle = 0,scale = 1]{figure/reed.jpg}
-  \caption[Reed logo]{\normalsize{Reed logo}}
-  \label{fig:reed}
-  \end{figure}
-  
-  Here is a reference to the Reed logo: \autoref{fig:reed}. Note the use
-  of the inline \textbf{R} code here. By default ``figure'' is specified
-  as the type. For clarity, we could have also added the \texttt{label}
-  and \texttt{type} to the parameter specifications and this would give us
-  the same result: \autoref{fig:reed}.
-  
-  \clearpage 
-  
-  Below we will investigate how to save the output of an \textbf{R} plot
-  and label it in a way similar to that done above. Recall the
-  \texttt{flights} dataset from \protect\hyperlink{rmd-basics}{}. (Note
-  that we've shown a different way to reference a section or chapter
-  here.) We will next explore a bar graph with the mean flight departure
-  delays by airline from Portland for 2014. Note also the use of the
-  \texttt{scale} parameter which is discussed on the next page.
-  
-  \begin{Shaded}
-  \begin{Highlighting}[]
-  \CommentTok{#delay_airline <- flights %>% group_by(carrier) %>%}
-  \CommentTok{#  summarize(mean_dep_delay = mean(dep_delay)) %>%}
-  \CommentTok{#  ggplot(aes(x = carrier, y = mean_dep_delay)) +}
-  \CommentTok{#  geom_bar(position = "identity", stat = "identity", fill = "red")}
-  \CommentTok{#ggsave("figure/delays.pdf", plot = delay_airline,}
-   \CommentTok{# height = 3, width = 6)}
-  \end{Highlighting}
-  \end{Shaded}
-  
-  \begin{Shaded}
-  \begin{Highlighting}[]
-  \KeywordTok{label}\NormalTok{(}\DataTypeTok{path =} \StringTok{"figure/delays.pdf"}\NormalTok{, }
-        \DataTypeTok{caption =} \StringTok{"Mean Delays by Airline"}\NormalTok{, }
-        \DataTypeTok{label =} \StringTok{"delays"}\NormalTok{, }\DataTypeTok{type =} \StringTok{"figure"}\NormalTok{)}
-  \end{Highlighting}
-  \end{Shaded}
-  
-  \begin{figure}[h!tbp]
-  \centering
-  \includegraphics[angle = 0,scale = 1]{figure/delays.pdf}
-  \caption[Mean Delays by Airline]{\normalsize{Mean Delays by Airline}}
-  \label{fig:delays}
-  \end{figure}
-  
-  A table linking these carrier codes to airline names is available at
-  \url{https://github.com/ismayc/pnwflights14/blob/master/data/airlines.csv}.
-  
-  \clearpage
-  
-  Next, we will explore the use of the \texttt{scale} parameter which can
-  be used to shrink or expand an image. Here we use the mathematical graph
-  stored in the ``subdivision.pdf'' file. Note that we didn't specify the
-  \texttt{caption\ =} or \texttt{label\ =} here, but we could have.
-  
-  \begin{Shaded}
-  \begin{Highlighting}[]
-  \KeywordTok{label}\NormalTok{(}\StringTok{"figure/subdivision.pdf"}\NormalTok{, }\StringTok{"Subdiv. graph"}\NormalTok{, }\StringTok{"subd"}\NormalTok{, }
-        \DataTypeTok{scale =} \FloatTok{0.75}\NormalTok{)}
-  \end{Highlighting}
-  \end{Shaded}
-  
-  \begin{figure}[h!tbp]
-  \centering
-  \includegraphics[angle = 0,scale = 0.75]{figure/subdivision.pdf}
-  \caption[Subdiv. graph]{\normalsize{Subdiv. graph}}
-  \label{fig:subd}
-  \end{figure}
-  
-  Here is a reference to this image: \autoref{fig:subd}. (Move this around
-  throughout the document as you wish.)
-  
-  \subsubsection{More Figure Stuff}\label{more-figure-stuff}
-  
-  Lastly, we will explore how to rotate figures using the \texttt{angle}
-  parameter.
-  
-  \begin{Shaded}
-  \begin{Highlighting}[]
-  \KeywordTok{label}\NormalTok{(}\StringTok{"figure/subdivision.pdf"}\NormalTok{, }
-        \StringTok{"A Larger Figure, Flipped Upside Down"}\NormalTok{, }
-        \DataTypeTok{scale =} \FloatTok{1.5}\NormalTok{,}
-        \DataTypeTok{angle =} \DecValTok{180}\NormalTok{,}
-        \DataTypeTok{label =} \StringTok{"subd2"}\NormalTok{)}
-  \end{Highlighting}
-  \end{Shaded}
-  
-  \begin{figure}[h!tbp]
-  \centering
-  \includegraphics[angle = 180,scale = 1.5]{figure/subdivision.pdf}
-  \caption[A Larger Figure, Flipped Upside Down]{\normalsize{A Larger Figure, Flipped Upside Down}}
-  \label{fig:subd2}
-  \end{figure}
-  
-  As another example, here is a reference to this figure:
-  \autoref{fig:subd2}.
-  
-  \subsubsection{Common Modifications}\label{common-modifications}
-  
-  The following figure features the more popular changes thesis students
-  want to make to their figures. We can add math to the caption that
-  displays below the picture, specify the size of our caption to display
-  below the figure (list of sizes available at this
-  \href{http://www.emerson.emory.edu/services/latex/latex_169.html\#SEC169}{link}),
-  and also specify that a different caption \texttt{alt.cap} be what
-  appears in the Table of Figures for this figure.
-  
-  If you'd like to make further tweaks to figures, you might need to
-  invoke some \LaTeX~code. Please email us at
-  \href{mailto:data@reed.edu}{\nolinkurl{data@reed.edu}} if you need
-  assistance.
-  
-  \begin{Shaded}
-  \begin{Highlighting}[]
-  \KeywordTok{label}\NormalTok{(}\StringTok{"figure/subdivision.pdf"}\NormalTok{, }
-        \DataTypeTok{caption =} \StringTok{"Subdivision of arc segments"}\NormalTok{,}
-        \DataTypeTok{alt.cap =} \StringTok{"You can see that $p_3 = p_6^}\CharTok{\textbackslash{}\textbackslash{}}\StringTok{prime$"}\NormalTok{,}
-        \DataTypeTok{cap.size =} \StringTok{"footnotesize"}\NormalTok{,}
-        \DataTypeTok{label =} \StringTok{"subd3"}\NormalTok{)}
-  \end{Highlighting}
-  \end{Shaded}
-  
-  \begin{figure}[h!tbp]
-  \centering
-  \includegraphics[angle = 0,scale = 1]{figure/subdivision.pdf}
-  \caption[Subdivision of arc segments]{\footnotesize{You can see that $p_3 = p_6^\prime$}}
-  \label{fig:subd3}
-  \end{figure}
-  
-  \section{Footnotes and Endnotes}\label{footnotes-and-endnotes}
-  
-  You might want to footnote something.\footnote{footnote text} The
-  footnote will be in a smaller font and placed appropriately. Endnotes
-  work in much the same way. More information can be found about both on
-  the CUS site or feel free to reach out to
-  \href{mailto:data@reed.edu}{\nolinkurl{data@reed.edu}}.
-  
-  \section{Bibliographies}\label{bibliographies}
-  
-  Of course you will need to cite things, and you will probably accumulate
-  an armful of sources. There are a variety of tools available for
-  creating a bibliography database (stored with the .bib extension). In
-  addition to BibTeX suggested below, you may want to consider using the
-  free and easy-to-use tool called Zotero. The Reed librarians have
-  created Zotero documentation at
-  \url{http://libguides.reed.edu/citation/zotero}. In addition, a tutorial
-  is available from Middlebury College at
-  \url{http://sites.middlebury.edu/zoteromiddlebury/}.
-  
-  \emph{R Markdown} uses \emph{pandoc} (\url{http://pandoc.org/}) to build
-  its bibliographies. One nice caveat of this is that you won't have to do
-  a second compile to load in references as standard \LaTeX~requires. To
-  cite references in your thesis (after creating your bibliography
-  database), place the reference name inside square brackets and precede
-  it by the ``at'' symbol. For example, here's a reference to a book about
-  worrying: (Molina \& Borkovec, 1994). This \texttt{Molina1994} entry
-  appears in a file called \texttt{thesis.bib} in the \texttt{bib} folder.
-  This bibliography database file was created by a program called BibTeX.
-  You can call this file something else if you like (look at the YAML
-  header in the main .Rmd file) and, by default, is to placed in the
-  \texttt{bib} folder.
-  
-  For more information about BibTeX and bibliographies, see our CUS site
-  (\url{http://web.reed.edu/cis/help/latex/index.html})\footnote{Reed~College
-    (2007)}. There are three pages on this topic: \emph{bibtex} (which
-  talks about using BibTeX, at
-  \url{http://web.reed.edu/cis/help/latex/bibtex.html}),
-  \emph{bibtexstyles} (about how to find and use the bibliography style
-  that best suits your needs, at
-  \url{http://web.reed.edu/cis/help/latex/bibtexstyles.html}) and
-  \emph{bibman} (which covers how to make and maintain a bibliography by
-  hand, without BibTeX, at
-  \url{http://web.reed.edu/cis/help/latex/bibman.html}). The last page
-  will not be useful unless you have only a few sources.
-  
-  If you look at the YAML header at the top of the main .Rmd file you can
-  see that we can specify the style of the bibliography by referencing the
-  appropriate csl file. You can download a variety of different style
-  files at \url{https://www.zotero.org/styles}. Make sure to download the
-  file into the csl folder.
-  
-  \paragraph{Tips for Bibliographies}\label{tips-for-bibliographies}
-  
-  \begin{itemize}
-  \tightlist
-  \item
-    Like with thesis formatting, the sooner you start compiling your
-    bibliography for something as large as thesis, the better. Typing in
-    source after source is mind-numbing enough; do you really want to do
-    it for hours on end in late April? Think of it as procrastination.
-  \item
-    The cite key (a citation's label) needs to be unique from the other
-    entries.
-  \item
-    When you have more than one author or editor, you need to separate
-    each author's name by the word ``and'' e.g.
-    \texttt{Author\ =\ \{Noble,\ Sam\ and\ Youngberg,\ Jessica\},}.
-  \item
-    Bibliographies made using BibTeX (whether manually or using a manager)
-    accept \LaTeX~markup, so you can italicize and add symbols as
-    necessary.
-  \item
-    To force capitalization in an article title or where all lowercase is
-    generally used, bracket the capital letter in curly braces.
-  \item
-    You can add a Reed Thesis citation\footnote{Noble (2002)} option. The
-    best way to do this is to use the phdthesis type of citation, and use
-    the optional ``type'' field to enter ``Reed thesis'' or
-    ``Undergraduate thesis.''
-  \end{itemize}
-  
-  \section{Anything else?}\label{anything-else}
-  
-  If you'd like to see examples of other things in this template, please
-  contact the Data @ Reed team (email
-  \href{mailto:data@reed.edu}{\nolinkurl{data@reed.edu}}) with your
-  suggestions. We love to see people using \emph{R Markdown} for their
-  theses, and are happy to help.
+  \chapter{Implementation of Our
+  Method}\label{implementation-of-our-method}
   
   \chapter*{Conclusion}\label{conclusion}
   \addcontentsline{toc}{chapter}{Conclusion}
@@ -884,20 +545,6 @@ starts here.
   \hypertarget{ref-angel2002a}{}
   Angel, E. (2001b). \emph{Test second book by angel}. Boston, MA: Wesley
   Addison Longman.
-  
-  \hypertarget{ref-Molina1994}{}
-  Molina, S. T., \& Borkovec, T. D. (1994). The Penn State worry
-  questionnaire: Psychometric properties and associated characteristics.
-  In G. C. L. Davey \& F. Tallis (Eds.), \emph{Worrying: Perspectives on
-  theory, assessment and treatment} (pp. 265--283). New York: Wiley.
-  
-  \hypertarget{ref-noble2002}{}
-  Noble, S. G. (2002). \emph{Turning images into simple line-art}
-  (Undergraduate thesis). Reed College.
-  
-  \hypertarget{ref-reedweb2007}{}
-  Reed~College. (2007, march). LaTeX your document. Retrieved from
-  \url{http://web.reed.edu/cis/help/LaTeX/index.html}
 
 
   % Index?
