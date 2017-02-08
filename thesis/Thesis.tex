@@ -207,7 +207,7 @@ starts here.
   trees}, that would allow trees to be fit on various types of data. An
   alternative to this method is conditional inference trees. Torsten
   Hothorn, Kurt Hornik, Achim Zeileis argue in their 2006 paper
-  \textbf{Unbiased Recursive Partitioning: A Conditional Inference
+  \emph{Unbiased Recursive Partitioning: A Conditional Inference
   Framework}, CART has a selection bias toward variables with either
   missing values or a great number of possible splits. This bias can
   effect the interpretability of all tree models fit using this method. As
@@ -220,6 +220,8 @@ starts here.
   and then by aggregating the responses over all of them but with a subtle
   trick that ensures the trees will be independent of each other. At each
   split only \emph{m} variables are considered as possible candidates.
+  Random forests and their algorithms will be discussed at length in
+  Chapter 2.
   
   \section{What We Mean When We Talk About
   Inference}\label{what-we-mean-when-we-talk-about-inference}
@@ -245,7 +247,7 @@ starts here.
   \section{Permutations and
   Populations}\label{permutations-and-populations}
   
-  ~~~~~ As stated in the introduction of the \textbf{Chronical of
+  ~~~~~ As stated in the introduction of the \emph{Chronical of
   Permutations Statistical Methods} by KJ Berry et al, 2014, there are two
   models of statistical inference. One is the population model, where we
   assume that the data was randomly sampled from one (or more)
@@ -372,6 +374,34 @@ starts here.
   \(Y~X_1,...,X_n\) instead of a model of \(X_j~X_1,...,X_n\).
   
   \chapter{Simulations and Comparisons}\label{simulations-and-comparisons}
+  
+  \section{Simulated Data}\label{simulated-data}
+  
+  \begin{itemize}
+  \tightlist
+  \item
+    From Strobl et al:
+  \end{itemize}
+  
+  To aid in comparisons between the methods, one of the simulated datasets
+  considered in this paper will be generated from the same method as used
+  in (Strobl et al, 2008???). Under this method, the 13 x 1000 data set,
+  \(D_1\), has 12 predictors, \(V_1,..,V_{12}\), where
+  \(V_j \sim N(0,1)\). The first four are, however, block correlated to
+  each other with \(\rho = .9\). They are related to \(Y\) by the linear
+  equation:
+  \[Y = 5 \cdot V_1 + 5 \cdot V_2 + 2 \cdot V_3 + 0 \cdot V_4 + -5 \cdot V_5 + -5\cdot V_6 + 0\cdot V_7 + 0 \cdot ..... + E, E \sim N(0,\frac 1 2 )\]
+  Note that the coefficents for \(V_7,...,V_{12}\) are all zero.
+  
+  \begin{center}\includegraphics{Thesis_files/figure-latex/stroblSimPlot-1} \end{center}
+  
+  \begin{itemize}
+  \tightlist
+  \item
+    Non linearly correlated
+  \end{itemize}
+  
+  \section{Models and Comparisons}\label{models-and-comparisons}
   
   In 1984, Breiman et al introduces a revolutionary new algorithm for
   trees. \textbf{Need to acquire} \emph{Classification and Regression
