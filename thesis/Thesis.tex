@@ -383,10 +383,10 @@ starts here.
     From Strobl et al:
   \end{itemize}
   
-  To aid in comparisons between the methods, one of the simulated datasets
-  considered in this paper will be generated from the same method as used
-  in (Strobl et al, 2008???). Under this method, the 13 x 1000 data set,
-  \(D_1\), has 12 predictors, \(V_1,..,V_{12}\), where
+  ~~~~~To aid in comparisons between the methods, one of the simulated
+  datasets considered in this paper will be generated from the same method
+  as used in (Strobl et al, 2008???). Under this method, the 13 x 1000
+  data set, \(D_1\), has 12 predictors, \(V_1,..,V_{12}\), where
   \(V_j \sim N(0,1)\). The first four are, however, block correlated to
   each other with \(\rho = .9\). They are related to \(Y\) by the linear
   equation:
@@ -400,6 +400,61 @@ starts here.
   \item
     Non linearly correlated
   \end{itemize}
+  
+  ~~~~~Many situations where tree-methods shine are ones that involve non
+  linearly correlated data and datasets with multiple types of predictor
+  variables. Let's look at our second dataset, \(D_2\).
+  
+  \begin{Shaded}
+  \begin{Highlighting}[]
+  \KeywordTok{rpois}\NormalTok{(}\DecValTok{12}\NormalTok{,}\DecValTok{3}\NormalTok{) ->}\StringTok{ }\NormalTok{mu }\CommentTok{#mean of each variable}
+  
+  \KeywordTok{diag}\NormalTok{(}\DecValTok{12}\NormalTok{) ->}\StringTok{ }\NormalTok{sigma }\CommentTok{#creates a 12 by 12 diagonal matrix with 1's down the diagonal}
+  
+  
+  \NormalTok{sigma ->}\StringTok{ }\NormalTok{sigma1}
+  \NormalTok{.}\DecValTok{9} \NormalTok{->}\StringTok{ }\NormalTok{sigma1[}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{]}
+  \NormalTok{.}\DecValTok{9} \NormalTok{->}\StringTok{ }\NormalTok{sigma1[}\DecValTok{2}\NormalTok{,}\DecValTok{1}\NormalTok{] }\CommentTok{#adding the block correlation between the first four variables}
+  \NormalTok{.}\DecValTok{9} \NormalTok{->}\StringTok{ }\NormalTok{sigma1[}\DecValTok{1}\NormalTok{,}\DecValTok{3}\NormalTok{]}
+  \NormalTok{.}\DecValTok{9} \NormalTok{->}\StringTok{ }\NormalTok{sigma1[}\DecValTok{3}\NormalTok{,}\DecValTok{1}\NormalTok{]}
+  \NormalTok{.}\DecValTok{9} \NormalTok{->}\StringTok{ }\NormalTok{sigma1[}\DecValTok{3}\NormalTok{,}\DecValTok{2}\NormalTok{]}
+  \NormalTok{.}\DecValTok{9} \NormalTok{->}\StringTok{ }\NormalTok{sigma1[}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{]}
+  \NormalTok{.}\DecValTok{9} \NormalTok{->}\StringTok{ }\NormalTok{sigma1[}\DecValTok{1}\NormalTok{,}\DecValTok{4}\NormalTok{]}
+  \NormalTok{.}\DecValTok{9} \NormalTok{->}\StringTok{ }\NormalTok{sigma1[}\DecValTok{4}\NormalTok{,}\DecValTok{1}\NormalTok{]}
+  \NormalTok{.}\DecValTok{9} \NormalTok{->}\StringTok{ }\NormalTok{sigma1[}\DecValTok{2}\NormalTok{,}\DecValTok{4}\NormalTok{]}
+  \NormalTok{.}\DecValTok{9} \NormalTok{->}\StringTok{ }\NormalTok{sigma1[}\DecValTok{4}\NormalTok{,}\DecValTok{2}\NormalTok{]}
+  \NormalTok{.}\DecValTok{9} \NormalTok{->}\StringTok{ }\NormalTok{sigma1[}\DecValTok{4}\NormalTok{,}\DecValTok{3}\NormalTok{]}
+  \NormalTok{.}\DecValTok{9} \NormalTok{->}\StringTok{ }\NormalTok{sigma1[}\DecValTok{3}\NormalTok{,}\DecValTok{4}\NormalTok{]}
+  
+  \DecValTok{1000} \NormalTok{->}\StringTok{ }\NormalTok{n }\CommentTok{#number of observations}
+  \KeywordTok{set.seed}\NormalTok{(}\DecValTok{1}\NormalTok{)}
+  \KeywordTok{mvrnorm}\NormalTok{(}\DataTypeTok{n =}\NormalTok{n, }\DataTypeTok{mu =} \NormalTok{mu, }\DataTypeTok{Sigma =} \NormalTok{sigma1) ->}\StringTok{ }\NormalTok{sim2 }\CommentTok{#sampling from the multivariate normal }
+  \CommentTok{#c(5,5,2,0,-5,-5,-2,0,0,0,0,0) -> bts #these are the betas }
+  
+  \KeywordTok{rnorm}\NormalTok{(}\DecValTok{1000}\NormalTok{, }\DataTypeTok{mean =} \DecValTok{0}\NormalTok{, }\DataTypeTok{sd =} \NormalTok{.}\DecValTok{5}\NormalTok{) ->}\StringTok{ }\NormalTok{e }\CommentTok{#error terms}
+  
+  \KeywordTok{rep}\NormalTok{(}\DecValTok{0}\NormalTok{, }\DecValTok{1000}\NormalTok{) ->}\StringTok{ }\NormalTok{ys }\CommentTok{#init a vector of zeros}
+  
+  \NormalTok{for( i in }\DecValTok{1}\NormalTok{:}\DecValTok{1000}\NormalTok{)\{ }\CommentTok{#go row by row and create the ys based on the function of e, bts, and sim1000}
+  \NormalTok{ys[i] <-}\StringTok{ }\NormalTok{sim1000[i,}\DecValTok{1}\NormalTok{]*bts[}\DecValTok{1}\NormalTok{]+}
+  \StringTok{    }\NormalTok{sim1000[i,}\DecValTok{2}\NormalTok{]*bts[}\DecValTok{2}\NormalTok{]+}\StringTok{ }
+  \StringTok{    }\NormalTok{sim1000[i,}\DecValTok{3}\NormalTok{]*bts[}\DecValTok{3}\NormalTok{]+}\StringTok{ }
+  \StringTok{    }\NormalTok{sim1000[i,}\DecValTok{4}\NormalTok{]*bts[}\DecValTok{4}\NormalTok{]+}\StringTok{ }
+  \StringTok{    }\NormalTok{sim1000[i,}\DecValTok{5}\NormalTok{]*bts[}\DecValTok{5}\NormalTok{]+}\StringTok{ }
+  \StringTok{    }\NormalTok{sim1000[i,}\DecValTok{6}\NormalTok{]*bts[}\DecValTok{6}\NormalTok{]+}
+  \StringTok{    }\NormalTok{sim1000[i,}\DecValTok{7}\NormalTok{]*bts[}\DecValTok{7}\NormalTok{]+}\StringTok{ }
+  \StringTok{    }\NormalTok{sim1000[i,}\DecValTok{8}\NormalTok{]*bts[}\DecValTok{8}\NormalTok{]+}\StringTok{ }
+  \StringTok{    }\NormalTok{sim1000[i,}\DecValTok{9}\NormalTok{]*bts[}\DecValTok{9}\NormalTok{]+}\StringTok{ }
+  \StringTok{    }\NormalTok{sim1000[i,}\DecValTok{10}\NormalTok{]*bts[}\DecValTok{10}\NormalTok{]+}\StringTok{ }
+  \StringTok{    }\NormalTok{sim1000[i,}\DecValTok{11}\NormalTok{]*bts[}\DecValTok{11}\NormalTok{]+}\StringTok{ }
+  \StringTok{    }\NormalTok{sim1000[i,}\DecValTok{12}\NormalTok{]*bts[}\DecValTok{12}\NormalTok{] +}
+  \StringTok{    }\NormalTok{e[i]}
+  \NormalTok{\}}
+  
+  \NormalTok{mvn.data <-}\StringTok{ }\KeywordTok{as.data.frame}\NormalTok{(sim1000)}
+  \NormalTok{mvn.data$y <-}\StringTok{ }\NormalTok{ys}
+  \end{Highlighting}
+  \end{Shaded}
   
   \section{Models and Comparisons}\label{models-and-comparisons}
   
