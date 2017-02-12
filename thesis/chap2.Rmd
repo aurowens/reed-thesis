@@ -83,80 +83,53 @@ mvn.data$y <- ys
 plot(mvn.data)
 ```
 
-- Non linearly correlated
+Let's move on to a more difficult situation. The dataset $D2$ contains five predictors, $X_1,...X_5$, that have an interesting structure- several of the predictors are correlated, but are not one -to -one. This violates an important assumtion of the linear model and means that these variables have low correlation. Note that this only makes sense in higher dimensions where we are estimating the value of $X_j$ given $X_1,...,X_n$. 
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Many situations where tree-methods shine are ones that involve non linearly correlated data and datasets with multiple types of predictor variables. Let's look at our second dataset, $D_2$. 
+```{r, sqrtAbs}
+x1 <- rnorm(1000)
 
-```{r}
-rpois(12,3) -> mu #mean of each variable
+x2 <- 2*sqrt(abs(x1)) + rnorm(1000)
 
-diag(12) -> sigma #creates a 12 by 12 diagonal matrix with 1's down the diagonal
+x3 <- x1 + 2*x2 + rnorm(1000)
 
+x4 <- rnorm(1000)
 
-sigma -> sigma1
-.9 -> sigma1[1,2]
-.9 -> sigma1[2,1] #adding the block correlation between the first four variables
-.9 -> sigma1[1,3]
-.9 -> sigma1[3,1]
-.9 -> sigma1[3,2]
-.9 -> sigma1[2,3]
-.9 -> sigma1[1,4]
-.9 -> sigma1[4,1]
-.9 -> sigma1[2,4]
-.9 -> sigma1[4,2]
-.9 -> sigma1[4,3]
-.9 -> sigma1[3,4]
+x5 <- 2*sqrt(abs(x4)) + rnorm(1000)
 
-1000 -> n #number of observations
-set.seed(1)
-mvrnorm(n =n, mu = mu, Sigma = sigma1) -> sim2 #sampling from the multivariate normal 
-#c(5,5,2,0,-5,-5,-2,0,0,0,0,0) -> bts #these are the betas 
+y <- x1 + 2*x2 + 3 * x3 + 4*x4 + 1*x5 + rnorm(1000)
 
-rnorm(1000, mean = 0, sd = .5) -> e #error terms
+d2 <- data.frame(y,x1,x2,x3,x4,x5)
 
-rep(0, 1000) -> ys #init a vector of zeros
+cor(d2)
 
-for( i in 1:1000){ #go row by row and create the ys based on the function of e, bts, and sim1000
-ys[i] <- sim1000[i,1]*bts[1]+
-    sim1000[i,2]*bts[2]+ 
-    sim1000[i,3]*bts[3]+ 
-    sim1000[i,4]*bts[4]+ 
-    sim1000[i,5]*bts[5]+ 
-    sim1000[i,6]*bts[6]+
-    sim1000[i,7]*bts[7]+ 
-    sim1000[i,8]*bts[8]+ 
-    sim1000[i,9]*bts[9]+ 
-    sim1000[i,10]*bts[10]+ 
-    sim1000[i,11]*bts[11]+ 
-    sim1000[i,12]*bts[12] +
-    e[i]
-}
-
-mvn.data <- as.data.frame(sim1000)
-mvn.data$y <- ys
-
-sig <- diag(4)
-sig <- sig * .04
-
-mu <- rep(0,4)
-x14 <- mvrnorm(n = 1000, mu = mu, Sigma = sig)
-
-b5 <- c(3,-1,0.5,1)
-
-x5 <- 11*x14[,1]^2 + b5[2]*(x14[,2])^3+ 1*cos((x14[,3])) + b5[4]*log(abs(x14[,4])) + rlnorm(1000) 
-
-x6 <- rlnorm(1000,meanlog = 2)
-
-x7 <- x14[,1] + rlnorm(1000) 
-x7[500:1000] <- x6[500:1000] + rlnorm(501)
+plot(d2)
 ```
 
-```{r}
+The tricker relationship between the variables in $D2$ was because they were generated using the square root of the absolute value of the other variable. Here, in $D3$ the process is repeated but with the log of the absolute value. 
 
+```{r logAbs}
+w1 <- rnorm(1000)
+
+w2 <- 2*log(abs(w1)) + rnorm(1000)
+
+w3 <- w1 + 2*w2 + rnorm(1000)
+
+w4 <- rnorm(1000)
+
+w5 <- 2*log(abs(w4)) + rnorm(1000)
+
+y <- w1 + 2*w2 + 3 * w3 + 4*w4 + 1*w5 + rnorm(1000)
+
+d3 <- data.frame(y,w1,w2,w3,w4,w5)
+
+cor(d3)
+
+plot(d3)
 ```
 
 ##Models and Comparisons
-
+##Trees
+###CART
   In 1984, Breiman et al introduces a revolutionary new algorithm for trees. **Need to acquire** _Classification and Regression Trees_  **to make sure the method discused in MASS is the same that Breiman uses/is used in** `randomForest`
 
 **Tree Algorithm** CART?
@@ -169,6 +142,9 @@ Begin by considering the entire feature space $X_1, ..., X_n$. Then:
 
 3. For each new partition, repeat steps 1 and 2 until some stopping condition is reached. 
 
+###Binary Recursive Partitioning 
+
+###Conditional Inference Trees
 CI trees
 1. For case weights  $w$  test the global null hypothesis of independence between any of the m covariates and the response. Stop if this hypothesis cannot be rejected. Otherwise select the  $j_{th}$  covariate  $Xj$  with strongest association to  $Y$.
 
@@ -179,4 +155,11 @@ CI trees
  from  https://eeecon.uibk.ac.at/~zeileis/papers/Hothorn+Hornik+Zeileis-2006.pdf
 
 After step 1 is completed, any goodness of fit method can be used to generate the split and choose the set $A$. Note that in this method the splitting is done separately from the variable selection. 
+
+##Bagged Forests
+
+##Random Forests
+
+
+
 

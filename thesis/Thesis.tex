@@ -395,68 +395,100 @@ starts here.
   
   \begin{center}\includegraphics{Thesis_files/figure-latex/stroblSimPlot-1} \end{center}
   
-  \begin{itemize}
-  \tightlist
-  \item
-    Non linearly correlated
-  \end{itemize}
-  
-  ~~~~~Many situations where tree-methods shine are ones that involve non
-  linearly correlated data and datasets with multiple types of predictor
-  variables. Let's look at our second dataset, \(D_2\).
+  Let's move on to a more difficult situation. The dataset \(D2\) contains
+  five predictors, \(X_1,...X_5\), that have an interesting structure-
+  several of the predictors are correlated, but are not one -to -one. This
+  violates an important assumtion of the linear model and means that these
+  variables have low correlation. Note that this only makes sense in
+  higher dimensions where we are estimating the value of \(X_j\) given
+  \(X_1,...,X_n\).
   
   \begin{Shaded}
   \begin{Highlighting}[]
-  \KeywordTok{rpois}\NormalTok{(}\DecValTok{12}\NormalTok{,}\DecValTok{3}\NormalTok{) ->}\StringTok{ }\NormalTok{mu }\CommentTok{#mean of each variable}
+  \NormalTok{x1 <-}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(}\DecValTok{1000}\NormalTok{)}
   
-  \KeywordTok{diag}\NormalTok{(}\DecValTok{12}\NormalTok{) ->}\StringTok{ }\NormalTok{sigma }\CommentTok{#creates a 12 by 12 diagonal matrix with 1's down the diagonal}
+  \NormalTok{x2 <-}\StringTok{ }\DecValTok{2}\NormalTok{*}\KeywordTok{sqrt}\NormalTok{(}\KeywordTok{abs}\NormalTok{(x1)) +}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(}\DecValTok{1000}\NormalTok{)}
   
+  \NormalTok{x3 <-}\StringTok{ }\NormalTok{x1 +}\StringTok{ }\DecValTok{2}\NormalTok{*x2 +}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(}\DecValTok{1000}\NormalTok{)}
   
-  \NormalTok{sigma ->}\StringTok{ }\NormalTok{sigma1}
-  \NormalTok{.}\DecValTok{9} \NormalTok{->}\StringTok{ }\NormalTok{sigma1[}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{]}
-  \NormalTok{.}\DecValTok{9} \NormalTok{->}\StringTok{ }\NormalTok{sigma1[}\DecValTok{2}\NormalTok{,}\DecValTok{1}\NormalTok{] }\CommentTok{#adding the block correlation between the first four variables}
-  \NormalTok{.}\DecValTok{9} \NormalTok{->}\StringTok{ }\NormalTok{sigma1[}\DecValTok{1}\NormalTok{,}\DecValTok{3}\NormalTok{]}
-  \NormalTok{.}\DecValTok{9} \NormalTok{->}\StringTok{ }\NormalTok{sigma1[}\DecValTok{3}\NormalTok{,}\DecValTok{1}\NormalTok{]}
-  \NormalTok{.}\DecValTok{9} \NormalTok{->}\StringTok{ }\NormalTok{sigma1[}\DecValTok{3}\NormalTok{,}\DecValTok{2}\NormalTok{]}
-  \NormalTok{.}\DecValTok{9} \NormalTok{->}\StringTok{ }\NormalTok{sigma1[}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{]}
-  \NormalTok{.}\DecValTok{9} \NormalTok{->}\StringTok{ }\NormalTok{sigma1[}\DecValTok{1}\NormalTok{,}\DecValTok{4}\NormalTok{]}
-  \NormalTok{.}\DecValTok{9} \NormalTok{->}\StringTok{ }\NormalTok{sigma1[}\DecValTok{4}\NormalTok{,}\DecValTok{1}\NormalTok{]}
-  \NormalTok{.}\DecValTok{9} \NormalTok{->}\StringTok{ }\NormalTok{sigma1[}\DecValTok{2}\NormalTok{,}\DecValTok{4}\NormalTok{]}
-  \NormalTok{.}\DecValTok{9} \NormalTok{->}\StringTok{ }\NormalTok{sigma1[}\DecValTok{4}\NormalTok{,}\DecValTok{2}\NormalTok{]}
-  \NormalTok{.}\DecValTok{9} \NormalTok{->}\StringTok{ }\NormalTok{sigma1[}\DecValTok{4}\NormalTok{,}\DecValTok{3}\NormalTok{]}
-  \NormalTok{.}\DecValTok{9} \NormalTok{->}\StringTok{ }\NormalTok{sigma1[}\DecValTok{3}\NormalTok{,}\DecValTok{4}\NormalTok{]}
+  \NormalTok{x4 <-}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(}\DecValTok{1000}\NormalTok{)}
   
-  \DecValTok{1000} \NormalTok{->}\StringTok{ }\NormalTok{n }\CommentTok{#number of observations}
-  \KeywordTok{set.seed}\NormalTok{(}\DecValTok{1}\NormalTok{)}
-  \KeywordTok{mvrnorm}\NormalTok{(}\DataTypeTok{n =}\NormalTok{n, }\DataTypeTok{mu =} \NormalTok{mu, }\DataTypeTok{Sigma =} \NormalTok{sigma1) ->}\StringTok{ }\NormalTok{sim2 }\CommentTok{#sampling from the multivariate normal }
-  \CommentTok{#c(5,5,2,0,-5,-5,-2,0,0,0,0,0) -> bts #these are the betas }
+  \NormalTok{x5 <-}\StringTok{ }\DecValTok{2}\NormalTok{*}\KeywordTok{sqrt}\NormalTok{(}\KeywordTok{abs}\NormalTok{(x4)) +}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(}\DecValTok{1000}\NormalTok{)}
   
-  \KeywordTok{rnorm}\NormalTok{(}\DecValTok{1000}\NormalTok{, }\DataTypeTok{mean =} \DecValTok{0}\NormalTok{, }\DataTypeTok{sd =} \NormalTok{.}\DecValTok{5}\NormalTok{) ->}\StringTok{ }\NormalTok{e }\CommentTok{#error terms}
+  \NormalTok{y <-}\StringTok{ }\NormalTok{x1 +}\StringTok{ }\DecValTok{2}\NormalTok{*x2 +}\StringTok{ }\DecValTok{3} \NormalTok{*}\StringTok{ }\NormalTok{x3 +}\StringTok{ }\DecValTok{4}\NormalTok{*x4 +}\StringTok{ }\DecValTok{1}\NormalTok{*x5 +}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(}\DecValTok{1000}\NormalTok{)}
   
-  \KeywordTok{rep}\NormalTok{(}\DecValTok{0}\NormalTok{, }\DecValTok{1000}\NormalTok{) ->}\StringTok{ }\NormalTok{ys }\CommentTok{#init a vector of zeros}
+  \NormalTok{d2 <-}\StringTok{ }\KeywordTok{data.frame}\NormalTok{(y,x1,x2,x3,x4,x5)}
   
-  \NormalTok{for( i in }\DecValTok{1}\NormalTok{:}\DecValTok{1000}\NormalTok{)\{ }\CommentTok{#go row by row and create the ys based on the function of e, bts, and sim1000}
-  \NormalTok{ys[i] <-}\StringTok{ }\NormalTok{sim1000[i,}\DecValTok{1}\NormalTok{]*bts[}\DecValTok{1}\NormalTok{]+}
-  \StringTok{    }\NormalTok{sim1000[i,}\DecValTok{2}\NormalTok{]*bts[}\DecValTok{2}\NormalTok{]+}\StringTok{ }
-  \StringTok{    }\NormalTok{sim1000[i,}\DecValTok{3}\NormalTok{]*bts[}\DecValTok{3}\NormalTok{]+}\StringTok{ }
-  \StringTok{    }\NormalTok{sim1000[i,}\DecValTok{4}\NormalTok{]*bts[}\DecValTok{4}\NormalTok{]+}\StringTok{ }
-  \StringTok{    }\NormalTok{sim1000[i,}\DecValTok{5}\NormalTok{]*bts[}\DecValTok{5}\NormalTok{]+}\StringTok{ }
-  \StringTok{    }\NormalTok{sim1000[i,}\DecValTok{6}\NormalTok{]*bts[}\DecValTok{6}\NormalTok{]+}
-  \StringTok{    }\NormalTok{sim1000[i,}\DecValTok{7}\NormalTok{]*bts[}\DecValTok{7}\NormalTok{]+}\StringTok{ }
-  \StringTok{    }\NormalTok{sim1000[i,}\DecValTok{8}\NormalTok{]*bts[}\DecValTok{8}\NormalTok{]+}\StringTok{ }
-  \StringTok{    }\NormalTok{sim1000[i,}\DecValTok{9}\NormalTok{]*bts[}\DecValTok{9}\NormalTok{]+}\StringTok{ }
-  \StringTok{    }\NormalTok{sim1000[i,}\DecValTok{10}\NormalTok{]*bts[}\DecValTok{10}\NormalTok{]+}\StringTok{ }
-  \StringTok{    }\NormalTok{sim1000[i,}\DecValTok{11}\NormalTok{]*bts[}\DecValTok{11}\NormalTok{]+}\StringTok{ }
-  \StringTok{    }\NormalTok{sim1000[i,}\DecValTok{12}\NormalTok{]*bts[}\DecValTok{12}\NormalTok{] +}
-  \StringTok{    }\NormalTok{e[i]}
-  \NormalTok{\}}
-  
-  \NormalTok{mvn.data <-}\StringTok{ }\KeywordTok{as.data.frame}\NormalTok{(sim1000)}
-  \NormalTok{mvn.data$y <-}\StringTok{ }\NormalTok{ys}
+  \KeywordTok{cor}\NormalTok{(d2)}
   \end{Highlighting}
   \end{Shaded}
   
+  \begin{verbatim}
+             y         x1          x2          x3          x4         x5
+  y  1.0000000 0.37370066  0.81852208  0.92926643  0.30615522 0.15357237
+  x1 0.3737007 1.00000000  0.01253512  0.37828457  0.02553116 0.01196494
+  x2 0.8185221 0.01253512  1.00000000  0.85944303 -0.04770287 0.04253338
+  x3 0.9292664 0.37828457  0.85944303  1.00000000 -0.03116991 0.04579883
+  x4 0.3061552 0.02553116 -0.04770287 -0.03116991  1.00000000 0.01984835
+  x5 0.1535724 0.01196494  0.04253338  0.04579883  0.01984835 1.00000000
+  \end{verbatim}
+  
+  \begin{Shaded}
+  \begin{Highlighting}[]
+  \KeywordTok{plot}\NormalTok{(d2)}
+  \end{Highlighting}
+  \end{Shaded}
+  
+  \begin{center}\includegraphics{Thesis_files/figure-latex/sqrtAbs-1} \end{center}
+  
+  The tricker relationship between the variables in \(D2\) was because
+  they were generated using the square root of the absolute value of the
+  other variable. Here, in \(D3\) the process is repeated but with the log
+  of the absolute value.
+  
+  \begin{Shaded}
+  \begin{Highlighting}[]
+  \NormalTok{w1 <-}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(}\DecValTok{1000}\NormalTok{)}
+  
+  \NormalTok{w2 <-}\StringTok{ }\DecValTok{2}\NormalTok{*}\KeywordTok{log}\NormalTok{(}\KeywordTok{abs}\NormalTok{(w1)) +}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(}\DecValTok{1000}\NormalTok{)}
+  
+  \NormalTok{w3 <-}\StringTok{ }\NormalTok{w1 +}\StringTok{ }\DecValTok{2}\NormalTok{*w2 +}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(}\DecValTok{1000}\NormalTok{)}
+  
+  \NormalTok{w4 <-}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(}\DecValTok{1000}\NormalTok{)}
+  
+  \NormalTok{w5 <-}\StringTok{ }\DecValTok{2}\NormalTok{*}\KeywordTok{log}\NormalTok{(}\KeywordTok{abs}\NormalTok{(w4)) +}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(}\DecValTok{1000}\NormalTok{)}
+  
+  \NormalTok{y <-}\StringTok{ }\NormalTok{w1 +}\StringTok{ }\DecValTok{2}\NormalTok{*w2 +}\StringTok{ }\DecValTok{3} \NormalTok{*}\StringTok{ }\NormalTok{w3 +}\StringTok{ }\DecValTok{4}\NormalTok{*w4 +}\StringTok{ }\DecValTok{1}\NormalTok{*w5 +}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(}\DecValTok{1000}\NormalTok{)}
+  
+  \NormalTok{d3 <-}\StringTok{ }\KeywordTok{data.frame}\NormalTok{(y,w1,w2,w3,w4,w5)}
+  
+  \KeywordTok{cor}\NormalTok{(d3)}
+  \end{Highlighting}
+  \end{Shaded}
+  
+  \begin{verbatim}
+              y          w1          w2          w3          w4          w5
+  y  1.00000000  0.15728407  0.94764704  0.97416878  0.17279746  0.05578763
+  w1 0.15728407  1.00000000 -0.02714818  0.15752508  0.03050113 -0.05109218
+  w2 0.94764704 -0.02714818  1.00000000  0.96531545 -0.01975103 -0.04414540
+  w3 0.97416878  0.15752508  0.96531545  1.00000000 -0.01042494 -0.05419898
+  w4 0.17279746  0.03050113 -0.01975103 -0.01042494  1.00000000 -0.03325170
+  w5 0.05578763 -0.05109218 -0.04414540 -0.05419898 -0.03325170  1.00000000
+  \end{verbatim}
+  
+  \begin{Shaded}
+  \begin{Highlighting}[]
+  \KeywordTok{plot}\NormalTok{(d3)}
+  \end{Highlighting}
+  \end{Shaded}
+  
+  \begin{center}\includegraphics{Thesis_files/figure-latex/logAbs-1} \end{center}
+  
   \section{Models and Comparisons}\label{models-and-comparisons}
+  
+  \section{Trees}\label{trees-1}
+  
+  \subsection{CART}\label{cart}
   
   In 1984, Breiman et al introduces a revolutionary new algorithm for
   trees. \textbf{Need to acquire} \emph{Classification and Regression
@@ -480,6 +512,12 @@ starts here.
     For each new partition, repeat steps 1 and 2 until some stopping
     condition is reached.
   \end{enumerate}
+  
+  \subsection{Binary Recursive
+  Partitioning}\label{binary-recursive-partitioning}
+  
+  \subsection{Conditional Inference
+  Trees}\label{conditional-inference-trees}
   
   CI trees 1. For case weights \(w\) test the global null hypothesis of
   independence between any of the m covariates and the response. Stop if
@@ -507,6 +545,10 @@ starts here.
   After step 1 is completed, any goodness of fit method can be used to
   generate the split and choose the set \(A\). Note that in this method
   the splitting is done separately from the variable selection.
+  
+  \section{Bagged Forests}\label{bagged-forests}
+  
+  \section{Random Forests}\label{random-forests}
   
   \chapter{Permuatations Tests Theory and Application to Conditional
   Variable
