@@ -23,8 +23,6 @@ if(!require(reedtemplates)){
 library(reedtemplates)
 library(MASS)
 ```
-
-
 #Simulations and Comparisons
 
 ##Simulated Data
@@ -85,7 +83,6 @@ mvn.data$y <- ys
 plot(mvn.data)
 ```
 
-
 - Non linearly correlated
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Many situations where tree-methods shine are ones that involve non linearly correlated data and datasets with multiple types of predictor variables. Let's look at our second dataset, $D_2$. 
@@ -137,12 +134,26 @@ ys[i] <- sim1000[i,1]*bts[1]+
 
 mvn.data <- as.data.frame(sim1000)
 mvn.data$y <- ys
+
+sig <- diag(4)
+sig <- sig * .04
+
+mu <- rep(0,4)
+x14 <- mvrnorm(n = 1000, mu = mu, Sigma = sig)
+
+b5 <- c(3,-1,0.5,1)
+
+x5 <- 11*x14[,1]^2 + b5[2]*(x14[,2])^3+ 1*cos((x14[,3])) + b5[4]*log(abs(x14[,4])) + rlnorm(1000) 
+
+x6 <- rlnorm(1000,meanlog = 2)
+
+x7 <- x14[,1] + rlnorm(1000) 
+x7[500:1000] <- x6[500:1000] + rlnorm(501)
 ```
 
 ```{r}
 
 ```
-
 
 ##Models and Comparisons
 
