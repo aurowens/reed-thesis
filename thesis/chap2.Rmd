@@ -85,7 +85,7 @@ cor(d1)
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Let's move on to a more difficult situation. The dataset $D2$ contains five predictors, $X_1,...X_5$, that have an interesting structure- several of the predictors are correlated, but are not one -to -one. This violates an important assumtion of the linear model and means that these variables have low correlation. Note that this only makes sense in higher dimensions where we are estimating the value of $X_j$ given $X_1,...,X_n$. 
 
-```{r, sqrtAbs}
+```{r sqrtAbs,echo=FALSE, message=FALSE}
 x1 <- rnorm(1000)
 
 x2 <- 2*sqrt(abs(x1)) + rnorm(1000)
@@ -107,7 +107,7 @@ plot(d2)
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The tricker relationship between the variables in $D2$ was because they were generated using the square root of the absolute value of the other variable. Here, in $D3$ the process is repeated but with the log of the absolute value. 
 
-```{r logAbs}
+```{r logAbs,echo=FALSE, message=FALSE}
 w1 <- rnorm(1000)
 
 w2 <- 2*log(abs(w1)) + rnorm(1000)
@@ -131,7 +131,7 @@ plot(d3)
 ##Trees
 ###CART: Regression Trees
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As outlined in the 1984 textbook, *Classification and Regression Trees*, _____ described their method for creating, pruning, and testing regression trees. What follows is their basic algorithm for fitting regression trees:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As outlined in the 1984 textbook, *Classification and Regression Trees*, Brieman, Friedman, Olshen, and Stone described their method for creating, pruning, and testing regression trees. What follows is their basic algorithm for fitting regression trees:
 
 ####Algorithm 2: CART, Regression Trees
 ```
@@ -142,7 +142,7 @@ plot(d3)
 ```
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Let's return to our simulated datasets. Here is what trees grown for each dataset using the model $Y\sim X_1,...X_n$.
 
-```{r}
+```{r,echo=FALSE, message=FALSE}
 library(tree)
 t1 <- tree(y~., d1)
 t2 <- tree(y~., d2)
@@ -194,7 +194,7 @@ for 1000 trials:
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Here is a histogram of the MSE found using this method:
 
-```{r}
+```{r, echo=FALSE, message=FALSE}
 testmse <- rep(0,1000)
 
 for(i in 1:1000){
@@ -214,13 +214,13 @@ ggplot(aes(x = testmse), data = testmse) + geom_histogram()
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Let's put that to the test here using our dataset $D3$ again. We'll build 100 forests of 100 trees each and compare the variability of the $MSE$ distributions. 
 
-```{r}
+```{r, echo=FALSE, message=FALSE}
 library(bagRboostR)
 
 mse <- rep(0,100)
 train = sample(1000,666)
 for (i in 1:100){
-  b <- randomForest(y~., data = d3, subset = train, mtry = 5)
+  b <- randomForest(y~., data = d3, subset = train, mtry = 5, ntree = 100)
   mse[i] <- mean((d3$y[-train] - predict(b, d3[-train,]))^2)
 }
 
@@ -234,6 +234,25 @@ var(mse)
 
 ##Random Forests
 
+As the number of trees grown in each forest increases, the $MSE_{test}$ decreases (cite). Still, this can become computationally intensive on larger data sets where we would like very accurate models. Random forests are often seen as a solution to this problem. In a bagged forest, every variable is considered when each split is made but in a random forest only $mtry, mtry \leq p$ are considered. This allows us to assume that the trees have a level of independence not found in bagged forests, and that a small random forest will often out perform the bagged forest. 
 
+For an illustration, let's build a random forest on $D3$ and compare the $MSE$. 
 
+(include note about oob error vs test mse)
+
+```{r}
+
+mseRF <- rep(0,100)
+train = sample(1000,666)
+for (i in 1:100){
+  rf <- randomForest(y~., data = d3, subset = train, ntree = 100)
+  mseRF[i] <- mean((d3$y[-train] - predict(rf, d3[-train,]))^2)
+}
+
+mseRF <- as.data.frame(mseRF)
+
+ggplot(aes(x = mseRF), data = mseRF) + geom_histogram()
+
+var(mseRF)
+```
 

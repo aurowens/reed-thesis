@@ -442,26 +442,6 @@ starts here.
   sense in higher dimensions where we are estimating the value of \(X_j\)
   given \(X_1,...,X_n\).
   
-  \begin{Shaded}
-  \begin{Highlighting}[]
-  \NormalTok{x1 <-}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(}\DecValTok{1000}\NormalTok{)}
-  
-  \NormalTok{x2 <-}\StringTok{ }\DecValTok{2}\NormalTok{*}\KeywordTok{sqrt}\NormalTok{(}\KeywordTok{abs}\NormalTok{(x1)) +}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(}\DecValTok{1000}\NormalTok{)}
-  
-  \NormalTok{x3 <-}\StringTok{ }\NormalTok{x1 +}\StringTok{ }\DecValTok{2}\NormalTok{*x2 +}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(}\DecValTok{1000}\NormalTok{)}
-  
-  \NormalTok{x4 <-}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(}\DecValTok{1000}\NormalTok{)}
-  
-  \NormalTok{x5 <-}\StringTok{ }\DecValTok{2}\NormalTok{*}\KeywordTok{sqrt}\NormalTok{(}\KeywordTok{abs}\NormalTok{(x4)) +}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(}\DecValTok{1000}\NormalTok{)}
-  
-  \NormalTok{y <-}\StringTok{ }\NormalTok{x1 +}\StringTok{ }\DecValTok{2}\NormalTok{*x2 +}\StringTok{ }\DecValTok{3} \NormalTok{*}\StringTok{ }\NormalTok{x3 +}\StringTok{ }\DecValTok{4}\NormalTok{*x4 +}\StringTok{ }\DecValTok{1}\NormalTok{*x5 +}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(}\DecValTok{1000}\NormalTok{)}
-  
-  \NormalTok{d2 <-}\StringTok{ }\KeywordTok{data.frame}\NormalTok{(y,x1,x2,x3,x4,x5)}
-  
-  \KeywordTok{cor}\NormalTok{(d2)}
-  \end{Highlighting}
-  \end{Shaded}
-  
   \begin{verbatim}
              y         x1          x2          x3          x4         x5
   y  1.0000000 0.37370066  0.81852208  0.92926643  0.30615522 0.15357237
@@ -472,38 +452,12 @@ starts here.
   x5 0.1535724 0.01196494  0.04253338  0.04579883  0.01984835 1.00000000
   \end{verbatim}
   
-  \begin{Shaded}
-  \begin{Highlighting}[]
-  \KeywordTok{plot}\NormalTok{(d2)}
-  \end{Highlighting}
-  \end{Shaded}
-  
   \begin{center}\includegraphics{Thesis_files/figure-latex/sqrtAbs-1} \end{center}
   
   ~~~~~The tricker relationship between the variables in \(D2\) was
   because they were generated using the square root of the absolute value
   of the other variable. Here, in \(D3\) the process is repeated but with
   the log of the absolute value.
-  
-  \begin{Shaded}
-  \begin{Highlighting}[]
-  \NormalTok{w1 <-}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(}\DecValTok{1000}\NormalTok{)}
-  
-  \NormalTok{w2 <-}\StringTok{ }\DecValTok{2}\NormalTok{*}\KeywordTok{log}\NormalTok{(}\KeywordTok{abs}\NormalTok{(w1)) +}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(}\DecValTok{1000}\NormalTok{)}
-  
-  \NormalTok{w3 <-}\StringTok{ }\NormalTok{w1 +}\StringTok{ }\DecValTok{2}\NormalTok{*w2 +}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(}\DecValTok{1000}\NormalTok{)}
-  
-  \NormalTok{w4 <-}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(}\DecValTok{1000}\NormalTok{)}
-  
-  \NormalTok{w5 <-}\StringTok{ }\DecValTok{2}\NormalTok{*}\KeywordTok{log}\NormalTok{(}\KeywordTok{abs}\NormalTok{(w4)) +}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(}\DecValTok{1000}\NormalTok{)}
-  
-  \NormalTok{y <-}\StringTok{ }\NormalTok{w1 +}\StringTok{ }\DecValTok{2}\NormalTok{*w2 +}\StringTok{ }\DecValTok{3} \NormalTok{*}\StringTok{ }\NormalTok{w3 +}\StringTok{ }\DecValTok{4}\NormalTok{*w4 +}\StringTok{ }\DecValTok{1}\NormalTok{*w5 +}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(}\DecValTok{1000}\NormalTok{)}
-  
-  \NormalTok{d3 <-}\StringTok{ }\KeywordTok{data.frame}\NormalTok{(y,w1,w2,w3,w4,w5)}
-  
-  \KeywordTok{cor}\NormalTok{(d3)}
-  \end{Highlighting}
-  \end{Shaded}
   
   \begin{verbatim}
               y          w1          w2          w3          w4          w5
@@ -514,12 +468,6 @@ starts here.
   w4 0.17279746  0.03050113 -0.01975103 -0.01042494  1.00000000 -0.03325170
   w5 0.05578763 -0.05109218 -0.04414540 -0.05419898 -0.03325170  1.00000000
   \end{verbatim}
-  
-  \begin{Shaded}
-  \begin{Highlighting}[]
-  \KeywordTok{plot}\NormalTok{(d3)}
-  \end{Highlighting}
-  \end{Shaded}
   
   \begin{center}\includegraphics{Thesis_files/figure-latex/logAbs-1} \end{center}
   
@@ -547,35 +495,9 @@ starts here.
   ~~~~~Let's return to our simulated datasets. Here is what trees grown
   for each dataset using the model \(Y\sim X_1,...X_n\).
   
-  \begin{Shaded}
-  \begin{Highlighting}[]
-  \KeywordTok{library}\NormalTok{(tree)}
-  \NormalTok{t1 <-}\StringTok{ }\KeywordTok{tree}\NormalTok{(y~., d1)}
-  \NormalTok{t2 <-}\StringTok{ }\KeywordTok{tree}\NormalTok{(y~., d2)}
-  \NormalTok{t3 <-}\StringTok{ }\KeywordTok{tree}\NormalTok{(y~., d3)}
-  
-  \KeywordTok{plot}\NormalTok{(t1)}
-  \KeywordTok{text}\NormalTok{(t1)}
-  \end{Highlighting}
-  \end{Shaded}
-  
   \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-1-1} \end{center}
   
-  \begin{Shaded}
-  \begin{Highlighting}[]
-  \KeywordTok{plot}\NormalTok{(t2)}
-  \KeywordTok{text}\NormalTok{(t2)}
-  \end{Highlighting}
-  \end{Shaded}
-  
   \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-1-2} \end{center}
-  
-  \begin{Shaded}
-  \begin{Highlighting}[]
-  \KeywordTok{plot}\NormalTok{(t3)}
-  \KeywordTok{text}\NormalTok{(t3)}
-  \end{Highlighting}
-  \end{Shaded}
   
   \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-1-3} \end{center}
   
@@ -622,35 +544,9 @@ starts here.
   
   ~~~~~Here is a histogram of the MSE found using this method:
   
-  \begin{Shaded}
-  \begin{Highlighting}[]
-  \NormalTok{testmse <-}\StringTok{ }\KeywordTok{rep}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{1000}\NormalTok{)}
-  
-  \NormalTok{for(i in }\DecValTok{1}\NormalTok{:}\DecValTok{1000}\NormalTok{)\{}
-    \NormalTok{train <-}\StringTok{ }\KeywordTok{sample}\NormalTok{(}\DecValTok{1000}\NormalTok{, }\DecValTok{666}\NormalTok{)}
-    \NormalTok{t <-}\StringTok{ }\KeywordTok{tree}\NormalTok{(y~., d3[train,])}
-    \NormalTok{testmse[i] <-}\StringTok{ }\KeywordTok{mean}\NormalTok{((d3[-train,]$y -}\StringTok{ }\KeywordTok{predict}\NormalTok{(t, d3[-train,]))^}\DecValTok{2}\NormalTok{)}
-  \NormalTok{\}}
-  
-  \NormalTok{testmse <-}\StringTok{ }\KeywordTok{as.data.frame}\NormalTok{(testmse)}
-  
-  \KeywordTok{var}\NormalTok{(testmse)}
-  \end{Highlighting}
-  \end{Shaded}
-  
   \begin{verbatim}
            testmse
   testmse 28.56955
-  \end{verbatim}
-  
-  \begin{Shaded}
-  \begin{Highlighting}[]
-  \KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =} \NormalTok{testmse), }\DataTypeTok{data =} \NormalTok{testmse) +}\StringTok{ }\KeywordTok{geom_histogram}\NormalTok{()}
-  \end{Highlighting}
-  \end{Shaded}
-  
-  \begin{verbatim}
-  `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
   \end{verbatim}
   
   \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-2-1} \end{center}
@@ -670,38 +566,11 @@ starts here.
   We'll build 100 forests of 100 trees each and compare the variability of
   the \(MSE\) distributions.
   
-  \begin{Shaded}
-  \begin{Highlighting}[]
-  \KeywordTok{library}\NormalTok{(bagRboostR)}
-  
-  \NormalTok{mse <-}\StringTok{ }\KeywordTok{rep}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{100}\NormalTok{)}
-  \NormalTok{train =}\StringTok{ }\KeywordTok{sample}\NormalTok{(}\DecValTok{1000}\NormalTok{,}\DecValTok{666}\NormalTok{)}
-  \NormalTok{for (i in }\DecValTok{1}\NormalTok{:}\DecValTok{100}\NormalTok{)\{}
-    \NormalTok{b <-}\StringTok{ }\KeywordTok{randomForest}\NormalTok{(y~., }\DataTypeTok{data =} \NormalTok{d3, }\DataTypeTok{subset =} \NormalTok{train, }\DataTypeTok{mtry =} \DecValTok{5}\NormalTok{)}
-    \NormalTok{mse[i] <-}\StringTok{ }\KeywordTok{mean}\NormalTok{((d3$y[-train] -}\StringTok{ }\KeywordTok{predict}\NormalTok{(b, d3[-train,]))^}\DecValTok{2}\NormalTok{)}
-  \NormalTok{\}}
-  
-  \NormalTok{mse <-}\StringTok{ }\KeywordTok{as.data.frame}\NormalTok{(mse)}
-  
-  \KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =} \NormalTok{mse), }\DataTypeTok{data =} \NormalTok{mse) +}\StringTok{ }\KeywordTok{geom_histogram}\NormalTok{()}
-  \end{Highlighting}
-  \end{Shaded}
-  
-  \begin{verbatim}
-  `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
-  \end{verbatim}
-  
   \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-3-1} \end{center}
-  
-  \begin{Shaded}
-  \begin{Highlighting}[]
-  \KeywordTok{var}\NormalTok{(mse)}
-  \end{Highlighting}
-  \end{Shaded}
   
   \begin{verbatim}
              mse
-  mse 0.01181591
+  mse 0.07051985
   \end{verbatim}
   
   ~~~~~As one can see, the values of \(MSE_{test}\) for the bagged forest
@@ -709,6 +578,53 @@ starts here.
   much smaller.
   
   \section{Random Forests}\label{random-forests}
+  
+  As the number of trees grown in each forest increases, the
+  \(MSE_{test}\) decreases (cite). Still, this can become computationally
+  intensive on larger data sets where we would like very accurate models.
+  Random forests are often seen as a solution to this problem. In a bagged
+  forest, every variable is considered when each split is made but in a
+  random forest only \(mtry, mtry \leq p\) are considered. This allows us
+  to assume that the trees have a level of independence not found in
+  bagged forests, and that a small random forest will often out perform
+  the bagged forest.
+  
+  For an illustration, let's build a random forest on \(D3\) and compare
+  the \(MSE\).
+  
+  (include note about oob error vs test mse)
+  
+  \begin{Shaded}
+  \begin{Highlighting}[]
+  \NormalTok{mseRF <-}\StringTok{ }\KeywordTok{rep}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{100}\NormalTok{)}
+  \NormalTok{train =}\StringTok{ }\KeywordTok{sample}\NormalTok{(}\DecValTok{1000}\NormalTok{,}\DecValTok{666}\NormalTok{)}
+  \NormalTok{for (i in }\DecValTok{1}\NormalTok{:}\DecValTok{100}\NormalTok{)\{}
+    \NormalTok{rf <-}\StringTok{ }\KeywordTok{randomForest}\NormalTok{(y~., }\DataTypeTok{data =} \NormalTok{d3, }\DataTypeTok{subset =} \NormalTok{train, }\DataTypeTok{ntree =} \DecValTok{100}\NormalTok{)}
+    \NormalTok{mseRF[i] <-}\StringTok{ }\KeywordTok{mean}\NormalTok{((d3$y[-train] -}\StringTok{ }\KeywordTok{predict}\NormalTok{(rf, d3[-train,]))^}\DecValTok{2}\NormalTok{)}
+  \NormalTok{\}}
+  
+  \NormalTok{mseRF <-}\StringTok{ }\KeywordTok{as.data.frame}\NormalTok{(mseRF)}
+  
+  \KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =} \NormalTok{mseRF), }\DataTypeTok{data =} \NormalTok{mseRF) +}\StringTok{ }\KeywordTok{geom_histogram}\NormalTok{()}
+  \end{Highlighting}
+  \end{Shaded}
+  
+  \begin{verbatim}
+  `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+  \end{verbatim}
+  
+  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-4-1} \end{center}
+  
+  \begin{Shaded}
+  \begin{Highlighting}[]
+  \KeywordTok{var}\NormalTok{(mseRF)}
+  \end{Highlighting}
+  \end{Shaded}
+  
+  \begin{verbatim}
+            mseRF
+  mseRF 0.2528736
+  \end{verbatim}
   
   \chapter{Permuatations Tests Theory and Application to Conditional
   Variable
