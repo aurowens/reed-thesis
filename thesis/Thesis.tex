@@ -377,12 +377,6 @@ starts here.
   
   \section{Simulated Data}\label{simulated-data}
   
-  \begin{itemize}
-  \tightlist
-  \item
-    From Strobl et al:
-  \end{itemize}
-  
   ~~~~~To aid in comparisons between the methods, one of the simulated
   datasets considered in this paper will be generated from the same method
   as used in (Strobl et al, 2008???). Under this method, the 13 x 1000
@@ -393,15 +387,60 @@ starts here.
   \[Y = 5 \cdot V_1 + 5 \cdot V_2 + 2 \cdot V_3 + 0 \cdot V_4 + -5 \cdot V_5 + -5\cdot V_6 + 0\cdot V_7 + 0 \cdot ..... + E, E \sim N(0,\frac 1 2 )\]
   Note that the coefficents for \(V_7,...,V_{12}\) are all zero.
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/stroblSimPlot-1} \end{center}
+  \begin{center}\includegraphics{Thesis_files/figure-latex/stroblSim-1} \end{center}
   
-  Let's move on to a more difficult situation. The dataset \(D2\) contains
-  five predictors, \(X_1,...X_5\), that have an interesting structure-
-  several of the predictors are correlated, but are not one -to -one. This
-  violates an important assumtion of the linear model and means that these
-  variables have low correlation. Note that this only makes sense in
-  higher dimensions where we are estimating the value of \(X_j\) given
-  \(X_1,...,X_n\).
+  \begin{verbatim}
+                V1            V2           V3           V4           V5
+  V1   1.000000000  0.9146541132  0.907895351  0.907066765 -0.034234292
+  V2   0.914654113  1.0000000000  0.913780977  0.913731929 -0.020066937
+  V3   0.907895351  0.9137809775  1.000000000  0.902766836 -0.016703104
+  V4   0.907066765  0.9137319288  0.902766836  1.000000000 -0.002169185
+  V5  -0.034234292 -0.0200669374 -0.016703104 -0.002169185  1.000000000
+  V6   0.006059950 -0.0007016153 -0.006844401 -0.014814462  0.043610533
+  V7   0.011864999 -0.0013307105  0.006951044  0.022724703  0.005306628
+  V8   0.012429245  0.0180018750  0.021232744  0.020871464 -0.031895007
+  V9   0.035378928  0.0383359616  0.036338439  0.037906433 -0.024882964
+  V10 -0.027164872 -0.0205322792 -0.021277153 -0.021746391  0.005239249
+  V11 -0.062839803 -0.0447873818 -0.029615955 -0.053826143 -0.018439527
+  V12  0.001895378 -0.0040846930 -0.005222882 -0.017304444 -0.043550921
+  y    0.828867870  0.8301277767  0.808338105  0.788791607 -0.388422174
+                 V6           V7          V8           V9          V10
+  V1   0.0060599505  0.011864999  0.01242924  0.035378928 -0.027164872
+  V2  -0.0007016153 -0.001330711  0.01800187  0.038335962 -0.020532279
+  V3  -0.0068444008  0.006951044  0.02123274  0.036338439 -0.021277153
+  V4  -0.0148144624  0.022724703  0.02087146  0.037906433 -0.021746391
+  V5   0.0436105331  0.005306628 -0.03189501 -0.024882964  0.005239249
+  V6   1.0000000000 -0.004856916 -0.02539841 -0.013632377  0.036331634
+  V7  -0.0048569164  1.000000000 -0.02367510  0.006567436  0.018156112
+  V8  -0.0253984113 -0.023675099  1.00000000 -0.038840769 -0.089374372
+  V9  -0.0136323768  0.006567436 -0.03884077  1.000000000  0.001732069
+  V10  0.0363316342  0.018156112 -0.08937437  0.001732069  1.000000000
+  V11 -0.0217988171 -0.033514884  0.02826398 -0.075004886  0.010676447
+  V12 -0.0422332641  0.032644574  0.02539601  0.009560373  0.015536556
+  y   -0.3637688830 -0.141169908  0.03665375  0.045997408 -0.037738613
+              V11          V12           y
+  V1  -0.06283980  0.001895378  0.82886787
+  V2  -0.04478738 -0.004084693  0.83012778
+  V3  -0.02961595 -0.005222882  0.80833811
+  V4  -0.05382614 -0.017304444  0.78879161
+  V5  -0.01843953 -0.043550921 -0.38842217
+  V6  -0.02179882 -0.042233264 -0.36376888
+  V7  -0.03351488  0.032644574 -0.14116991
+  V8   0.02826398  0.025396015  0.03665375
+  V9  -0.07500489  0.009560373  0.04599741
+  V10  0.01067645  0.015536556 -0.03773861
+  V11  1.00000000  0.022521656 -0.02183787
+  V12  0.02252166  1.000000000  0.02427605
+  y   -0.02183787  0.024276053  1.00000000
+  \end{verbatim}
+  
+  ~~~~~Let's move on to a more difficult situation. The dataset \(D2\)
+  contains five predictors, \(X_1,...X_5\), that have an interesting
+  structure- several of the predictors are correlated, but are not one -to
+  -one. This violates an important assumtion of the linear model and means
+  that these variables have low correlation. Note that this only makes
+  sense in higher dimensions where we are estimating the value of \(X_j\)
+  given \(X_1,...,X_n\).
   
   \begin{Shaded}
   \begin{Highlighting}[]
@@ -441,10 +480,10 @@ starts here.
   
   \begin{center}\includegraphics{Thesis_files/figure-latex/sqrtAbs-1} \end{center}
   
-  The tricker relationship between the variables in \(D2\) was because
-  they were generated using the square root of the absolute value of the
-  other variable. Here, in \(D3\) the process is repeated but with the log
-  of the absolute value.
+  ~~~~~The tricker relationship between the variables in \(D2\) was
+  because they were generated using the square root of the absolute value
+  of the other variable. Here, in \(D3\) the process is repeated but with
+  the log of the absolute value.
   
   \begin{Shaded}
   \begin{Highlighting}[]
@@ -488,56 +527,73 @@ starts here.
   
   \section{Trees}\label{trees-1}
   
-  \subsection{CART}\label{cart}
+  \subsection{CART: Regression Trees}\label{cart-regression-trees}
   
-  In 1984, Breiman et al introduces a revolutionary new algorithm for
-  trees. \textbf{Need to acquire} \emph{Classification and Regression
-  Trees} \textbf{to make sure the method discused in MASS is the same that
-  Breiman uses/is used in} \texttt{randomForest}
+  ~~~~~As outlined in the 1984 textbook, \emph{Classification and
+  Regression Trees}, \_\_\_\_\_ described their method for creating,
+  pruning, and testing regression trees. What follows is their basic
+  algorithm for fitting regression trees:
   
-  \textbf{Tree Algorithm} CART?
+  \subsubsection{Algorithm 2: CART, Regression
+  Trees}\label{algorithm-2-cart-regression-trees}
   
-  Begin by considering the entire feature space \(X_1, ..., X_n\). Then:
+  \begin{verbatim}
+  1.
+  2.
+  3.
+  4.
+  \end{verbatim}
   
-  \begin{enumerate}
-  \def\labelenumi{\arabic{enumi}.}
-  \item
-    Consider every possible pair of partitions of this feature space,
-    \(P_1, P_2\), so that if \(X_1 = x_1 , X_2 = x_2,..., X_n = x_n\)
-    where \({x_1,...,x_n} \in P_1\) then our prediction is the mean value
-    of \(y\) given \(x_1,..,x_n \in P_1\).
-  \item
-    Choose the partitions that minimize RSS
-  \item
-    For each new partition, repeat steps 1 and 2 until some stopping
-    condition is reached.
-  \end{enumerate}
+  ~~~~~Let's return to our simulated datasets. Here is what trees grown
+  for each dataset using the model \(Y\sim X_1,...X_n\).
   
-  \subsection{Binary Recursive
-  Partitioning}\label{binary-recursive-partitioning}
+  \begin{Shaded}
+  \begin{Highlighting}[]
+  \KeywordTok{library}\NormalTok{(tree)}
+  \NormalTok{t1 <-}\StringTok{ }\KeywordTok{tree}\NormalTok{(y~., d1)}
+  \NormalTok{t2 <-}\StringTok{ }\KeywordTok{tree}\NormalTok{(y~., d2)}
+  \NormalTok{t3 <-}\StringTok{ }\KeywordTok{tree}\NormalTok{(y~., d3)}
+  
+  \KeywordTok{plot}\NormalTok{(t1)}
+  \KeywordTok{text}\NormalTok{(t1)}
+  \end{Highlighting}
+  \end{Shaded}
+  
+  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-1-1} \end{center}
+  
+  \begin{Shaded}
+  \begin{Highlighting}[]
+  \KeywordTok{plot}\NormalTok{(t2)}
+  \KeywordTok{text}\NormalTok{(t2)}
+  \end{Highlighting}
+  \end{Shaded}
+  
+  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-1-2} \end{center}
+  
+  \begin{Shaded}
+  \begin{Highlighting}[]
+  \KeywordTok{plot}\NormalTok{(t3)}
+  \KeywordTok{text}\NormalTok{(t3)}
+  \end{Highlighting}
+  \end{Shaded}
+  
+  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-1-3} \end{center}
   
   \subsection{Conditional Inference
   Trees}\label{conditional-inference-trees}
   
-  CI trees 1. For case weights \(w\) test the global null hypothesis of
-  independence between any of the m covariates and the response. Stop if
-  this hypothesis cannot be rejected. Otherwise select the \(j_{th}\)
-  covariate \(Xj\) with strongest association to \(Y\).
+  ~~~~~Another popular method for creating regression tree models is
+  Conditional Inference Trees.
   
-  \begin{enumerate}
-  \def\labelenumi{\arabic{enumi}.}
-  \setcounter{enumi}{1}
-  \item
-    Choose a set \(A \subset X_{j}\) in order to split \(X_{j}\) into two
-    disjoint sets \(A\) and \(X_{j}\) ~\(A\). The case weights
-    \(w_{left}\) and \(w_{right}\) determine the two subgroups with
-    \(w_{left,i} = w_iI(X_{j\cdot i} \in A)\) and
-    \(w_{right,i} = w_iI(X_{ji} \in A)\) for all \(i = 1,...,n\) (
-    \(I(·)\) denotes the indicator function).
-  \item
-    Recursively repeat steps 1 and 2 with modified case weights \(w_left\)
-    and \(w_right\), respectively.
-  \end{enumerate}
+  CI trees
+  
+  \begin{verbatim}
+  1. For case weights  $w$  test the global null hypothesis of independence between any of the m covariates and the response. Stop if this hypothesis cannot be rejected. Otherwise select the  $j_{th}$  covariate  $Xj$  with strongest association to  $Y$.
+  
+  2. Choose a set  $A \subset X_{j}$  in order to split  $X_{j}$  into two disjoint sets  $A$  and  $X_{j}$ \ $A$.  The case weights  $w_{left}$  and  $w_{right}$  determine the two subgroups with  $w_{left,i} = w_iI(X_{j\cdot i} \in A)$  and  $w_{right,i} = w_iI(X_{ji} \in A)$ for all $i = 1,...,n$  ( $I(·)$  denotes the indicator function). 
+  
+  3. Recursively repeat steps 1 and 2 with modified case weights  $w_left$  and  $w_right$, respectively. 
+  \end{verbatim}
   
   from
   \url{https://eeecon.uibk.ac.at/~zeileis/papers/Hothorn+Hornik+Zeileis-2006.pdf}
@@ -547,6 +603,110 @@ starts here.
   the splitting is done separately from the variable selection.
   
   \section{Bagged Forests}\label{bagged-forests}
+  
+  ~~~~~As mentioned in the introduction, single trees can have some
+  variablility that in practice, limits their use. This simulation
+  demonstrates this principle:
+  
+  \begin{verbatim}
+  for 1000 trials:
+  
+  1. separete D3 into a training set and a test set where the training set contains 2/3 of the observations
+  
+  2. fit a CART tree
+  
+  3. Predict the response using the test set 
+  
+  4. Calculate the mean squared error 
+  \end{verbatim}
+  
+  ~~~~~Here is a histogram of the MSE found using this method:
+  
+  \begin{Shaded}
+  \begin{Highlighting}[]
+  \NormalTok{testmse <-}\StringTok{ }\KeywordTok{rep}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{1000}\NormalTok{)}
+  
+  \NormalTok{for(i in }\DecValTok{1}\NormalTok{:}\DecValTok{1000}\NormalTok{)\{}
+    \NormalTok{train <-}\StringTok{ }\KeywordTok{sample}\NormalTok{(}\DecValTok{1000}\NormalTok{, }\DecValTok{666}\NormalTok{)}
+    \NormalTok{t <-}\StringTok{ }\KeywordTok{tree}\NormalTok{(y~., d3[train,])}
+    \NormalTok{testmse[i] <-}\StringTok{ }\KeywordTok{mean}\NormalTok{((d3[-train,]$y -}\StringTok{ }\KeywordTok{predict}\NormalTok{(t, d3[-train,]))^}\DecValTok{2}\NormalTok{)}
+  \NormalTok{\}}
+  
+  \NormalTok{testmse <-}\StringTok{ }\KeywordTok{as.data.frame}\NormalTok{(testmse)}
+  
+  \KeywordTok{var}\NormalTok{(testmse)}
+  \end{Highlighting}
+  \end{Shaded}
+  
+  \begin{verbatim}
+           testmse
+  testmse 28.56955
+  \end{verbatim}
+  
+  \begin{Shaded}
+  \begin{Highlighting}[]
+  \KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =} \NormalTok{testmse), }\DataTypeTok{data =} \NormalTok{testmse) +}\StringTok{ }\KeywordTok{geom_histogram}\NormalTok{()}
+  \end{Highlighting}
+  \end{Shaded}
+  
+  \begin{verbatim}
+  `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+  \end{verbatim}
+  
+  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-2-1} \end{center}
+  
+  ~~~~~As one can see, there is a fair amount of variability in a single
+  tree, they are heavily dependent on fluctuations in the starting data
+  set. As mention briefly in the introduction, bagged forests present one
+  solution to this problem. To create a bagged forest, as outlined in
+  \emph{An Introduction to Statistical Learning} by James, Witten, Hastie
+  and Tibshirani, 2013, many bootsrtapped samples are taken from the
+  itintial dataset and trees are fitted to them. The final predictions
+  are, then, averaged over all of the trees. This ensures that while each
+  tree has high variance, when they are aggregated the variance will
+  decrease.
+  
+  ~~~~~Let's put that to the test here using our dataset \(D3\) again.
+  We'll build 100 forests of 100 trees each and compare the variability of
+  the \(MSE\) distributions.
+  
+  \begin{Shaded}
+  \begin{Highlighting}[]
+  \KeywordTok{library}\NormalTok{(bagRboostR)}
+  
+  \NormalTok{mse <-}\StringTok{ }\KeywordTok{rep}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{100}\NormalTok{)}
+  \NormalTok{train =}\StringTok{ }\KeywordTok{sample}\NormalTok{(}\DecValTok{1000}\NormalTok{,}\DecValTok{666}\NormalTok{)}
+  \NormalTok{for (i in }\DecValTok{1}\NormalTok{:}\DecValTok{100}\NormalTok{)\{}
+    \NormalTok{b <-}\StringTok{ }\KeywordTok{randomForest}\NormalTok{(y~., }\DataTypeTok{data =} \NormalTok{d3, }\DataTypeTok{subset =} \NormalTok{train, }\DataTypeTok{mtry =} \DecValTok{5}\NormalTok{)}
+    \NormalTok{mse[i] <-}\StringTok{ }\KeywordTok{mean}\NormalTok{((d3$y[-train] -}\StringTok{ }\KeywordTok{predict}\NormalTok{(b, d3[-train,]))^}\DecValTok{2}\NormalTok{)}
+  \NormalTok{\}}
+  
+  \NormalTok{mse <-}\StringTok{ }\KeywordTok{as.data.frame}\NormalTok{(mse)}
+  
+  \KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =} \NormalTok{mse), }\DataTypeTok{data =} \NormalTok{mse) +}\StringTok{ }\KeywordTok{geom_histogram}\NormalTok{()}
+  \end{Highlighting}
+  \end{Shaded}
+  
+  \begin{verbatim}
+  `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+  \end{verbatim}
+  
+  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-3-1} \end{center}
+  
+  \begin{Shaded}
+  \begin{Highlighting}[]
+  \KeywordTok{var}\NormalTok{(mse)}
+  \end{Highlighting}
+  \end{Shaded}
+  
+  \begin{verbatim}
+             mse
+  mse 0.01181591
+  \end{verbatim}
+  
+  ~~~~~As one can see, the values of \(MSE_{test}\) for the bagged forest
+  were entirely below the \(MSE_test\) for the trees and the variance was
+  much smaller.
   
   \section{Random Forests}\label{random-forests}
   

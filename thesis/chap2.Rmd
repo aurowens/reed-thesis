@@ -22,12 +22,13 @@ if(!require(reedtemplates)){
   }
 library(reedtemplates)
 library(MASS)
+library(ggplot2)
+library(randomForest)
 ```
 #Simulations and Comparisons
 
 ##Simulated Data
 
-- From Strobl et al:
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;To aid in comparisons between the methods, one of the simulated datasets considered in this paper will be generated from the same method as used in (Strobl et al, 2008???). Under this method, the 13 x 1000 data set, $D_1$, has 12 predictors, $V_1,..,V_{12}$, where $V_j \sim N(0,1)$. The first four are, however, block correlated to each other with $\rho = .9$. They are related to $Y$ by the linear equation: $$Y = 5 \cdot V_1 + 5 \cdot V_2 + 2 \cdot V_3 + 0 \cdot V_4 + -5 \cdot V_5 + -5\cdot V_6 + 0\cdot V_7 + 0 \cdot ..... + E, E \sim N(0,\frac 1 2 )$$ Note that the coefficents for $V_7,...,V_{12}$ are all zero. 
 
@@ -75,15 +76,14 @@ ys[i] <- sim1000[i,1]*bts[1]+
     e[i]
 }
 
-mvn.data <- as.data.frame(sim1000)
-mvn.data$y <- ys
+d1 <- as.data.frame(sim1000)
+d1$y <- ys
+
+plot(d1)
+cor(d1)
 ```
 
-```{r stroblSimPlot, echo=FALSE, warning=FALSE}
-plot(mvn.data)
-```
-
-Let's move on to a more difficult situation. The dataset $D2$ contains five predictors, $X_1,...X_5$, that have an interesting structure- several of the predictors are correlated, but are not one -to -one. This violates an important assumtion of the linear model and means that these variables have low correlation. Note that this only makes sense in higher dimensions where we are estimating the value of $X_j$ given $X_1,...,X_n$. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Let's move on to a more difficult situation. The dataset $D2$ contains five predictors, $X_1,...X_5$, that have an interesting structure- several of the predictors are correlated, but are not one -to -one. This violates an important assumtion of the linear model and means that these variables have low correlation. Note that this only makes sense in higher dimensions where we are estimating the value of $X_j$ given $X_1,...,X_n$. 
 
 ```{r, sqrtAbs}
 x1 <- rnorm(1000)
@@ -105,7 +105,7 @@ cor(d2)
 plot(d2)
 ```
 
-The tricker relationship between the variables in $D2$ was because they were generated using the square root of the absolute value of the other variable. Here, in $D3$ the process is repeated but with the log of the absolute value. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The tricker relationship between the variables in $D2$ was because they were generated using the square root of the absolute value of the other variable. Here, in $D3$ the process is repeated but with the log of the absolute value. 
 
 ```{r logAbs}
 w1 <- rnorm(1000)
@@ -129,34 +129,108 @@ plot(d3)
 
 ##Models and Comparisons
 ##Trees
-###CART
-  In 1984, Breiman et al introduces a revolutionary new algorithm for trees. **Need to acquire** _Classification and Regression Trees_  **to make sure the method discused in MASS is the same that Breiman uses/is used in** `randomForest`
+###CART: Regression Trees
 
-**Tree Algorithm** CART?
- 
-Begin by considering the entire feature space $X_1, ..., X_n$. Then:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As outlined in the 1984 textbook, *Classification and Regression Trees*, _____ described their method for creating, pruning, and testing regression trees. What follows is their basic algorithm for fitting regression trees:
 
-1. Consider every possible pair of partitions of this feature space, $P_1, P_2$, so that if $X_1 = x_1 , X_2 = x_2,..., X_n = x_n$ where ${x_1,...,x_n}  \in P_1$ then our prediction is the mean value of $y$ given $x_1,..,x_n \in P_1$. 
+####Algorithm 2: CART, Regression Trees
+```
+1.
+2.
+3.
+4.
+```
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Let's return to our simulated datasets. Here is what trees grown for each dataset using the model $Y\sim X_1,...X_n$.
 
-2. Choose the partitions that minimize RSS 
+```{r}
+library(tree)
+t1 <- tree(y~., d1)
+t2 <- tree(y~., d2)
+t3 <- tree(y~., d3)
 
-3. For each new partition, repeat steps 1 and 2 until some stopping condition is reached. 
+plot(t1)
+text(t1)
 
-###Binary Recursive Partitioning 
+plot(t2)
+text(t2)
+
+plot(t3)
+text(t3)
+```
 
 ###Conditional Inference Trees
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Another popular method for creating regression tree models is Conditional Inference Trees.
+
 CI trees
+
+```
 1. For case weights  $w$  test the global null hypothesis of independence between any of the m covariates and the response. Stop if this hypothesis cannot be rejected. Otherwise select the  $j_{th}$  covariate  $Xj$  with strongest association to  $Y$.
 
 2. Choose a set  $A \subset X_{j}$  in order to split  $X_{j}$  into two disjoint sets  $A$  and  $X_{j}$ \ $A$.  The case weights  $w_{left}$  and  $w_{right}$  determine the two subgroups with  $w_{left,i} = w_iI(X_{j\cdot i} \in A)$  and  $w_{right,i} = w_iI(X_{ji} \in A)$ for all $i = 1,...,n$  ( $I(·)$  denotes the indicator function). 
 
 3. Recursively repeat steps 1 and 2 with modified case weights  $w_left$  and  $w_right$, respectively. 
+```
 
- from  https://eeecon.uibk.ac.at/~zeileis/papers/Hothorn+Hornik+Zeileis-2006.pdf
+from  https://eeecon.uibk.ac.at/~zeileis/papers/Hothorn+Hornik+Zeileis-2006.pdf
 
 After step 1 is completed, any goodness of fit method can be used to generate the split and choose the set $A$. Note that in this method the splitting is done separately from the variable selection. 
 
 ##Bagged Forests
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As mentioned in the introduction, single trees can have some variablility that in practice, limits their use. This simulation demonstrates this principle:
+
+```
+for 1000 trials:
+
+1. separete D3 into a training set and a test set where the training set contains 2/3 of the observations
+
+2. fit a CART tree
+
+3. Predict the response using the test set 
+
+4. Calculate the mean squared error 
+```
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Here is a histogram of the MSE found using this method:
+
+```{r}
+testmse <- rep(0,1000)
+
+for(i in 1:1000){
+  train <- sample(1000, 666)
+  t <- tree(y~., d3[train,])
+  testmse[i] <- mean((d3[-train,]$y - predict(t, d3[-train,]))^2)
+}
+
+testmse <- as.data.frame(testmse)
+
+var(testmse)
+
+ggplot(aes(x = testmse), data = testmse) + geom_histogram()
+```
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As one can see, there is a fair amount of variability in a single tree, they are heavily dependent on fluctuations in the starting data set. As mention briefly in the introduction, bagged forests present one solution to this problem. To create a bagged forest, as outlined in *An Introduction to Statistical Learning* by James, Witten, Hastie and Tibshirani, 2013, many bootsrtapped samples are taken from the itintial dataset and trees are fitted to them. The final predictions are, then, averaged over all of the trees. This ensures that while each tree has high variance, when they are aggregated the variance will decrease. 
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Let's put that to the test here using our dataset $D3$ again. We'll build 100 forests of 100 trees each and compare the variability of the $MSE$ distributions. 
+
+```{r}
+library(bagRboostR)
+
+mse <- rep(0,100)
+train = sample(1000,666)
+for (i in 1:100){
+  b <- randomForest(y~., data = d3, subset = train, mtry = 5)
+  mse[i] <- mean((d3$y[-train] - predict(b, d3[-train,]))^2)
+}
+
+mse <- as.data.frame(mse)
+
+ggplot(aes(x = mse), data = mse) + geom_histogram()
+
+var(mse)
+```
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As one can see, the values of $MSE_{test}$ for the bagged forest were entirely below the $MSE_test$ for the trees and the variance was much smaller. 
 
 ##Random Forests
 
