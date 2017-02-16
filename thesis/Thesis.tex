@@ -130,6 +130,8 @@ The preface pretty much says it all. \par  Second paragraph of abstract
 starts here.
 }
 
+	\usepackage{algorithm}
+	\usepackage{algpseudocode}
 % End of CII addition
 %%
 %% End Preamble
@@ -377,6 +379,15 @@ starts here.
   
   \section{Simulated Data}\label{simulated-data}
   
+  ~~~~~Tree-based methods shine in situations with correlated predictors,
+  although these situations can pose problems for inference. In a
+  situation with correlated predictors \(X_1\) and \(X_2\), and the model
+  we are considering is \(Y \sim X_1 + X_2\), it is difficult to say how
+  much of the modeled effect on \(Y\) is due to \(X_1\) or \(X_2\). To
+  illustrate this idea, compare a few existing methods, and explore
+  methods of inference on tree based models three datasets will be
+  simulated with different correlation structures.
+  
   ~~~~~To aid in comparisons between the methods, one of the simulated
   datasets considered in this paper will be generated from the same method
   as used in (Strobl et al, 2008???). Under this method, the 13 x 1000
@@ -387,89 +398,142 @@ starts here.
   \[Y = 5 \cdot V_1 + 5 \cdot V_2 + 2 \cdot V_3 + 0 \cdot V_4 + -5 \cdot V_5 + -5\cdot V_6 + 0\cdot V_7 + 0 \cdot ..... + E, E \sim N(0,\frac 1 2 )\]
   Note that the coefficents for \(V_7,...,V_{12}\) are all zero.
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/stroblSim-1} \end{center}
+  \subsubsection{\texorpdfstring{Table 1: Correlation of \(V_1,..., V_7\)
+  and
+  \(Y\)}{Table 1: Correlation of V\_1,..., V\_7 and Y}}\label{table-1-correlation-of-v_1...-v_7-and-y}
+  
+  \begin{longtable}[]{@{}lrrrrrrrrr@{}}
+  \toprule
+  & V1 & V2 & V3 & V4 & V5 & V6 & V7 & y & beta\tabularnewline
+  \midrule
+  \endhead
+  V1 & 1.000 & 0.915 & 0.908 & 0.907 & -0.034 & 0.006 & 0.012 & 0.829 &
+  5\tabularnewline
+  V2 & 0.915 & 1.000 & 0.914 & 0.914 & -0.020 & -0.001 & -0.001 & 0.830 &
+  5\tabularnewline
+  V3 & 0.908 & 0.914 & 1.000 & 0.903 & -0.017 & -0.007 & 0.007 & 0.808 &
+  2\tabularnewline
+  V4 & 0.907 & 0.914 & 0.903 & 1.000 & -0.002 & -0.015 & 0.023 & 0.789 &
+  0\tabularnewline
+  V5 & -0.034 & -0.020 & -0.017 & -0.002 & 1.000 & 0.044 & 0.005 & -0.388
+  & -5\tabularnewline
+  V6 & 0.006 & -0.001 & -0.007 & -0.015 & 0.044 & 1.000 & -0.005 & -0.364
+  & -5\tabularnewline
+  V7 & 0.012 & -0.001 & 0.007 & 0.023 & 0.005 & -0.005 & 1.000 & -0.141 &
+  -2\tabularnewline
+  \bottomrule
+  \end{longtable}
+  
+  ~~~~~As can be seen from the last column in the table, ``beta'',
+  although \(V4\) was not included in the model \(Y \sim V1,..V_{12}\),
+  its' strong correlation with more influential predictors \(V_1,...,V_3\)
+  insures that it still shows a strong linear correlation with \(Y\). A
+  linear model would likely \emph{overstate} the effect of \(V_4\) on
+  \(Y\).\footnote{A brief note on uncertainty is needed here. It's true
+    that in this setting we can say that \(V_4\) is actually unimportant
+    to understanding \(Y\), but in situations with real data this is
+    profoundly more difficult to parse. Often like in the social science
+    situations that Morgan and Sonquist encountered, the real relationship
+    between correlated predictors is complicated and often there is some
+    theoretical backing or other insight that is gained to include
+    variables that may not be important to the model.}\footnote{Another
+    point that could be said is that, no \(V_4\) is not unimportant,
+    \(V_1, V_2,\) and \(V_3\) are just stand ins for the real star,
+    \(V_4\), as they are nearly the same (\(\rho \sim 1\)). Then the real
+    relationship represented here is
+    \(Y \sim (5 + 5 + 2) \cdot V_4 + -5 \cdot V_5 + -5 \cdot V_6 + -2 \cdot V_7\).
+    This model is not unsuccesful in capturing the structure of the data,
+    and this is typically the practice used to model data with highly
+    correlated predictors. If this seems philosophically satisfying to
+    you, the rest of this thesis may seem a bit unconsequential. I
+    apologize.}
+  
+  \subsubsection{Figure 1:}\label{figure-1}
   
   \begin{verbatim}
-                V1            V2           V3           V4           V5
-  V1   1.000000000  0.9146541132  0.907895351  0.907066765 -0.034234292
-  V2   0.914654113  1.0000000000  0.913780977  0.913731929 -0.020066937
-  V3   0.907895351  0.9137809775  1.000000000  0.902766836 -0.016703104
-  V4   0.907066765  0.9137319288  0.902766836  1.000000000 -0.002169185
-  V5  -0.034234292 -0.0200669374 -0.016703104 -0.002169185  1.000000000
-  V6   0.006059950 -0.0007016153 -0.006844401 -0.014814462  0.043610533
-  V7   0.011864999 -0.0013307105  0.006951044  0.022724703  0.005306628
-  V8   0.012429245  0.0180018750  0.021232744  0.020871464 -0.031895007
-  V9   0.035378928  0.0383359616  0.036338439  0.037906433 -0.024882964
-  V10 -0.027164872 -0.0205322792 -0.021277153 -0.021746391  0.005239249
-  V11 -0.062839803 -0.0447873818 -0.029615955 -0.053826143 -0.018439527
-  V12  0.001895378 -0.0040846930 -0.005222882 -0.017304444 -0.043550921
-  y    0.828867870  0.8301277767  0.808338105  0.788791607 -0.388422174
-                 V6           V7          V8           V9          V10
-  V1   0.0060599505  0.011864999  0.01242924  0.035378928 -0.027164872
-  V2  -0.0007016153 -0.001330711  0.01800187  0.038335962 -0.020532279
-  V3  -0.0068444008  0.006951044  0.02123274  0.036338439 -0.021277153
-  V4  -0.0148144624  0.022724703  0.02087146  0.037906433 -0.021746391
-  V5   0.0436105331  0.005306628 -0.03189501 -0.024882964  0.005239249
-  V6   1.0000000000 -0.004856916 -0.02539841 -0.013632377  0.036331634
-  V7  -0.0048569164  1.000000000 -0.02367510  0.006567436  0.018156112
-  V8  -0.0253984113 -0.023675099  1.00000000 -0.038840769 -0.089374372
-  V9  -0.0136323768  0.006567436 -0.03884077  1.000000000  0.001732069
-  V10  0.0363316342  0.018156112 -0.08937437  0.001732069  1.000000000
-  V11 -0.0217988171 -0.033514884  0.02826398 -0.075004886  0.010676447
-  V12 -0.0422332641  0.032644574  0.02539601  0.009560373  0.015536556
-  y   -0.3637688830 -0.141169908  0.03665375  0.045997408 -0.037738613
-              V11          V12           y
-  V1  -0.06283980  0.001895378  0.82886787
-  V2  -0.04478738 -0.004084693  0.83012778
-  V3  -0.02961595 -0.005222882  0.80833811
-  V4  -0.05382614 -0.017304444  0.78879161
-  V5  -0.01843953 -0.043550921 -0.38842217
-  V6  -0.02179882 -0.042233264 -0.36376888
-  V7  -0.03351488  0.032644574 -0.14116991
-  V8   0.02826398  0.025396015  0.03665375
-  V9  -0.07500489  0.009560373  0.04599741
-  V10  0.01067645  0.015536556 -0.03773861
-  V11  1.00000000  0.022521656 -0.02183787
-  V12  0.02252166  1.000000000  0.02427605
-  y   -0.02183787  0.024276053  1.00000000
+  Using  as id variables
   \end{verbatim}
   
-  ~~~~~Let's move on to a more difficult situation. The dataset \(D2\)
-  contains five predictors, \(X_1,...X_5\), that have an interesting
-  structure- several of the predictors are correlated, but are not one -to
-  -one. This violates an important assumtion of the linear model and means
-  that these variables have low correlation. Note that this only makes
-  sense in higher dimensions where we are estimating the value of \(X_j\)
-  given \(X_1,...,X_n\).
+  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-2-1} \end{center}
+  
+  ~~~~~ As can be seen above in Figure 1 the densities of \(V_1,...,V_5\)
+  are all very similar due to the way they were generated.
+  
+  \subsubsection{Figure 2:}\label{figure-2}
+  
+  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-3-1} \end{center}
+  
+  ~~~~~ Figure 2 is an illustration of the relationship between
+  \(Y\sim V_4\) with linear correlation of .789.
+  
+  ~~~~~While \(D_1\) represents a situation with linear correlation
+  between the predictors, \(D_2\) does not. Here, the model is the same,
+  \(Y~X_1,...,X_12\) where \(Y\) is generated according to the equation:
+  \[Y = 5 \cdot X_1 + 5 \cdot X_2 + 2 \cdot X_3 + 0 \cdot X_4 + -5 \cdot X_5 + -5\cdot X_6 + 0\cdot X_7 + 0 \cdot ..... + E, E \sim N(0,\frac 1 2 )\]
+  
+  However, instead of block correlation with \(\rho = .9\), four variables
+  are related to each other by the equations below. Note that
+  \(X_1, X_5,...,X_{12} ~ N(0,1)\)
+  \[X_2 = X_1 + E, E \sim Exponential(1)\]
+  \[X_3 = X_2 + E, E \sim Exponential(1)\]
+  \[X_4 = X_3 + E, E \sim Exponential(1)\] \#\#\#\#Table 2: Correlation of
+  \(X_1,..., X_7\) and \(Y\)
+  
+  \begin{longtable}[]{@{}lrrrrrrrrr@{}}
+  \toprule
+  & X1 & X2 & X3 & X4 & X5 & X6 & X7 & y & beta\tabularnewline
+  \midrule
+  \endhead
+  X1 & 1.000 & 0.693 & 0.605 & 0.552 & -0.043 & 0.009 & -0.006 & 0.760 &
+  5\tabularnewline
+  X2 & 0.693 & 1.000 & 0.847 & 0.745 & 0.004 & 0.006 & -0.018 & 0.845 &
+  5\tabularnewline
+  X3 & 0.605 & 0.847 & 1.000 & 0.877 & 0.007 & 0.005 & -0.024 & 0.785 &
+  2\tabularnewline
+  X4 & 0.552 & 0.745 & 0.877 & 1.000 & 0.011 & 0.006 & -0.032 & 0.696 &
+  0\tabularnewline
+  X5 & -0.043 & 0.004 & 0.007 & 0.011 & 1.000 & -0.008 & 0.020 & -0.318 &
+  -5\tabularnewline
+  X6 & 0.009 & 0.006 & 0.005 & 0.006 & -0.008 & 1.000 & -0.046 & -0.310 &
+  -5\tabularnewline
+  X7 & -0.006 & -0.018 & -0.024 & -0.032 & 0.020 & -0.046 & 1.000 & -0.133
+  & -2\tabularnewline
+  \bottomrule
+  \end{longtable}
+  
+  ~~~~~As one can see, Table 2 mirrors Table 1. For this dataset, however,
+  the correlation structure is more complicated. \(X_1\) and \(X_2\) are
+  highly correlated with \(\rho = .7\).
+  
+  \subsubsection{Figure 3:}\label{figure-3}
+  
+  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-4-1} \end{center}
+  
+  \subsubsection{Figure 4:}\label{figure-4}
+  
+  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-5-1} \end{center}
+  
+  ~~~~~As seen in Figure 4, the pattern observed between \(X_1\) and
+  \(X_2\) does not carry over to the other correlated predictors.
+  
+  \subsubsection{Figure 5:}\label{figure-5}
   
   \begin{verbatim}
-             y         x1          x2          x3          x4         x5
-  y  1.0000000 0.37370066  0.81852208  0.92926643  0.30615522 0.15357237
-  x1 0.3737007 1.00000000  0.01253512  0.37828457  0.02553116 0.01196494
-  x2 0.8185221 0.01253512  1.00000000  0.85944303 -0.04770287 0.04253338
-  x3 0.9292664 0.37828457  0.85944303  1.00000000 -0.03116991 0.04579883
-  x4 0.3061552 0.02553116 -0.04770287 -0.03116991  1.00000000 0.01984835
-  x5 0.1535724 0.01196494  0.04253338  0.04579883  0.01984835 1.00000000
+  Using  as id variables
   \end{verbatim}
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/sqrtAbs-1} \end{center}
+  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-6-1} \end{center}
+  
+  ~~~~~Figure 5 demonstrate how the correlation between a few of the
+  predictors and \(Y\) may be effected by slope. Scale is much more a
+  factor in this dataset, with some variables like \(X_3\) having a larger
+  range than the variables \(X_1 \sim N(0,1)\) or
+  \(X_5,...,X_{12} \sim MVN()\).
   
   ~~~~~The tricker relationship between the variables in \(D2\) was
   because they were generated using the square root of the absolute value
   of the other variable. Here, in \(D3\) the process is repeated but with
   the log of the absolute value.
-  
-  \begin{verbatim}
-              y          w1          w2          w3          w4          w5
-  y  1.00000000  0.15728407  0.94764704  0.97416878  0.17279746  0.05578763
-  w1 0.15728407  1.00000000 -0.02714818  0.15752508  0.03050113 -0.05109218
-  w2 0.94764704 -0.02714818  1.00000000  0.96531545 -0.01975103 -0.04414540
-  w3 0.97416878  0.15752508  0.96531545  1.00000000 -0.01042494 -0.05419898
-  w4 0.17279746  0.03050113 -0.01975103 -0.01042494  1.00000000 -0.03325170
-  w5 0.05578763 -0.05109218 -0.04414540 -0.05419898 -0.03325170  1.00000000
-  \end{verbatim}
-  
-  \begin{center}\includegraphics{Thesis_files/figure-latex/logAbs-1} \end{center}
   
   \section{Models and Comparisons}\label{models-and-comparisons}
   
@@ -478,9 +542,9 @@ starts here.
   \subsection{CART: Regression Trees}\label{cart-regression-trees}
   
   ~~~~~As outlined in the 1984 textbook, \emph{Classification and
-  Regression Trees}, \_\_\_\_\_ described their method for creating,
-  pruning, and testing regression trees. What follows is their basic
-  algorithm for fitting regression trees:
+  Regression Trees}, Brieman, Friedman, Olshen, and Stone described their
+  method for creating, pruning, and testing regression trees. What follows
+  is their basic algorithm for fitting regression trees:
   
   \subsubsection{Algorithm 2: CART, Regression
   Trees}\label{algorithm-2-cart-regression-trees}
@@ -494,12 +558,6 @@ starts here.
   
   ~~~~~Let's return to our simulated datasets. Here is what trees grown
   for each dataset using the model \(Y\sim X_1,...X_n\).
-  
-  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-1-1} \end{center}
-  
-  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-1-2} \end{center}
-  
-  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-1-3} \end{center}
   
   \subsection{Conditional Inference
   Trees}\label{conditional-inference-trees}
@@ -546,10 +604,10 @@ starts here.
   
   \begin{verbatim}
            testmse
-  testmse 28.56955
+  testmse 17.42427
   \end{verbatim}
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-2-1} \end{center}
+  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-8-1} \end{center}
   
   ~~~~~As one can see, there is a fair amount of variability in a single
   tree, they are heavily dependent on fluctuations in the starting data
@@ -566,11 +624,11 @@ starts here.
   We'll build 100 forests of 100 trees each and compare the variability of
   the \(MSE\) distributions.
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-3-1} \end{center}
+  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-9-1} \end{center}
   
   \begin{verbatim}
              mse
-  mse 0.07051985
+  mse 0.03038569
   \end{verbatim}
   
   ~~~~~As one can see, the values of \(MSE_{test}\) for the bagged forest
@@ -613,7 +671,7 @@ starts here.
   `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
   \end{verbatim}
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-4-1} \end{center}
+  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-10-1} \end{center}
   
   \begin{Shaded}
   \begin{Highlighting}[]
@@ -623,7 +681,7 @@ starts here.
   
   \begin{verbatim}
             mseRF
-  mseRF 0.2528736
+  mseRF 0.5671406
   \end{verbatim}
   
   \chapter{Permuatations Tests Theory and Application to Conditional

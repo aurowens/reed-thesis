@@ -24,14 +24,21 @@ library(reedtemplates)
 library(MASS)
 library(ggplot2)
 library(randomForest)
+library(knitr)
+library(GGally)
+library(reshape)
+
+thesis <- c("#245e67", "#90bd98", "#cfd0a0", "#c49e46", "#d28383")
 ```
 #Simulations and Comparisons
 
 ##Simulated Data
 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Tree-based methods shine in situations with correlated predictors, although these situations can pose problems for inference. In a situation with correlated predictors $X_1$ and $X_2$, and the model we are considering is $Y \sim X_1 + X_2$, it is difficult to say how much of the modeled effect on $Y$ is due to $X_1$ or $X_2$. To illustrate this idea, compare a few existing methods, and explore methods of inference on tree based models three datasets will be simulated with different correlation structures. 
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;To aid in comparisons between the methods, one of the simulated datasets considered in this paper will be generated from the same method as used in (Strobl et al, 2008???). Under this method, the 13 x 1000 data set, $D_1$, has 12 predictors, $V_1,..,V_{12}$, where $V_j \sim N(0,1)$. The first four are, however, block correlated to each other with $\rho = .9$. They are related to $Y$ by the linear equation: $$Y = 5 \cdot V_1 + 5 \cdot V_2 + 2 \cdot V_3 + 0 \cdot V_4 + -5 \cdot V_5 + -5\cdot V_6 + 0\cdot V_7 + 0 \cdot ..... + E, E \sim N(0,\frac 1 2 )$$ Note that the coefficents for $V_7,...,V_{12}$ are all zero. 
 
+####Table 1: Correlation of $V_1,..., V_7$ and $Y$ 
 ```{r stroblSim, echo=FALSE}
 rep(0, 12) -> mu #mean of each variable
 
@@ -79,31 +86,133 @@ ys[i] <- sim1000[i,1]*bts[1]+
 d1 <- as.data.frame(sim1000)
 d1$y <- ys
 
-plot(d1)
-cor(d1)
+cord1 <- round(cor(d1)[c(1:7),c(1:7,13)], digits = 3)
+cord1 <- cbind(cord1, "beta"= bts[1:7])
+
+kable(cord1)
 ```
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Let's move on to a more difficult situation. The dataset $D2$ contains five predictors, $X_1,...X_5$, that have an interesting structure- several of the predictors are correlated, but are not one -to -one. This violates an important assumtion of the linear model and means that these variables have low correlation. Note that this only makes sense in higher dimensions where we are estimating the value of $X_j$ given $X_1,...,X_n$. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As can be seen from the last column in the table, "beta", although $V4$ was not included in the model $Y \sim V1,..V_{12}$, its' strong correlation with more influential predictors $V_1,...,V_3$ insures that it still shows a strong linear correlation with $Y$. A linear model would likely *overstate* the effect of $V_4$ on $Y$. [^1] [^2]
 
-```{r sqrtAbs,echo=FALSE, message=FALSE}
+[^1]: A brief note on uncertainty is needed here. It's true that in this setting we can say that $V_4$ is actually unimportant to understanding $Y$, but in situations with real data this is profoundly more difficult to parse. Often like in the social science situations that Morgan and Sonquist encountered, the real relationship between correlated predictors is complicated and often there is some theoretical backing or other insight that is gained to include variables that may not be important to the model. 
+
+[^2]: Another point that could be said is that, no $V_4$ is not unimportant, $V_1, V_2,$ and $V_3$ are just stand ins for the real star, $V_4$, as they are nearly the same ($\rho \sim 1$). Then the real relationship represented here is $Y \sim (5 + 5 + 2) \cdot V_4 + -5 \cdot V_5 + -5 \cdot V_6 + -2 \cdot V_7$. This model is not unsuccesful in capturing the structure of the data, and this is typically the practice used to model data with highly correlated predictors. If this seems philosophically satisfying to you, the rest of this thesis may seem a bit unconsequential. I apologize. 
+
+```{r, echo=FALSE}
+#ggpairs(data=d1, # data.frame with variables
+#       columns=c(1:7, 13), # columns to plot, default to all.
+#       title=("Visualization of the Structure of Dataset D1")) 
+
+```
+
+#### Figure 1:
+```{r, echo =FALSE}
+t <-  melt(d1[,1:5])
+#levels(t$variable) <- rev(levels(t$variable))
+ggplot(data = t, aes(x = value, fill = variable)) + 
+  geom_density(alpha = .8)+
+  scale_fill_manual(values = thesis)+
+  ggtitle("Comparisons of the Density Graphs for V1 through V5")
+```
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; As can be seen above in Figure 1 the densities of $V_1,...,V_5$ are all very similar due to the way they were generated. 
+
+#### Figure 2:
+```{r, echo=FALSE}
+ggplot(data = d1, aes(x = V4, y = y)) + 
+  geom_point(color = thesis[4], alpha = .8) +
+  ggtitle("Y ~ V4, Correlation = .789")
+```
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Figure 2 is an illustration of the relationship between $Y\sim V_4$ with linear correlation of .789.
+
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;While $D_1$ represents a situation with linear correlation between the predictors, $D_2$ does not. Here, the model is the same, $Y~X_1,...,X_12$ where $Y$ is generated according to the equation: $$Y = 5 \cdot X_1 + 5 \cdot X_2 + 2 \cdot X_3 + 0 \cdot X_4 + -5 \cdot X_5 + -5\cdot X_6 + 0\cdot X_7 + 0 \cdot ..... + E, E \sim N(0,\frac 1 2 )$$
+
+However, instead of block correlation with $\rho = .9$, four variables are related to each other by the equations below. Note that $X_1, X_5,...,X_{12} ~ N(0,1)$ 
+$$X_2 = X_1 + E, E \sim Exponential(1)$$
+$$X_3 = X_2 + E, E \sim Exponential(1)$$
+$$X_4 = X_3 + E, E \sim Exponential(1)$$
+####Table 2: Correlation of $X_1,..., X_7$ and $Y$ 
+
+```{r nonLinErrors,echo=FALSE, message=FALSE}
 x1 <- rnorm(1000)
 
-x2 <- 2*sqrt(abs(x1)) + rnorm(1000)
+x2 <- x1 + rexp(1000)
 
-x3 <- x1 + 2*x2 + rnorm(1000)
+x3 <- x2 + rexp(1000)
 
-x4 <- rnorm(1000)
+x4 <- x3 + rexp(1000)
 
-x5 <- 2*sqrt(abs(x4)) + rnorm(1000)
+diag(8) -> sigma
 
-y <- x1 + 2*x2 + 3 * x3 + 4*x4 + 1*x5 + rnorm(1000)
+rep(1, 8)-> mu
 
-d2 <- data.frame(y,x1,x2,x3,x4,x5)
+mvrnorm(n =n, mu = mu, Sigma = sigma) -> simv5v12
 
-cor(d2)
+data.frame(x1,x2,x3,x4,simv5v12) -> d2
+              
+c("X1","X2","X3","X4","X5","X6", "X7","X8","X9","X10","X11","X12") -> names(d2)
 
-plot(d2)
+rep(0, 1000) -> ys #init a vector of zeros
+
+for( i in 1:1000){ #go row by row and create the ys based on the function of e, bts, and d2
+ys[i] <- d2[i,1]*bts[1]+
+    d2[i,2]*bts[2]+ 
+    d2[i,3]*bts[3]+ 
+    d2[i,4]*bts[4]+ 
+    d2[i,5]*bts[5]+ 
+    d2[i,6]*bts[6]+
+    d2[i,7]*bts[7]+ 
+    d2[i,8]*bts[8]+ 
+    d2[i,9]*bts[9]+ 
+    d2[i,10]*bts[10]+ 
+    d2[i,11]*bts[11]+ 
+    d2[i,12]*bts[12] +
+    e[i]
+}
+
+d2$y <- ys
+
+cord2 <- round(cor(d2)[c(1:7),c(1:7,13)], digits = 3)
+cord2 <- cbind(cord2, "beta"= bts[1:7])
+
+kable(cord2)
 ```
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As one can see, Table 2 mirrors Table 1. For this dataset, however, the correlation structure is more complicated. $X_1$ and $X_2$ are highly correlated with $\rho = .7$. 
+
+#### Figure 3:
+
+```{r, echo=FALSE}
+ggplot(data = d2, aes(x = X1, y = X2)) + 
+  geom_point(color = thesis[1])+
+  ggtitle("X2~X1, Correlation = .7")
+```
+
+#### Figure 4:
+```{r, echo=FALSE}
+ggpairs(
+  data =d2,
+  columns = c(1:4),
+  title = "Correlation Structure of the First Four Variables"
+)
+```
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As seen in Figure 4, the pattern observed between $X_1$ and $X_2$ does not carry over to the other correlated predictors. 
+
+
+#### Figure 5:
+
+```{r, echo=FALSE}
+t <-  melt(d2[,1:5])
+ggplot(data = t, aes(x = value, fill = variable)) + 
+  geom_density(alpha = .8)+
+  scale_fill_manual(values = thesis)+
+  ggtitle("Comparisons of the Density Graphs for X1 through X5")
+```
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Figure 5 demonstrate how the correlation between a few of the predictors and $Y$ may be effected by slope. Scale is much more a factor in this dataset, with some variables like $X_3$ having a larger range than the variables $X_1 \sim N(0,1)$ or $X_5,...,X_{12} \sim MVN()$. 
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The tricker relationship between the variables in $D2$ was because they were generated using the square root of the absolute value of the other variable. Here, in $D3$ the process is repeated but with the log of the absolute value. 
 
@@ -122,9 +231,9 @@ y <- w1 + 2*w2 + 3 * w3 + 4*w4 + 1*w5 + rnorm(1000)
 
 d3 <- data.frame(y,w1,w2,w3,w4,w5)
 
-cor(d3)
+#cor(d3)
 
-plot(d3)
+#plot(d3)
 ```
 
 ##Models and Comparisons
@@ -148,14 +257,14 @@ t1 <- tree(y~., d1)
 t2 <- tree(y~., d2)
 t3 <- tree(y~., d3)
 
-plot(t1)
-text(t1)
+#plot(t1)
+#text(t1)
 
-plot(t2)
-text(t2)
+#plot(t2)
+#text(t2)
 
-plot(t3)
-text(t3)
+#plot(t3)
+#text(t3)
 ```
 
 ###Conditional Inference Trees
@@ -194,7 +303,7 @@ for 1000 trials:
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Here is a histogram of the MSE found using this method:
 
-```{r, echo=FALSE, message=FALSE}
+```{r, echo=FALSE, message=FALSE, cache=TRUE}
 testmse <- rep(0,1000)
 
 for(i in 1:1000){
@@ -214,7 +323,7 @@ ggplot(aes(x = testmse), data = testmse) + geom_histogram()
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Let's put that to the test here using our dataset $D3$ again. We'll build 100 forests of 100 trees each and compare the variability of the $MSE$ distributions. 
 
-```{r, echo=FALSE, message=FALSE}
+```{r, echo=FALSE, message=FALSE, cache=TRUE}
 library(bagRboostR)
 
 mse <- rep(0,100)
@@ -240,7 +349,7 @@ For an illustration, let's build a random forest on $D3$ and compare the $MSE$.
 
 (include note about oob error vs test mse)
 
-```{r}
+```{r, cache=TRUE}
 
 mseRF <- rep(0,100)
 train = sample(1000,666)
@@ -255,4 +364,3 @@ ggplot(aes(x = mseRF), data = mseRF) + geom_histogram()
 
 var(mseRF)
 ```
-

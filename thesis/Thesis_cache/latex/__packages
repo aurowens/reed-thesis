@@ -1,3 +1,17 @@
 base
 devtools
 reedtemplates
+MASS
+tree
+ggplot2
+randomForest
+mvtnorm
+modeltools
+zoo
+sandwich
+strucchange
+party
+bagRboostR
+knitr
+GGally
+reshape
