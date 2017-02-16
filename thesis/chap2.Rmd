@@ -34,12 +34,12 @@ thesis <- c("#245e67", "#90bd98", "#cfd0a0", "#c49e46", "#d28383")
 
 ##Simulated Data
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Tree-based methods shine in situations with correlated predictors, although these situations can pose problems for inference. In a situation with correlated predictors $X_1$ and $X_2$, and the model we are considering is $Y \sim X_1 + X_2$, it is difficult to say how much of the modeled effect on $Y$ is due to $X_1$ or $X_2$. To illustrate this idea, compare a few existing methods, and explore methods of inference on tree based models three datasets will be simulated with different correlation structures. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Tree-based methods shine in situations with correlated predictors, although these situations can pose problems for inference. In a situation with correlated predictors $X_1$ and $X_2$, and the model we are considering is $Y \sim X_1 + X_2$, it is difficult to say how much of the modeled effect on $Y$ is due to $X_1$ or $X_2$. To illustrate this idea, compare a few existing methods, and explore methods of inference on tree based models three datasets will be simulated with different correlation structures. We will be focused more on the correlation structure between the predictors than on their relationships with the response and this will be reflected in the simulations.  
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;To aid in comparisons between the methods, one of the simulated datasets considered in this paper will be generated from the same method as used in (Strobl et al, 2008???). Under this method, the 13 x 1000 data set, $D_1$, has 12 predictors, $V_1,..,V_{12}$, where $V_j \sim N(0,1)$. The first four are, however, block correlated to each other with $\rho = .9$. They are related to $Y$ by the linear equation: $$Y = 5 \cdot V_1 + 5 \cdot V_2 + 2 \cdot V_3 + 0 \cdot V_4 + -5 \cdot V_5 + -5\cdot V_6 + 0\cdot V_7 + 0 \cdot ..... + E, E \sim N(0,\frac 1 2 )$$ Note that the coefficents for $V_7,...,V_{12}$ are all zero. 
 
 ####Table 1: Correlation of $V_1,..., V_7$ and $Y$ 
-```{r stroblSim, echo=FALSE}
+```{r stroblSim, warning=FALSE, message=FALSE, echo=FALSE}
 rep(0, 12) -> mu #mean of each variable
 
 diag(12) -> sigma #creates a 12 by 12 diagonal matrix with 1's down the diagonal
@@ -106,7 +106,7 @@ kable(cord1)
 ```
 
 #### Figure 1:
-```{r, echo =FALSE}
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
 t <-  melt(d1[,1:5])
 #levels(t$variable) <- rev(levels(t$variable))
 ggplot(data = t, aes(x = value, fill = variable)) + 
@@ -133,6 +133,7 @@ However, instead of block correlation with $\rho = .9$, four variables are relat
 $$X_2 = X_1 + E, E \sim Exponential(1)$$
 $$X_3 = X_2 + E, E \sim Exponential(1)$$
 $$X_4 = X_3 + E, E \sim Exponential(1)$$
+
 ####Table 2: Correlation of $X_1,..., X_7$ and $Y$ 
 
 ```{r nonLinErrors,echo=FALSE, message=FALSE}
@@ -201,10 +202,9 @@ ggpairs(
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As seen in Figure 4, the pattern observed between $X_1$ and $X_2$ does not carry over to the other correlated predictors. 
 
-
 #### Figure 5:
 
-```{r, echo=FALSE}
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
 t <-  melt(d2[,1:5])
 ggplot(data = t, aes(x = value, fill = variable)) + 
   geom_density(alpha = .8)+
@@ -214,27 +214,89 @@ ggplot(data = t, aes(x = value, fill = variable)) +
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Figure 5 demonstrate how the correlation between a few of the predictors and $Y$ may be effected by slope. Scale is much more a factor in this dataset, with some variables like $X_3$ having a larger range than the variables $X_1 \sim N(0,1)$ or $X_5,...,X_{12} \sim MVN()$. 
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The tricker relationship between the variables in $D2$ was because they were generated using the square root of the absolute value of the other variable. Here, in $D3$ the process is repeated but with the log of the absolute value. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The last dataset we'll consider is $D_3$, a data set with even more non-linear relationships between the first four variables. Otherwise it is very similar to both $D_1$ and $D_2$. The first four variables are generated as follows:
 
+$$\omega_1 \sim N(1,0)$$
+$$\omega_2 = log(\omega_1) + E, E \sim N(1,0)$$
+$$\omega_3 = log(\omega_2) + E, E \sim N(1,0)$$
+$$\omega_4 = log(\omega_4) + E, E \sim N(1,0)$$
+
+#### Table 3:Correlation of $\omega_1,..., \omega_7$ and $Y$ 
 ```{r logAbs,echo=FALSE, message=FALSE}
 w1 <- rnorm(1000)
 
 w2 <- 2*log(abs(w1)) + rnorm(1000)
 
-w3 <- w1 + 2*w2 + rnorm(1000)
+w3 <- 2*log(abs(w2)) + rnorm(1000)
 
-w4 <- rnorm(1000)
+w4 <- 2*log(abs(w3)) + rnorm(1000)
 
-w5 <- 2*log(abs(w4)) + rnorm(1000)
+mvrnorm(n =n, mu = mu, Sigma = sigma) -> simw5w12
 
-y <- w1 + 2*w2 + 3 * w3 + 4*w4 + 1*w5 + rnorm(1000)
+data.frame(w1,w2,w3,w4,simw5w12) -> d3
+              
+c("W1","W2","W3","W4","W5","W6", "W7","W8","W9","W10","W11","W12") -> names(d3)
 
-d3 <- data.frame(y,w1,w2,w3,w4,w5)
+rep(0, 1000) -> ys #init a vector of zeros
 
-#cor(d3)
+for( i in 1:1000){ #go row by row and create the ys based on the function of e, bts, and d3
+ys[i] <- d3[i,1]*bts[1]+
+    d3[i,2]*bts[2]+ 
+    d3[i,3]*bts[3]+ 
+    d3[i,4]*bts[4]+ 
+    d3[i,5]*bts[5]+ 
+    d3[i,6]*bts[6]+
+    d3[i,7]*bts[7]+ 
+    d3[i,8]*bts[8]+ 
+    d3[i,9]*bts[9]+ 
+    d3[i,10]*bts[10]+ 
+    d3[i,11]*bts[11]+ 
+    d3[i,12]*bts[12] +
+    e[i]
+}
 
-#plot(d3)
+d3$y <- ys
+
+cord3 <- round(cor(d3)[c(1:7),c(1:7,13)], digits = 3)
+cord3 <- cbind(cord3, "beta"= bts[1:7])
+
+kable(cord3)
 ```
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The linear correlation structure in $D_3$ is not as striking as in $D_1$. The two strongest linear relationships are between $\omega_2$ and $\omega_3$ with $\rho = -.534$ and between $Y$ and $\omega_2$ with $\rho = .700$. 
+
+#### Figure 6:
+
+```{r,warning=FALSE, message=FALSE, echo=FALSE}
+ggpairs(
+  data =d3,
+  columns = c(1:4),
+  title = "Correlation Structure of the First Four Variables"
+)
+```
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Figure 6 provides another way of visualizing some of the information given in Table 3. Here we can see the densities as well as the paired correlations of the first four variables in $D_3$.
+
+#### Figure 7:
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+t <-  melt(d3[,1:5])
+ggplot(data = t, aes(x = value, fill = variable)) + 
+  geom_density(alpha = .8)+
+  scale_fill_manual(values = thesis)+
+  ggtitle("Comparisons of the Density Graphs for W1 through W5")
+```
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;There is more variation between the densities of $\omega_1,...,\omega_5$ then we have seen in the other data sets. $\omega_2,\omega_3,$ and $\omega_4$ have greater spread than their counterparts that are generated under the normal distribution.
+
+### Figure 8:
+
+```{r,warning=FALSE, message=FALSE, echo=FALSE}
+ggplot(data = d3, aes(x = W2, y = y)) + 
+  geom_point(color = thesis[2])+
+  ggtitle("Y~W2, Correlation = .7")
+```
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; As the relationship between $Y$ and $\omega_2$ was so striking, it is nice to see a scatterplot that represents it. 
 
 ##Models and Comparisons
 ##Trees

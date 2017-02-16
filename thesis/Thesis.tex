@@ -386,7 +386,10 @@ starts here.
   much of the modeled effect on \(Y\) is due to \(X_1\) or \(X_2\). To
   illustrate this idea, compare a few existing methods, and explore
   methods of inference on tree based models three datasets will be
-  simulated with different correlation structures.
+  simulated with different correlation structures. We will be focused more
+  on the correlation structure between the predictors than on their
+  relationships with the response and this will be reflected in the
+  simulations.
   
   ~~~~~To aid in comparisons between the methods, one of the simulated
   datasets considered in this paper will be generated from the same method
@@ -450,10 +453,6 @@ starts here.
   
   \subsubsection{Figure 1:}\label{figure-1}
   
-  \begin{verbatim}
-  Using  as id variables
-  \end{verbatim}
-  
   \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-2-1} \end{center}
   
   ~~~~~ As can be seen above in Figure 1 the densities of \(V_1,...,V_5\)
@@ -476,8 +475,11 @@ starts here.
   \(X_1, X_5,...,X_{12} ~ N(0,1)\)
   \[X_2 = X_1 + E, E \sim Exponential(1)\]
   \[X_3 = X_2 + E, E \sim Exponential(1)\]
-  \[X_4 = X_3 + E, E \sim Exponential(1)\] \#\#\#\#Table 2: Correlation of
-  \(X_1,..., X_7\) and \(Y\)
+  \[X_4 = X_3 + E, E \sim Exponential(1)\]
+  
+  \subsubsection{\texorpdfstring{Table 2: Correlation of \(X_1,..., X_7\)
+  and
+  \(Y\)}{Table 2: Correlation of X\_1,..., X\_7 and Y}}\label{table-2-correlation-of-x_1...-x_7-and-y}
   
   \begin{longtable}[]{@{}lrrrrrrrrr@{}}
   \toprule
@@ -518,10 +520,6 @@ starts here.
   
   \subsubsection{Figure 5:}\label{figure-5}
   
-  \begin{verbatim}
-  Using  as id variables
-  \end{verbatim}
-  
   \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-6-1} \end{center}
   
   ~~~~~Figure 5 demonstrate how the correlation between a few of the
@@ -530,10 +528,69 @@ starts here.
   range than the variables \(X_1 \sim N(0,1)\) or
   \(X_5,...,X_{12} \sim MVN()\).
   
-  ~~~~~The tricker relationship between the variables in \(D2\) was
-  because they were generated using the square root of the absolute value
-  of the other variable. Here, in \(D3\) the process is repeated but with
-  the log of the absolute value.
+  ~~~~~The last dataset we'll consider is \(D_3\), a data set with even
+  more non-linear relationships between the first four variables.
+  Otherwise it is very similar to both \(D_1\) and \(D_2\). The first four
+  variables are generated as follows:
+  
+  \[\omega_1 \sim N(1,0)\] \[\omega_2 = log(\omega_1) + E, E \sim N(1,0)\]
+  \[\omega_3 = log(\omega_2) + E, E \sim N(1,0)\]
+  \[\omega_4 = log(\omega_4) + E, E \sim N(1,0)\]
+  
+  \subsubsection{\texorpdfstring{Table 3:Correlation of
+  \(\omega_1,..., \omega_7\) and
+  \(Y\)}{Table 3:Correlation of \textbackslash{}omega\_1,..., \textbackslash{}omega\_7 and Y}}\label{table-3correlation-of-omega_1...-omega_7-and-y}
+  
+  \begin{longtable}[]{@{}lrrrrrrrrr@{}}
+  \toprule
+  & W1 & W2 & W3 & W4 & W5 & W6 & W7 & y & beta\tabularnewline
+  \midrule
+  \endhead
+  W1 & 1.000 & -0.056 & -0.040 & 0.041 & 0.002 & -0.034 & -0.028 & 0.322 &
+  5\tabularnewline
+  W2 & -0.056 & 1.000 & -0.533 & -0.279 & -0.002 & 0.049 & -0.003 & 0.668
+  & 5\tabularnewline
+  W3 & -0.040 & -0.533 & 1.000 & -0.002 & -0.019 & -0.031 & -0.010 &
+  -0.096 & 2\tabularnewline
+  W4 & 0.041 & -0.279 & -0.002 & 1.000 & -0.007 & -0.008 & -0.079 & -0.223
+  & 0\tabularnewline
+  W5 & 0.002 & -0.002 & -0.019 & -0.007 & 1.000 & -0.012 & -0.019 & -0.382
+  & -5\tabularnewline
+  W6 & -0.034 & 0.049 & -0.031 & -0.008 & -0.012 & 1.000 & 0.004 & -0.358
+  & -5\tabularnewline
+  W7 & -0.028 & -0.003 & -0.010 & -0.079 & -0.019 & 0.004 & 1.000 & -0.159
+  & -2\tabularnewline
+  \bottomrule
+  \end{longtable}
+  
+  ~~~~~The linear correlation structure in \(D_3\) is not as striking as
+  in \(D_1\). The two strongest linear relationships are between
+  \(\omega_2\) and \(\omega_3\) with \(\rho = -.534\) and between \(Y\)
+  and \(\omega_2\) with \(\rho = .700\).
+  
+  \subsubsection{Figure 6:}\label{figure-6}
+  
+  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-7-1} \end{center}
+  
+  ~~~~~Figure 6 provides another way of visualizing some of the
+  information given in Table 3. Here we can see the densities as well as
+  the paired correlations of the first four variables in \(D_3\).
+  
+  \subsubsection{Figure 7:}\label{figure-7}
+  
+  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-8-1} \end{center}
+  
+  ~~~~~There is more variation between the densities of
+  \(\omega_1,...,\omega_5\) then we have seen in the other data sets.
+  \(\omega_2,\omega_3,\) and \(\omega_4\) have greater spread than their
+  counterparts that are generated under the normal distribution.
+  
+  \subsection{Figure 8:}\label{figure-8}
+  
+  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-9-1} \end{center}
+  
+  ~~~~~ As the relationship between \(Y\) and \(\omega_2\) was so
+  striking, it is nice to see a scatterplot that represents it.
   
   \section{Models and Comparisons}\label{models-and-comparisons}
   
@@ -604,10 +661,10 @@ starts here.
   
   \begin{verbatim}
            testmse
-  testmse 17.42427
+  testmse 24.64791
   \end{verbatim}
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-8-1} \end{center}
+  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-11-1} \end{center}
   
   ~~~~~As one can see, there is a fair amount of variability in a single
   tree, they are heavily dependent on fluctuations in the starting data
@@ -624,11 +681,11 @@ starts here.
   We'll build 100 forests of 100 trees each and compare the variability of
   the \(MSE\) distributions.
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-9-1} \end{center}
+  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-12-1} \end{center}
   
   \begin{verbatim}
-             mse
-  mse 0.03038569
+            mse
+  mse 0.3431275
   \end{verbatim}
   
   ~~~~~As one can see, the values of \(MSE_{test}\) for the bagged forest
@@ -671,7 +728,7 @@ starts here.
   `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
   \end{verbatim}
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-10-1} \end{center}
+  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-13-1} \end{center}
   
   \begin{Shaded}
   \begin{Highlighting}[]
@@ -680,8 +737,8 @@ starts here.
   \end{Shaded}
   
   \begin{verbatim}
-            mseRF
-  mseRF 0.5671406
+           mseRF
+  mseRF 0.428446
   \end{verbatim}
   
   \chapter{Permuatations Tests Theory and Application to Conditional
