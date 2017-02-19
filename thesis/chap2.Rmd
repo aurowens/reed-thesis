@@ -24,6 +24,7 @@ library(reedtemplates)
 library(MASS)
 library(ggplot2)
 library(randomForest)
+library(maptree)
 library(knitr)
 library(GGally)
 library(reshape)
@@ -299,8 +300,8 @@ ggplot(data = d3, aes(x = W2, y = y)) +
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; As the relationship between $Y$ and $\omega_2$ was so striking, it is nice to see a scatterplot that represents it. 
 
 ##Models and Comparisons
-##Trees
-###CART: Regression Trees
+
+####CART: Regression Trees
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As outlined in the 1984 textbook, *Classification and Regression Trees*, Brieman, Friedman, Olshen, and Stone described their method for creating, pruning, and testing regression trees. What follows is their basic algorithm for fitting regression trees:
 
@@ -316,9 +317,12 @@ ggplot(data = d3, aes(x = W2, y = y)) +
 ```{r,echo=FALSE, message=FALSE}
 library(tree)
 t1 <- tree(y~., d1)
+t11<-cv.tree(t1)
+t1 <- prune.tree(t1, k = 4)
 t2 <- tree(y~., d2)
 t3 <- tree(y~., d3)
 
+draw.tree(t1, digits = 2, col = c(thesis, rep(thesis, 3)))
 #plot(t1)
 #text(t1)
 
