@@ -604,15 +604,13 @@ starts here.
   \subsubsection{Algorithm 2: CART, Regression
   Trees}\label{algorithm-2-cart-regression-trees}
   
-  \begin{verbatim}
-  1.
-  2.
-  3.
-  4.
-  \end{verbatim}
+  \emph{Ripley, B. D. (1996) Pattern Recognition and Neural Networks.
+  Cambridge University Press, Cambridge. Chapter 7.}
   
-  ~~~~~Let's return to our simulated datasets. Here is what trees grown
-  for each dataset using the model \(Y\sim X_1,...X_n\).
+  \subsection{Figure 9:}\label{figure-9}
+  
+  \textbf{CART Representing Y\textasciitilde{}, from datasets D1, D2, and
+  D3}
   
   \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-10-1} \end{center}
   
@@ -639,54 +637,65 @@ starts here.
   generate the split and choose the set \(A\). Note that in this method
   the splitting is done separately from the variable selection.
   
-  \section{Bagged Forests}\label{bagged-forests}
+  \begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
   
-  ~~~~~As mentioned in the introduction, single trees can have some
-  variablility that in practice, limits their use. This simulation
-  demonstrates this principle:
+  To compare the two methods, lets compare the CART tree fitted on \(D_2\)
+  above with a recursive partitioned tree as implemented in the R package
+  \texttt{rpart}.
   
-  \begin{verbatim}
-  for 1000 trials:
+  \subsection{Figure 10:}\label{figure-10}
   
-  1. separete D3 into a training set and a test set where the training set contains 2/3 of the observations
-  
-  2. fit a CART tree
-  
-  3. Predict the response using the test set 
-  
-  4. Calculate the mean squared error 
-  \end{verbatim}
-  
-  ~~~~~Here is a histogram of the MSE found using this method:
-  
-  \begin{verbatim}
-           testmse
-  testmse 24.64791
-  \end{verbatim}
+  *CART and RPART fitted to \(D_2\)
   
   \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-11-1} \end{center}
   
-  ~~~~~As one can see, there is a fair amount of variability in a single
-  tree, they are heavily dependent on fluctuations in the starting data
-  set. As mention briefly in the introduction, bagged forests present one
-  solution to this problem. To create a bagged forest, as outlined in
-  \emph{An Introduction to Statistical Learning} by James, Witten, Hastie
-  and Tibshirani, 2013, many bootsrtapped samples are taken from the
-  itintial dataset and trees are fitted to them. The final predictions
-  are, then, averaged over all of the trees. This ensures that while each
-  tree has high variance, when they are aggregated the variance will
-  decrease.
+  Trees can be quite variable, so to get a better idea of the differences
+  between the methods let's run a simulation.
+  
+  \textbf{Psuedo-code simulation} For \(i \leq 1000\): 1. Randomly sample
+  \(\frac 2 3\) of the observations in \(D_2\) to a training set,
+  \(D_{2, train}^i\). The other observations,
+  \(x \in D_2, x \notin D_{2, train}^i\) form the testing set
+  \(D_{2, test}^i\) 2. Fit a tree, \(T^i\), to the data under the model
+  \(Y \sim X_1,...,X_2\) using the observations in \(D_{2}^i\) 3.
+  Calculate the \(MSE_test\) of the model using the equation:
+  \[MSE_{test} = \frac 1 n (y_j - \hat{y_j})^2\] Where \(n\) is the number
+  of observations in \(D_{2, test}^i\),
+  \(y_j \in D_{2, test}^i, \hat{y_j} \in T^i(D_{2, test}^i)\) for
+  \(1 \leq j \leq n\)
+  
+  This produces two distributions of \(MSE_{test}\), one for CART and one
+  for RPART.
+  
+  \subsection{Figure 10:}\label{figure-10-1}
+  
+  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-12-1} \end{center}
+  
+  While trees may be variable, this variablility appears consistant across
+  the algorithms considered here.
+  
+  \begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
+  
+  \section{Bagged Forests}\label{bagged-forests}
+  
+  ~~~~~As one can see in the Figure 10, there is a fair amount of
+  variability in a single tree, they are heavily dependent on fluctuations
+  in the starting data set. As mention briefly in the introduction, bagged
+  forests present one solution to this problem. To create a bagged forest,
+  as outlined in \emph{An Introduction to Statistical Learning} by James,
+  Witten, Hastie and Tibshirani, 2013, many bootsrtapped samples are taken
+  from the itintial dataset and trees are fitted to them. The final
+  predictions are, then, averaged over all of the trees. This ensures that
+  while each tree has high variance, when they are aggregated the variance
+  will decrease.
   
   ~~~~~Let's put that to the test here using our dataset \(D3\) again.
   We'll build 100 forests of 100 trees each and compare the variability of
   the \(MSE\) distributions.
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-12-1} \end{center}
+  \subsection{Figure 11:}\label{figure-11}
   
-  \begin{verbatim}
-            mse
-  mse 0.3431275
-  \end{verbatim}
+  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-13-1} \end{center}
   
   ~~~~~As one can see, the values of \(MSE_{test}\) for the bagged forest
   were entirely below the \(MSE_test\) for the trees and the variance was
@@ -707,39 +716,7 @@ starts here.
   For an illustration, let's build a random forest on \(D3\) and compare
   the \(MSE\).
   
-  (include note about oob error vs test mse)
-  
-  \begin{Shaded}
-  \begin{Highlighting}[]
-  \NormalTok{mseRF <-}\StringTok{ }\KeywordTok{rep}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{100}\NormalTok{)}
-  \NormalTok{train =}\StringTok{ }\KeywordTok{sample}\NormalTok{(}\DecValTok{1000}\NormalTok{,}\DecValTok{666}\NormalTok{)}
-  \NormalTok{for (i in }\DecValTok{1}\NormalTok{:}\DecValTok{100}\NormalTok{)\{}
-    \NormalTok{rf <-}\StringTok{ }\KeywordTok{randomForest}\NormalTok{(y~., }\DataTypeTok{data =} \NormalTok{d3, }\DataTypeTok{subset =} \NormalTok{train, }\DataTypeTok{ntree =} \DecValTok{100}\NormalTok{)}
-    \NormalTok{mseRF[i] <-}\StringTok{ }\KeywordTok{mean}\NormalTok{((d3$y[-train] -}\StringTok{ }\KeywordTok{predict}\NormalTok{(rf, d3[-train,]))^}\DecValTok{2}\NormalTok{)}
-  \NormalTok{\}}
-  
-  \NormalTok{mseRF <-}\StringTok{ }\KeywordTok{as.data.frame}\NormalTok{(mseRF)}
-  
-  \KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =} \NormalTok{mseRF), }\DataTypeTok{data =} \NormalTok{mseRF) +}\StringTok{ }\KeywordTok{geom_histogram}\NormalTok{()}
-  \end{Highlighting}
-  \end{Shaded}
-  
-  \begin{verbatim}
-  `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
-  \end{verbatim}
-  
-  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-13-1} \end{center}
-  
-  \begin{Shaded}
-  \begin{Highlighting}[]
-  \KeywordTok{var}\NormalTok{(mseRF)}
-  \end{Highlighting}
-  \end{Shaded}
-  
-  \begin{verbatim}
-           mseRF
-  mseRF 0.428446
-  \end{verbatim}
+  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-14-1} \end{center}
   
   \chapter{Permuatations Tests Theory and Application to Conditional
   Variable

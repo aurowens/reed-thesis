@@ -306,31 +306,33 @@ ggplot(data = d3, aes(x = W2, y = y)) +
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As outlined in the 1984 textbook, *Classification and Regression Trees*, Brieman, Friedman, Olshen, and Stone described their method for creating, pruning, and testing regression trees. What follows is their basic algorithm for fitting regression trees:
 
 ####Algorithm 2: CART, Regression Trees
-```
-1.
-2.
-3.
-4.
-```
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Let's return to our simulated datasets. Here is what trees grown for each dataset using the model $Y\sim X_1,...X_n$.
+
+*Ripley, B. D. (1996) Pattern Recognition and Neural Networks. Cambridge University Press, Cambridge. Chapter 7.*
+
+### Figure 9:
+
+**CART Representing Y~, from datasets D1, D2, and D3**
+
 
 ```{r,echo=FALSE, message=FALSE}
 library(tree)
-t1 <- tree(y~., d1)
-t11<-cv.tree(t1)
-t1 <- prune.tree(t1, k = 4)
-t2 <- tree(y~., d2)
-t3 <- tree(y~., d3)
+t1 <- tree(y~., round(d1))
+#t1 <- prune.tree(t1, k = 2)
+t2 <- tree(y~., round(d2))
+#plot(cv.tree(t2))
+t2 <- prune.tree(t2, k = 4)
+t3 <- tree(y~., round(d3))
+#plot(cv.tree(t3))
+t3 <- prune.tree(t3, k = 6)
 
+t1$frame$yval <- round(t1$frame$yval)
+t2$frame$yval <- round(t2$frame$yval)
+t3$frame$yval <- round(t3$frame$yval)
+
+par(mfrow=c(1,3))
 draw.tree(t1, digits = 2, col = c(thesis, rep(thesis, 3)))
-#plot(t1)
-#text(t1)
-
-#plot(t2)
-#text(t2)
-
-#plot(t3)
-#text(t3)
+draw.tree(t2, digits = 2, col = c(thesis, rep(thesis, 3)))
+draw.tree(t3, digits = 2, col = c(thesis, rep(thesis, 3)))
 ```
 
 ###Conditional Inference Trees
@@ -351,60 +353,94 @@ from  https://eeecon.uibk.ac.at/~zeileis/papers/Hothorn+Hornik+Zeileis-2006.pdf
 
 After step 1 is completed, any goodness of fit method can be used to generate the split and choose the set $A$. Note that in this method the splitting is done separately from the variable selection. 
 
-##Bagged Forests
+***
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As mentioned in the introduction, single trees can have some variablility that in practice, limits their use. This simulation demonstrates this principle:
+To compare the two methods, lets compare the CART tree fitted on $D_2$ above with a recursive partitioned tree as implemented in the R package `rpart`. 
 
+### Figure 10:
+
+*CART and RPART fitted to $D_2$
+
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+t2.2 <- rpart(y~., round(d2))
+t2.2$frame$yval <- round(t2.2$frame$yval)
+
+par(mfrow=c(1,2))
+draw.tree(t2.2, digits = 2, col = c(thesis, rep(thesis, 3)))
+draw.tree(t2, digits = 2, col = c(thesis, rep(thesis, 3)))
 ```
-for 1000 trials:
 
-1. separete D3 into a training set and a test set where the training set contains 2/3 of the observations
+Trees can be quite variable, so to get a better idea of the differences between the methods let's run a simulation.
 
-2. fit a CART tree
+**Psuedo-code simulation**
+For $i \leq 1000$:
+1. Randomly sample $\frac 2 3$ of the observations in $D_2$ to a training set, $D_{2, train}^i$. The other observations, $x \in D_2, x \notin D_{2, train}^i$ form the testing set $D_{2, test}^i$
+2. Fit a tree, $T^i$, to the data under the model $Y \sim X_1,...,X_2$ using the observations in $D_{2}^i$
+3. Calculate the $MSE_test$ of the model using the equation:
+$$MSE_{test} = \frac 1 n (y_j - \hat{y_j})^2$$ Where $n$ is the number of observations in $D_{2, test}^i$, $y_j \in D_{2, test}^i, \hat{y_j} \in  T^i(D_{2, test}^i)$ for $1 \leq j \leq n$ 
 
-3. Predict the response using the test set 
+This produces two distributions of $MSE_{test}$, one for CART and one for RPART. 
 
-4. Calculate the mean squared error 
-```
+### Figure 10:
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Here is a histogram of the MSE found using this method:
-
-```{r, echo=FALSE, message=FALSE, cache=TRUE}
-testmse <- rep(0,1000)
+```{r,echo=FALSE, message=FALSE, cache=TRUE}
+testmseC <- rep(0,1000)
+testmseR <- rep(0,1000)
 
 for(i in 1:1000){
   train <- sample(1000, 666)
-  t <- tree(y~., d3[train,])
-  testmse[i] <- mean((d3[-train,]$y - predict(t, d3[-train,]))^2)
+  tR <- rpart(y~., d2[train,])
+  tC <- tree(y~., d2[train,])
+  testmseC[i] <- mean((d2[-train,]$y - predict(tC, d2[-train,]))^2)
+  testmseR[i] <- mean((d2[-train,]$y - predict(tR, d2[-train,]))^2)
 }
 
-testmse <- as.data.frame(testmse)
+testmse <- data.frame(RPART = testmseR, CART= testmseC)
 
-var(testmse)
+testm <- melt(testmse)
 
-ggplot(aes(x = testmse), data = testmse) + geom_histogram()
+ggplot(data = testm, aes(fill = variable, x = value)) + 
+  geom_density(alpha = .5)+
+  ggtitle("Comparison of the Simulated MSEtest Distributions of RPART and CART")+
+  scale_fill_manual(values = thesis)+
+  guides(fill=guide_legend(title=NULL))
 ```
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As one can see, there is a fair amount of variability in a single tree, they are heavily dependent on fluctuations in the starting data set. As mention briefly in the introduction, bagged forests present one solution to this problem. To create a bagged forest, as outlined in *An Introduction to Statistical Learning* by James, Witten, Hastie and Tibshirani, 2013, many bootsrtapped samples are taken from the itintial dataset and trees are fitted to them. The final predictions are, then, averaged over all of the trees. This ensures that while each tree has high variance, when they are aggregated the variance will decrease. 
+While trees may be variable, this variablility appears consistant across the algorithms considered here. 
+
+***
+
+##Bagged Forests
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As one can see in the Figure 10, there is a fair amount of variability in a single tree, they are heavily dependent on fluctuations in the starting data set. As mention briefly in the introduction, bagged forests present one solution to this problem. To create a bagged forest, as outlined in *An Introduction to Statistical Learning* by James, Witten, Hastie and Tibshirani, 2013, many bootsrtapped samples are taken from the itintial dataset and trees are fitted to them. The final predictions are, then, averaged over all of the trees. This ensures that while each tree has high variance, when they are aggregated the variance will decrease. 
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Let's put that to the test here using our dataset $D3$ again. We'll build 100 forests of 100 trees each and compare the variability of the $MSE$ distributions. 
+
+### Figure 11:
 
 ```{r, echo=FALSE, message=FALSE, cache=TRUE}
 library(bagRboostR)
 
 mse <- rep(0,100)
-train = sample(1000,666)
+
 for (i in 1:100){
-  b <- randomForest(y~., data = d3, subset = train, mtry = 5, ntree = 100)
-  mse[i] <- mean((d3$y[-train] - predict(b, d3[-train,]))^2)
+  train = sample(1000,666)
+  b <- randomForest(y~., data = d2, subset = train, mtry = 5, ntree = 100)
+  mse[i] <- mean((d2$y[-train] - predict(b, d2[-train,]))^2)
 }
 
-mse <- as.data.frame(mse)
+msebag <- data.frame(BaggedForest = mse, RPART = sample(testmseR,100))
 
-ggplot(aes(x = mse), data = mse) + geom_histogram()
+msebag <- melt(msebag)
 
-var(mse)
+ggplot(aes(x = value, fill = variable), data = msebag) + 
+  geom_density(alpha = .5)+
+  ggtitle("Comparison of the Simulated MSEtest Distributions of RPART and Bagged Forests")+
+  scale_fill_manual(values = thesis)+
+  guides(fill=guide_legend(title=NULL))
+
 ```
+
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As one can see, the values of $MSE_{test}$ for the bagged forest were entirely below the $MSE_test$ for the trees and the variance was much smaller. 
 
 ##Random Forests
@@ -413,20 +449,27 @@ As the number of trees grown in each forest increases, the $MSE_{test}$ decrease
 
 For an illustration, let's build a random forest on $D3$ and compare the $MSE$. 
 
-(include note about oob error vs test mse)
-
-```{r, cache=TRUE}
+```{r, echo=FALSE, message=FALSE, cache=TRUE}
 
 mseRF <- rep(0,100)
-train = sample(1000,666)
+
 for (i in 1:100){
+  train = sample(1000,666)
   rf <- randomForest(y~., data = d3, subset = train, ntree = 100)
   mseRF[i] <- mean((d3$y[-train] - predict(rf, d3[-train,]))^2)
 }
 
-mseRF <- as.data.frame(mseRF)
+mserf <- data.frame(BaggedForest = mse, RPART = sample(testmseR, 100), RandomForest = mseRF)
 
-ggplot(aes(x = mseRF), data = mseRF) + geom_histogram()
+mserf<- melt(mserf)
 
-var(mseRF)
+ggplot(aes(x = value, fill = variable), data = mserf) + 
+  geom_density(alpha = .5)+
+  ggtitle("Comparison of the Simulated MSEtest Distributions of RPART, Random, and Bagged Forests")+
+  scale_fill_manual(values = thesis)+
+  guides(fill=guide_legend(title=NULL))
+
+
 ```
+
+

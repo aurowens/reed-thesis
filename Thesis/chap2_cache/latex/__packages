@@ -9,3 +9,6 @@ bagRboostR
 knitr
 GGally
 reshape
+cluster
+rpart
+maptree
