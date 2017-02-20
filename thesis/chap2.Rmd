@@ -2,6 +2,11 @@
 header-includes:
 - \usepackage{amssymb,amsthm,amsmath}
 - \usepackage{chemarr}
+- \usepackage{algorithm}
+- \usepackage{algpseudocode}
+- \usepackage{pifont}
+
+
 output: pdf_document
 ---
 
@@ -99,15 +104,9 @@ kable(cord1)
 
 [^2]: Another point that could be said is that, no $V_4$ is not unimportant, $V_1, V_2,$ and $V_3$ are just stand ins for the real star, $V_4$, as they are nearly the same ($\rho \sim 1$). Then the real relationship represented here is $Y \sim (5 + 5 + 2) \cdot V_4 + -5 \cdot V_5 + -5 \cdot V_6 + -2 \cdot V_7$. This model is not unsuccesful in capturing the structure of the data, and this is typically the practice used to model data with highly correlated predictors. If this seems philosophically satisfying to you, the rest of this thesis may seem a bit unconsequential. I apologize. 
 
-```{r, echo=FALSE}
-#ggpairs(data=d1, # data.frame with variables
-#       columns=c(1:7, 13), # columns to plot, default to all.
-#       title=("Visualization of the Structure of Dataset D1")) 
-
-```
 
 #### Figure 1:
-```{r, warning=FALSE, message=FALSE, echo=FALSE}
+```{r fig1, warning=FALSE, message=FALSE, echo=FALSE}
 t <-  melt(d1[,1:5])
 #levels(t$variable) <- rev(levels(t$variable))
 ggplot(data = t, aes(x = value, fill = variable)) + 
@@ -119,7 +118,7 @@ ggplot(data = t, aes(x = value, fill = variable)) +
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; As can be seen above in Figure 1 the densities of $V_1,...,V_5$ are all very similar due to the way they were generated. 
 
 #### Figure 2:
-```{r, echo=FALSE}
+```{r fig2, echo=FALSE}
 ggplot(data = d1, aes(x = V4, y = y)) + 
   geom_point(color = thesis[4], alpha = .8) +
   ggtitle("Y ~ V4, Correlation = .789")
@@ -186,14 +185,14 @@ kable(cord2)
 
 #### Figure 3:
 
-```{r, echo=FALSE}
+```{r fig3, echo=FALSE}
 ggplot(data = d2, aes(x = X1, y = X2)) + 
   geom_point(color = thesis[1])+
   ggtitle("X2~X1, Correlation = .7")
 ```
 
 #### Figure 4:
-```{r, echo=FALSE}
+```{r fig4, echo=FALSE}
 ggpairs(
   data =d2,
   columns = c(1:4),
@@ -205,7 +204,7 @@ ggpairs(
 
 #### Figure 5:
 
-```{r, warning=FALSE, message=FALSE, echo=FALSE}
+```{r fig5, warning=FALSE, message=FALSE, echo=FALSE}
 t <-  melt(d2[,1:5])
 ggplot(data = t, aes(x = value, fill = variable)) + 
   geom_density(alpha = .8)+
@@ -268,7 +267,7 @@ kable(cord3)
 
 #### Figure 6:
 
-```{r,warning=FALSE, message=FALSE, echo=FALSE}
+```{r fig6,warning=FALSE, message=FALSE, echo=FALSE}
 ggpairs(
   data =d3,
   columns = c(1:4),
@@ -280,7 +279,7 @@ ggpairs(
 
 #### Figure 7:
 
-```{r, warning=FALSE, message=FALSE, echo=FALSE}
+```{r fig7, warning=FALSE, message=FALSE, echo=FALSE}
 t <-  melt(d3[,1:5])
 ggplot(data = t, aes(x = value, fill = variable)) + 
   geom_density(alpha = .8)+
@@ -292,7 +291,7 @@ ggplot(data = t, aes(x = value, fill = variable)) +
 
 ### Figure 8:
 
-```{r,warning=FALSE, message=FALSE, echo=FALSE}
+```{r fig8,warning=FALSE, message=FALSE, echo=FALSE}
 ggplot(data = d3, aes(x = W2, y = y)) + 
   geom_point(color = thesis[2])+
   ggtitle("Y~W2, Correlation = .7")
@@ -305,16 +304,28 @@ ggplot(data = d3, aes(x = W2, y = y)) +
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As outlined in the 1984 textbook, *Classification and Regression Trees*, Brieman, Friedman, Olshen, and Stone described their method for creating, pruning, and testing regression trees. What follows is their basic algorithm for fitting regression trees:
 
-####Algorithm 2: CART, Regression Trees
+(From Introduction to Statistical Learning)
 
-*Ripley, B. D. (1996) Pattern Recognition and Neural Networks. Cambridge University Press, Cambridge. Chapter 7.*
+\begin{algorithm}
+\caption{CART}
+\label{cart}
+\begin{algorithmic}[1]
+\For{$i \leq 1000$ }
+\State Randomly sample $\frac 2 3$  of the observations in  $D_2$  to a training set,  $D_{2, train}^i$. The other observations,  $x \in D_2, x \notin D_{2, train}^i$ form the testing set $D_{2, test}^i$
+\State Fit a tree, $T^i$, to the data under the model $Y \sim X_1,...,X_2$ using the observations in      $D_{2}^i$
+\State Calculate the $MSE_test$ of the model using the equation:
+    $MSE_{test} = \frac 1 n (y_j - \hat{y_j})^2$
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
 
 ### Figure 9:
 
 **CART Representing Y~, from datasets D1, D2, and D3**
 
 
-```{r,echo=FALSE, message=FALSE}
+```{r fig9,echo=FALSE, message=FALSE,cache=TRUE}
 library(tree)
 t1 <- tree(y~., round(d1))
 #t1 <- prune.tree(t1, k = 2)
@@ -337,78 +348,95 @@ draw.tree(t3, digits = 2, col = c(thesis, rep(thesis, 3)))
 
 ###Conditional Inference Trees
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Another popular method for creating regression tree models is Conditional Inference Trees.
+As mentioned in the introduction, CART has the tendency to bias towards variables with the most possible splits and overfitting. There is little head paid to statistical significance or general statistical theory. *Conditional Inference Trees* are a method proposed by Horthon et al, 2006, that utilizes permutation theory to create and algorithm that is sensitive to these issues. 
 
-CI trees
+\begin{algorithm}
+\caption{Conditional Inference Trees}
+\label{ctree}
+\begin{algorithmic}[1]
+\For{$w_i, i \in {1,...,|w|}$}
+\State Test the global null hypothesis of independence between any of the $m$ covariates and the response. 
+\If{$H_O$ cannot be rejected} 
+\State Stop 
+\Else \State Select predictor $X_j$ with the strongest linear association to $Y$ 
+\EndIf
+\State Choose a set $A \in X_j$ such that $A \cup X_j \ A = A$ 
+\State The case weights, $w_{left}$ and $w_{right}$ are then defined as $w_{left,i} = w_i I (x_j \in X_j, \in A)$ and $w_{right,i} = w_i I(x_j \in X_j, x_j \notin A)$
+\EndFor
+\end{algorithmic}
+\end{algorithm}
 
-```
-1. For case weights  $w$  test the global null hypothesis of independence between any of the m covariates and the response. Stop if this hypothesis cannot be rejected. Otherwise select the  $j_{th}$  covariate  $Xj$  with strongest association to  $Y$.
-
-2. Choose a set  $A \subset X_{j}$  in order to split  $X_{j}$  into two disjoint sets  $A$  and  $X_{j}$ \ $A$.  The case weights  $w_{left}$  and  $w_{right}$  determine the two subgroups with  $w_{left,i} = w_iI(X_{j\cdot i} \in A)$  and  $w_{right,i} = w_iI(X_{ji} \in A)$ for all $i = 1,...,n$  ( $I(·)$  denotes the indicator function). 
-
-3. Recursively repeat steps 1 and 2 with modified case weights  $w_left$  and  $w_right$, respectively. 
-```
 
 from  https://eeecon.uibk.ac.at/~zeileis/papers/Hothorn+Hornik+Zeileis-2006.pdf
 
 After step 1 is completed, any goodness of fit method can be used to generate the split and choose the set $A$. Note that in this method the splitting is done separately from the variable selection. 
 
-***
 
-To compare the two methods, lets compare the CART tree fitted on $D_2$ above with a recursive partitioned tree as implemented in the R package `rpart`. 
+To compare the two methods, lets compare the CART tree fitted on $D_2$ above with a conditional inference tree as implemented in the R package `partykit`. 
 
 ### Figure 10:
 
-*CART and RPART fitted to $D_2$
+**CART and CTree fitted to $D_2$**
 
-```{r, message=FALSE, warning=FALSE, echo=FALSE}
-t2.2 <- rpart(y~., round(d2))
-t2.2$frame$yval <- round(t2.2$frame$yval)
+```{r fig10, message=FALSE, warning=FALSE, echo=FALSE,cache=TRUE}
+library(partykit)
+
+t2.2 <- ctree(y~., round(d2))
+#t2.2$frame$yval <- round(t2.2$frame$yval)
 
 par(mfrow=c(1,2))
-draw.tree(t2.2, digits = 2, col = c(thesis, rep(thesis, 3)))
+plot(t2.2, col = c(thesis, rep(thesis, 3)))
 draw.tree(t2, digits = 2, col = c(thesis, rep(thesis, 3)))
 ```
 
 Trees can be quite variable, so to get a better idea of the differences between the methods let's run a simulation.
 
-**Psuedo-code simulation**
-For $i \leq 1000$:
-1. Randomly sample $\frac 2 3$ of the observations in $D_2$ to a training set, $D_{2, train}^i$. The other observations, $x \in D_2, x \notin D_{2, train}^i$ form the testing set $D_{2, test}^i$
-2. Fit a tree, $T^i$, to the data under the model $Y \sim X_1,...,X_2$ using the observations in $D_{2}^i$
-3. Calculate the $MSE_test$ of the model using the equation:
-$$MSE_{test} = \frac 1 n (y_j - \hat{y_j})^2$$ Where $n$ is the number of observations in $D_{2, test}^i$, $y_j \in D_{2, test}^i, \hat{y_j} \in  T^i(D_{2, test}^i)$ for $1 \leq j \leq n$ 
+\begin{algorithm}
+\caption{Simulation Scheme 2.1}
+\label{sim2.1}
+\begin{algorithmic}[1]
+\For{$i \leq 1000$ }
+\State Randomly sample $\frac 2 3$  of the observations in  $D_2$  to a training set,  $D_{2, train}^i$. The other observations,  $x \in D_2, x \notin D_{2, train}^i$ form the testing set $D_{2, test}^i$
+\State Fit a tree, $T^i$, to the data under the model $Y \sim X_1,...,X_2$ using the observations in      $D_{2}^i$
+\State Calculate the $MSE_test$ of the model using the equation:
+    $MSE_{test} = \frac 1 n \sum (y_j - \hat{y_j})^2$
+\EndFor
+\end{algorithmic}
+\end{algorithm}
 
-This produces two distributions of $MSE_{test}$, one for CART and one for RPART. 
 
-### Figure 10:
+Where  $n$  is the number of observations in  $D_{2, test}^i$, $y_j \in D_{2, test}^i, \hat{y_j} \in  T^i(D_{2, test}^i)$ for $1 \leq j \leq n$ 
 
-```{r,echo=FALSE, message=FALSE, cache=TRUE}
+This produces two distributions of $MSE_{test}$, one for CART and one for CTree, conditional inference trees. 
+
+### Figure 11:
+
+```{r fig11,echo=FALSE, message=FALSE,cache=TRUE}
 testmseC <- rep(0,1000)
-testmseR <- rep(0,1000)
+testmseCt <- rep(0,1000)
 
 for(i in 1:1000){
   train <- sample(1000, 666)
-  tR <- rpart(y~., d2[train,])
+  tCt <- ctree(y~., d2[train,])
   tC <- tree(y~., d2[train,])
   testmseC[i] <- mean((d2[-train,]$y - predict(tC, d2[-train,]))^2)
-  testmseR[i] <- mean((d2[-train,]$y - predict(tR, d2[-train,]))^2)
+  testmseCt[i] <- mean((d2[-train,]$y - predict(tCt, d2[-train,]))^2)
 }
 
-testmse <- data.frame(RPART = testmseR, CART= testmseC)
+testmse <- data.frame(ConditionalInferenceTree = testmseCt, CART= testmseC)
 
 testm <- melt(testmse)
 
 ggplot(data = testm, aes(fill = variable, x = value)) + 
   geom_density(alpha = .5)+
-  ggtitle("Comparison of the Simulated MSEtest Distributions of RPART and CART")+
+  ggtitle("Comparison of the Simulated MSEtest Distributions of CTree and CART")+
   scale_fill_manual(values = thesis)+
   guides(fill=guide_legend(title=NULL))
+
 ```
 
-While trees may be variable, this variablility appears consistant across the algorithms considered here. 
 
-***
+While trees may be variable, this variablility appears consistant across the algorithms considered here. 
 
 ##Bagged Forests
 
@@ -416,9 +444,9 @@ While trees may be variable, this variablility appears consistant across the alg
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Let's put that to the test here using our dataset $D3$ again. We'll build 100 forests of 100 trees each and compare the variability of the $MSE$ distributions. 
 
-### Figure 11:
+### Figure 12:
 
-```{r, echo=FALSE, message=FALSE, cache=TRUE}
+```{r fig12, echo=FALSE, message=FALSE,cache=TRUE}
 library(bagRboostR)
 
 mse <- rep(0,100)
@@ -429,13 +457,13 @@ for (i in 1:100){
   mse[i] <- mean((d2$y[-train] - predict(b, d2[-train,]))^2)
 }
 
-msebag <- data.frame(BaggedForest = mse, RPART = sample(testmseR,100))
+msebag <- data.frame(BaggedForest = mse, CTree = sample(testmseCt,100))
 
 msebag <- melt(msebag)
 
 ggplot(aes(x = value, fill = variable), data = msebag) + 
   geom_density(alpha = .5)+
-  ggtitle("Comparison of the Simulated MSEtest Distributions of RPART and Bagged Forests")+
+  ggtitle("Comparison of the Simulated MSEtest Distributions of CTree and Bagged Forests")+
   scale_fill_manual(values = thesis)+
   guides(fill=guide_legend(title=NULL))
 
@@ -449,7 +477,9 @@ As the number of trees grown in each forest increases, the $MSE_{test}$ decrease
 
 For an illustration, let's build a random forest on $D3$ and compare the $MSE$. 
 
-```{r, echo=FALSE, message=FALSE, cache=TRUE}
+### Figure 13:
+
+```{r fig13, echo=FALSE, message=FALSE,cache=TRUE}
 
 mseRF <- rep(0,100)
 
@@ -459,16 +489,15 @@ for (i in 1:100){
   mseRF[i] <- mean((d3$y[-train] - predict(rf, d3[-train,]))^2)
 }
 
-mserf <- data.frame(BaggedForest = mse, RPART = sample(testmseR, 100), RandomForest = mseRF)
+mserf <- data.frame(BaggedForest = mse, CTree = sample(testmseCt, 100), RandomForest = mseRF)
 
 mserf<- melt(mserf)
 
 ggplot(aes(x = value, fill = variable), data = mserf) + 
   geom_density(alpha = .5)+
-  ggtitle("Comparison of the Simulated MSEtest Distributions of RPART, Random, and Bagged Forests")+
+  ggtitle("Comparison of the Simulated MSEtest Distributions of CTree, Random, and Bagged Forests")+
   scale_fill_manual(values = thesis)+
   guides(fill=guide_legend(title=NULL))
-
 
 ```
 

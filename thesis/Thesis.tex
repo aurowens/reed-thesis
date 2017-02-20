@@ -453,14 +453,14 @@ starts here.
   
   \subsubsection{Figure 1:}\label{figure-1}
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-2-1} \end{center}
+  \begin{center}\includegraphics{Thesis_files/figure-latex/fig1-1} \end{center}
   
   ~~~~~ As can be seen above in Figure 1 the densities of \(V_1,...,V_5\)
   are all very similar due to the way they were generated.
   
   \subsubsection{Figure 2:}\label{figure-2}
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-3-1} \end{center}
+  \begin{center}\includegraphics{Thesis_files/figure-latex/fig2-1} \end{center}
   
   ~~~~~ Figure 2 is an illustration of the relationship between
   \(Y\sim V_4\) with linear correlation of .789.
@@ -509,18 +509,18 @@ starts here.
   
   \subsubsection{Figure 3:}\label{figure-3}
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-4-1} \end{center}
+  \begin{center}\includegraphics{Thesis_files/figure-latex/fig3-1} \end{center}
   
   \subsubsection{Figure 4:}\label{figure-4}
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-5-1} \end{center}
+  \begin{center}\includegraphics{Thesis_files/figure-latex/fig4-1} \end{center}
   
   ~~~~~As seen in Figure 4, the pattern observed between \(X_1\) and
   \(X_2\) does not carry over to the other correlated predictors.
   
   \subsubsection{Figure 5:}\label{figure-5}
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-6-1} \end{center}
+  \begin{center}\includegraphics{Thesis_files/figure-latex/fig5-1} \end{center}
   
   ~~~~~Figure 5 demonstrate how the correlation between a few of the
   predictors and \(Y\) may be effected by slope. Scale is much more a
@@ -570,7 +570,7 @@ starts here.
   
   \subsubsection{Figure 6:}\label{figure-6}
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-7-1} \end{center}
+  \begin{center}\includegraphics{Thesis_files/figure-latex/fig6-1} \end{center}
   
   ~~~~~Figure 6 provides another way of visualizing some of the
   information given in Table 3. Here we can see the densities as well as
@@ -578,7 +578,7 @@ starts here.
   
   \subsubsection{Figure 7:}\label{figure-7}
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-8-1} \end{center}
+  \begin{center}\includegraphics{Thesis_files/figure-latex/fig7-1} \end{center}
   
   ~~~~~There is more variation between the densities of
   \(\omega_1,...,\omega_5\) then we have seen in the other data sets.
@@ -587,7 +587,7 @@ starts here.
   
   \subsection{Figure 8:}\label{figure-8}
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-9-1} \end{center}
+  \begin{center}\includegraphics{Thesis_files/figure-latex/fig8-1} \end{center}
   
   ~~~~~ As the relationship between \(Y\) and \(\omega_2\) was so
   striking, it is nice to see a scatterplot that represents it.
@@ -601,34 +601,53 @@ starts here.
   method for creating, pruning, and testing regression trees. What follows
   is their basic algorithm for fitting regression trees:
   
-  \subsubsection{Algorithm 2: CART, Regression
-  Trees}\label{algorithm-2-cart-regression-trees}
+  (From Introduction to Statistical Learning)
   
-  \emph{Ripley, B. D. (1996) Pattern Recognition and Neural Networks.
-  Cambridge University Press, Cambridge. Chapter 7.}
+  \begin{algorithm}
+  \caption{CART}
+  \label{cart}
+  \begin{algorithmic}[1]
+  \For{$i \leq 1000$ }
+  \State Randomly sample $\frac 2 3$  of the observations in  $D_2$  to a training set,  $D_{2, train}^i$. The other observations,  $x \in D_2, x \notin D_{2, train}^i$ form the testing set $D_{2, test}^i$
+  \State Fit a tree, $T^i$, to the data under the model $Y \sim X_1,...,X_2$ using the observations in      $D_{2}^i$
+  \State Calculate the $MSE_test$ of the model using the equation:
+      $MSE_{test} = \frac 1 n (y_j - \hat{y_j})^2$
+  \EndFor
+  \end{algorithmic}
+  \end{algorithm}
   
   \subsection{Figure 9:}\label{figure-9}
   
   \textbf{CART Representing Y\textasciitilde{}, from datasets D1, D2, and
   D3}
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-10-1} \end{center}
+  \begin{center}\includegraphics{Thesis_files/figure-latex/fig9-1} \end{center}
   
   \subsection{Conditional Inference
   Trees}\label{conditional-inference-trees}
   
-  ~~~~~Another popular method for creating regression tree models is
-  Conditional Inference Trees.
+  As mentioned in the introduction, CART has the tendency to bias towards
+  variables with the most possible splits and overfitting. There is little
+  head paid to statistical significance or general statistical theory.
+  \emph{Conditional Inference Trees} are a method proposed by Horthon et
+  al, 2006, that utilizes permutation theory to create and algorithm that
+  is sensitive to these issues.
   
-  CI trees
-  
-  \begin{verbatim}
-  1. For case weights  $w$  test the global null hypothesis of independence between any of the m covariates and the response. Stop if this hypothesis cannot be rejected. Otherwise select the  $j_{th}$  covariate  $Xj$  with strongest association to  $Y$.
-  
-  2. Choose a set  $A \subset X_{j}$  in order to split  $X_{j}$  into two disjoint sets  $A$  and  $X_{j}$ \ $A$.  The case weights  $w_{left}$  and  $w_{right}$  determine the two subgroups with  $w_{left,i} = w_iI(X_{j\cdot i} \in A)$  and  $w_{right,i} = w_iI(X_{ji} \in A)$ for all $i = 1,...,n$  ( $I(·)$  denotes the indicator function). 
-  
-  3. Recursively repeat steps 1 and 2 with modified case weights  $w_left$  and  $w_right$, respectively. 
-  \end{verbatim}
+  \begin{algorithm}
+  \caption{Conditional Inference Trees}
+  \label{ctree}
+  \begin{algorithmic}[1]
+  \For{$w_i, i \in {1,...,|w|}$}
+  \State Test the global null hypothesis of independence between any of the $m$ covariates and the response. 
+  \If{$H_O$ cannot be rejected} 
+  \State Stop 
+  \Else \State Select predictor $X_j$ with the strongest linear association to $Y$ 
+  \EndIf
+  \State Choose a set $A \in X_j$ such that $A \cup X_j \ A = A$ 
+  \State The case weights, $w_{left}$ and $w_{right}$ are then defined as $w_{left,i} = w_i I (x_j \in X_j, \in A)$ and $w_{right,i} = w_i I(x_j \in X_j, x_j \notin A)$
+  \EndFor
+  \end{algorithmic}
+  \end{algorithm}
   
   from
   \url{https://eeecon.uibk.ac.at/~zeileis/papers/Hothorn+Hornik+Zeileis-2006.pdf}
@@ -637,44 +656,47 @@ starts here.
   generate the split and choose the set \(A\). Note that in this method
   the splitting is done separately from the variable selection.
   
-  \begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
-  
   To compare the two methods, lets compare the CART tree fitted on \(D_2\)
-  above with a recursive partitioned tree as implemented in the R package
-  \texttt{rpart}.
+  above with a conditional inference tree as implemented in the R package
+  \texttt{partykit}.
   
   \subsection{Figure 10:}\label{figure-10}
   
-  *CART and RPART fitted to \(D_2\)
+  \textbf{CART and CTree fitted to \(D_2\)}
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-11-1} \end{center}
+  \begin{center}\includegraphics{Thesis_files/figure-latex/fig10-1} \end{center}
+  
+  \begin{center}\includegraphics{Thesis_files/figure-latex/fig10-2} \end{center}
   
   Trees can be quite variable, so to get a better idea of the differences
   between the methods let's run a simulation.
   
-  \textbf{Psuedo-code simulation} For \(i \leq 1000\): 1. Randomly sample
-  \(\frac 2 3\) of the observations in \(D_2\) to a training set,
-  \(D_{2, train}^i\). The other observations,
-  \(x \in D_2, x \notin D_{2, train}^i\) form the testing set
-  \(D_{2, test}^i\) 2. Fit a tree, \(T^i\), to the data under the model
-  \(Y \sim X_1,...,X_2\) using the observations in \(D_{2}^i\) 3.
-  Calculate the \(MSE_test\) of the model using the equation:
-  \[MSE_{test} = \frac 1 n (y_j - \hat{y_j})^2\] Where \(n\) is the number
-  of observations in \(D_{2, test}^i\),
+  \begin{algorithm}
+  \caption{Simulation Scheme 2.1}
+  \label{sim2.1}
+  \begin{algorithmic}[1]
+  \For{$i \leq 1000$ }
+  \State Randomly sample $\frac 2 3$  of the observations in  $D_2$  to a training set,  $D_{2, train}^i$. The other observations,  $x \in D_2, x \notin D_{2, train}^i$ form the testing set $D_{2, test}^i$
+  \State Fit a tree, $T^i$, to the data under the model $Y \sim X_1,...,X_2$ using the observations in      $D_{2}^i$
+  \State Calculate the $MSE_test$ of the model using the equation:
+      $MSE_{test} = \frac 1 n \sum (y_j - \hat{y_j})^2$
+  \EndFor
+  \end{algorithmic}
+  \end{algorithm}
+  
+  Where \(n\) is the number of observations in \(D_{2, test}^i\),
   \(y_j \in D_{2, test}^i, \hat{y_j} \in T^i(D_{2, test}^i)\) for
   \(1 \leq j \leq n\)
   
   This produces two distributions of \(MSE_{test}\), one for CART and one
-  for RPART.
+  for CTree, conditional inference trees.
   
-  \subsection{Figure 10:}\label{figure-10-1}
+  \subsection{Figure 11:}\label{figure-11}
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-12-1} \end{center}
+  \begin{center}\includegraphics{Thesis_files/figure-latex/fig11-1} \end{center}
   
   While trees may be variable, this variablility appears consistant across
   the algorithms considered here.
-  
-  \begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
   
   \section{Bagged Forests}\label{bagged-forests}
   
@@ -693,9 +715,9 @@ starts here.
   We'll build 100 forests of 100 trees each and compare the variability of
   the \(MSE\) distributions.
   
-  \subsection{Figure 11:}\label{figure-11}
+  \subsection{Figure 12:}\label{figure-12}
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-13-1} \end{center}
+  \begin{center}\includegraphics{Thesis_files/figure-latex/fig12-1} \end{center}
   
   ~~~~~As one can see, the values of \(MSE_{test}\) for the bagged forest
   were entirely below the \(MSE_test\) for the trees and the variance was
@@ -716,7 +738,9 @@ starts here.
   For an illustration, let's build a random forest on \(D3\) and compare
   the \(MSE\).
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-14-1} \end{center}
+  \subsection{Figure 13:}\label{figure-13}
+  
+  \begin{center}\includegraphics{Thesis_files/figure-latex/fig13-1} \end{center}
   
   \chapter{Permuatations Tests Theory and Application to Conditional
   Variable
