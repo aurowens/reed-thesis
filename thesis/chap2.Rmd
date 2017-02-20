@@ -126,7 +126,6 @@ ggplot(data = d1, aes(x = V4, y = y)) +
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Figure 2 is an illustration of the relationship between $Y\sim V_4$ with linear correlation of .789.
 
-
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;While $D_1$ represents a situation with linear correlation between the predictors, $D_2$ does not. Here, the model is the same, $Y~X_1,...,X_12$ where $Y$ is generated according to the equation: $$Y = 5 \cdot X_1 + 5 \cdot X_2 + 2 \cdot X_3 + 0 \cdot X_4 + -5 \cdot X_5 + -5\cdot X_6 + 0\cdot X_7 + 0 \cdot ..... + E, E \sim N(0,\frac 1 2 )$$
 
 However, instead of block correlation with $\rho = .9$, four variables are related to each other by the equations below. Note that $X_1, X_5,...,X_{12} ~ N(0,1)$ 
@@ -302,22 +301,7 @@ ggplot(data = d3, aes(x = W2, y = y)) +
 
 ####CART: Regression Trees
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As outlined in the 1984 textbook, *Classification and Regression Trees*, Brieman, Friedman, Olshen, and Stone described their method for creating, pruning, and testing regression trees. What follows is their basic algorithm for fitting regression trees:
-
-(From Introduction to Statistical Learning)
-
-\begin{algorithm}
-\caption{CART}
-\label{cart}
-\begin{algorithmic}[1]
-\For{$i \leq 1000$ }
-\State Randomly sample $\frac 2 3$  of the observations in  $D_2$  to a training set,  $D_{2, train}^i$. The other observations,  $x \in D_2, x \notin D_{2, train}^i$ form the testing set $D_{2, test}^i$
-\State Fit a tree, $T^i$, to the data under the model $Y \sim X_1,...,X_2$ using the observations in      $D_{2}^i$
-\State Calculate the $MSE_test$ of the model using the equation:
-    $MSE_{test} = \frac 1 n (y_j - \hat{y_j})^2$
-\EndFor
-\end{algorithmic}
-\end{algorithm}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As outlined in the 1984 textbook, *Classification and Regression Trees*, Brieman, Friedman, Olshen, and Stone described their method for creating, pruning, and testing regression trees. There are essentially three steps: one, decide on a variable to split over, two, partition that variable space in two distinct partitions, and three, set our intial predictions for each partition to be mean value of the response according to the observed responses corresponding to the values in the partitions. Recursively, this process is repeated for each new partition until some stopping condition is reached. This is a top down, greedy algorithm that functions by creating as large a tree as possible and then is pruned down to prevent overfitting. 
 
 
 ### Figure 9:
@@ -348,13 +332,13 @@ draw.tree(t3, digits = 2, col = c(thesis, rep(thesis, 3)))
 
 ###Conditional Inference Trees
 
-As mentioned in the introduction, CART has the tendency to bias towards variables with the most possible splits and overfitting. There is little head paid to statistical significance or general statistical theory. *Conditional Inference Trees* are a method proposed by Horthon et al, 2006, that utilizes permutation theory to create and algorithm that is sensitive to these issues. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As mentioned in the introduction, CART has the tendency to bias towards variables with the most possible splits and overfitting. There is little head paid to statistical significance or general statistical theory. *Conditional Inference Trees* are a method proposed by Horthon et al, 2006, that utilizes permutation theory to create and algorithm that is sensitive to these issues. A crutial difference between CTree and CART is that while CART is a top down algorithm, CTree initially assumes each row of the dataset is a node and then gradually prunes them.
 
 \begin{algorithm}
 \caption{Conditional Inference Trees}
 \label{ctree}
 \begin{algorithmic}[1]
-\For{$w_i, i \in {1,...,|w|}$}
+\For{$w_i, i \in \{{w_1,...,w_n}\}$}
 \State Test the global null hypothesis of independence between any of the $m$ covariates and the response. 
 \If{$H_O$ cannot be rejected} 
 \State Stop 
@@ -366,30 +350,24 @@ As mentioned in the introduction, CART has the tendency to bias towards variable
 \end{algorithmic}
 \end{algorithm}
 
-
-from  https://eeecon.uibk.ac.at/~zeileis/papers/Hothorn+Hornik+Zeileis-2006.pdf
-
-After step 1 is completed, any goodness of fit method can be used to generate the split and choose the set $A$. Note that in this method the splitting is done separately from the variable selection. 
-
-
-To compare the two methods, lets compare the CART tree fitted on $D_2$ above with a conditional inference tree as implemented in the R package `partykit`. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The case weights, $w_i \in {w_1,..., w_n}$, correspond to nodes are defined as:$$w_i = I(x_i \in {N_t})$$ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Where $x_i$ is a vector of observations and $N_t$ is a node in the tree. CTree's inferential power comes from their use of permuation tests, which will be expanded upon in Chapter 3. For now, lets compare the CART tree fitted on $D_2$ above with a conditional inference tree as implemented in the R package `partykit`. 
 
 ### Figure 10:
 
 **CART and CTree fitted to $D_2$**
 
-```{r fig10, message=FALSE, warning=FALSE, echo=FALSE,cache=TRUE}
+```{r fig10, message=FALSE, warning=FALSE, echo=FALSE}
 library(partykit)
 
 t2.2 <- ctree(y~., round(d2))
 #t2.2$frame$yval <- round(t2.2$frame$yval)
 
 par(mfrow=c(1,2))
-plot(t2.2, col = c(thesis, rep(thesis, 3)))
+plot(t2.2, col = c(thesis, rep(thesis, 3)), clip = TRUE, type="simple", drop_terminal = TRUE)
 draw.tree(t2, digits = 2, col = c(thesis, rep(thesis, 3)))
 ```
 
-Trees can be quite variable, so to get a better idea of the differences between the methods let's run a simulation.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Trees can be quite variable, so to get a better idea of the differences between the methods let's run a simulation.
 
 \begin{algorithm}
 \caption{Simulation Scheme 2.1}
@@ -405,9 +383,7 @@ Trees can be quite variable, so to get a better idea of the differences between 
 \end{algorithm}
 
 
-Where  $n$  is the number of observations in  $D_{2, test}^i$, $y_j \in D_{2, test}^i, \hat{y_j} \in  T^i(D_{2, test}^i)$ for $1 \leq j \leq n$ 
-
-This produces two distributions of $MSE_{test}$, one for CART and one for CTree, conditional inference trees. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Where  $n$  is the number of observations in  $D_{2, test}^i$, $y_j \in D_{2, test}^i, \hat{y_j} \in  T^i(D_{2, test}^i)$ for $1 \leq j \leq n$ This produces two distributions of $MSE_{test}$, one for CART and one for CTree, conditional inference trees. 
 
 ### Figure 11:
 
@@ -435,8 +411,7 @@ ggplot(data = testm, aes(fill = variable, x = value)) +
 
 ```
 
-
-While trees may be variable, this variablility appears consistant across the algorithms considered here. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The CTree tree outperformed the CART one on $MSE_{test}$. 
 
 ##Bagged Forests
 
@@ -498,7 +473,6 @@ ggplot(aes(x = value, fill = variable), data = mserf) +
   ggtitle("Comparison of the Simulated MSEtest Distributions of CTree, Random, and Bagged Forests")+
   scale_fill_manual(values = thesis)+
   guides(fill=guide_legend(title=NULL))
-
 ```
 
-
+In this situation, the bagged forest outplayed the random forest. **Why?**

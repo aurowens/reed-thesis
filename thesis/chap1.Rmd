@@ -69,12 +69,20 @@ $$PV(x_j) = \frac{\sum_1^ntree PV^t(x_j)}{\frac{\hat{\sigma}}{\sqrt{ntree}}}$$
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; The researchers at the University of Munich published a fully fleshed response to the Breiman and Cutler method in 2008, titled *Conditional Variable Importance for Random Forests* that address these issues. Strobl et al propose restructuring the Breiman and Cutler algorithm to account for conditional dependence among the predictors. Their algorithm looks like this:
 
-1. Fit a random forest to the model, $R_0$, and calculate base variable importance for each variable $V$ 
-2. For every predictor $X_j \in X_1,...,X_n$:
-+ 2a. Conditionally permute $X_j$ given the splits found in $R_0$
-+ 2b. Fit a new random forest $R_j$ with the permuted data
-+ 2c. Calculate a new variable importance $\hat{V}_j$
-3. For every variable $X_1,..., X_n$, $$CV(X_j) = \hat{V}_j - V_j$$
+\begin{algorithm}
+\caption{Conditional Variable Importance for Random Forests}
+\label{cviRF}
+\begin{algorithmic}[1]
+\State Fit a random forest to the model, $R_0$, and calculate base variable importance for each variable $V$ 
+\For{every predictor $X_j \in X_1,...,X_n$}
+\State Conditionally permute $X_j$ given the splits found in $R_0$
+\State Fit a new random forest $R_j$ with the permuted data
+\State Calculate a new variable importance $\hat{V}_j$
+\EndFor
+\State For every variable $X_1,..., X_n$, $$CV(X_j) = \hat{V}_j - V_j$$
+\end{algorithmic}
+\end{algorithm}
+
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; The null hypothesis is that $CV(X_j) = 0$ given the predictor $Y$ *and all other predictors* $X_1,..X_n$.This accounts for interactions between $X_j$ and the other predictors. Using the simulated data from the previous example, here's an implementation of the algorithm outlined here as it is in the `party` package. 
 

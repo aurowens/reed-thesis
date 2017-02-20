@@ -335,33 +335,19 @@ starts here.
   algorithm to account for conditional dependence among the predictors.
   Their algorithm looks like this:
   
-  \begin{enumerate}
-  \def\labelenumi{\arabic{enumi}.}
-  \tightlist
-  \item
-    Fit a random forest to the model, \(R_0\), and calculate base variable
-    importance for each variable \(V\)
-  \item
-    For every predictor \(X_j \in X_1,...,X_n\):
-  \end{enumerate}
-  
-  \begin{itemize}
-  \tightlist
-  \item
-    2a. Conditionally permute \(X_j\) given the splits found in \(R_0\)
-  \item
-    2b. Fit a new random forest \(R_j\) with the permuted data
-  \item
-    2c. Calculate a new variable importance \(\hat{V}_j\)
-  \end{itemize}
-  
-  \begin{enumerate}
-  \def\labelenumi{\arabic{enumi}.}
-  \setcounter{enumi}{2}
-  \tightlist
-  \item
-    For every variable \(X_1,..., X_n\), \[CV(X_j) = \hat{V}_j - V_j\]
-  \end{enumerate}
+  \begin{algorithm}
+  \caption{Conditional Variable Importance for Random Forests}
+  \label{cviRF}
+  \begin{algorithmic}[1]
+  \State Fit a random forest to the model, $R_0$, and calculate base variable importance for each variable $V$ 
+  \For{every predictor $X_j \in X_1,...,X_n$}
+  \State Conditionally permute $X_j$ given the splits found in $R_0$
+  \State Fit a new random forest $R_j$ with the permuted data
+  \State Calculate a new variable importance $\hat{V}_j$
+  \EndFor
+  \State For every variable $X_1,..., X_n$, $$CV(X_j) = \hat{V}_j - V_j$$
+  \end{algorithmic}
+  \end{algorithm}
   
   ~~~~~ The null hypothesis is that \(CV(X_j) = 0\) given the predictor
   \(Y\) \emph{and all other predictors} \(X_1,..X_n\).This accounts for
@@ -598,23 +584,15 @@ starts here.
   
   ~~~~~As outlined in the 1984 textbook, \emph{Classification and
   Regression Trees}, Brieman, Friedman, Olshen, and Stone described their
-  method for creating, pruning, and testing regression trees. What follows
-  is their basic algorithm for fitting regression trees:
-  
-  (From Introduction to Statistical Learning)
-  
-  \begin{algorithm}
-  \caption{CART}
-  \label{cart}
-  \begin{algorithmic}[1]
-  \For{$i \leq 1000$ }
-  \State Randomly sample $\frac 2 3$  of the observations in  $D_2$  to a training set,  $D_{2, train}^i$. The other observations,  $x \in D_2, x \notin D_{2, train}^i$ form the testing set $D_{2, test}^i$
-  \State Fit a tree, $T^i$, to the data under the model $Y \sim X_1,...,X_2$ using the observations in      $D_{2}^i$
-  \State Calculate the $MSE_test$ of the model using the equation:
-      $MSE_{test} = \frac 1 n (y_j - \hat{y_j})^2$
-  \EndFor
-  \end{algorithmic}
-  \end{algorithm}
+  method for creating, pruning, and testing regression trees. There are
+  essentially three steps: one, decide on a variable to split over, two,
+  partition that variable space in two distinct partitions, and three, set
+  our intial predictions for each partition to be mean value of the
+  response according to the observed responses corresponding to the values
+  in the partitions. Recursively, this process is repeated for each new
+  partition until some stopping condition is reached. This is a top down,
+  greedy algorithm that functions by creating as large a tree as possible
+  and then is pruned down to prevent overfitting.
   
   \subsection{Figure 9:}\label{figure-9}
   
@@ -626,18 +604,21 @@ starts here.
   \subsection{Conditional Inference
   Trees}\label{conditional-inference-trees}
   
-  As mentioned in the introduction, CART has the tendency to bias towards
-  variables with the most possible splits and overfitting. There is little
-  head paid to statistical significance or general statistical theory.
-  \emph{Conditional Inference Trees} are a method proposed by Horthon et
-  al, 2006, that utilizes permutation theory to create and algorithm that
-  is sensitive to these issues.
+  ~~~~~As mentioned in the introduction, CART has the tendency to bias
+  towards variables with the most possible splits and overfitting. There
+  is little head paid to statistical significance or general statistical
+  theory. \emph{Conditional Inference Trees} are a method proposed by
+  Horthon et al, 2006, that utilizes permutation theory to create and
+  algorithm that is sensitive to these issues. A crutial difference
+  between CTree and CART is that while CART is a top down algorithm, CTree
+  initially assumes each row of the dataset is a node and then gradually
+  prunes them.
   
   \begin{algorithm}
   \caption{Conditional Inference Trees}
   \label{ctree}
   \begin{algorithmic}[1]
-  \For{$w_i, i \in {1,...,|w|}$}
+  \For{$w_i, i \in \{{w_1,...,w_n}\}$}
   \State Test the global null hypothesis of independence between any of the $m$ covariates and the response. 
   \If{$H_O$ cannot be rejected} 
   \State Stop 
@@ -649,14 +630,11 @@ starts here.
   \end{algorithmic}
   \end{algorithm}
   
-  from
-  \url{https://eeecon.uibk.ac.at/~zeileis/papers/Hothorn+Hornik+Zeileis-2006.pdf}
-  
-  After step 1 is completed, any goodness of fit method can be used to
-  generate the split and choose the set \(A\). Note that in this method
-  the splitting is done separately from the variable selection.
-  
-  To compare the two methods, lets compare the CART tree fitted on \(D_2\)
+  ~~~~~The case weights, \(w_i \in {w_1,..., w_n}\), correspond to nodes
+  are defined as:\[w_i = I(x_i \in {N_t})\] ~~~~~Where \(x_i\) is a vector
+  of observations and \(N_t\) is a node in the tree. CTree's inferential
+  power comes from their use of permuation tests, which will be expanded
+  upon in Chapter 3. For now, lets compare the CART tree fitted on \(D_2\)
   above with a conditional inference tree as implemented in the R package
   \texttt{partykit}.
   
@@ -668,8 +646,8 @@ starts here.
   
   \begin{center}\includegraphics{Thesis_files/figure-latex/fig10-2} \end{center}
   
-  Trees can be quite variable, so to get a better idea of the differences
-  between the methods let's run a simulation.
+  ~~~~~Trees can be quite variable, so to get a better idea of the
+  differences between the methods let's run a simulation.
   
   \begin{algorithm}
   \caption{Simulation Scheme 2.1}
@@ -684,19 +662,16 @@ starts here.
   \end{algorithmic}
   \end{algorithm}
   
-  Where \(n\) is the number of observations in \(D_{2, test}^i\),
+  ~~~~~Where \(n\) is the number of observations in \(D_{2, test}^i\),
   \(y_j \in D_{2, test}^i, \hat{y_j} \in T^i(D_{2, test}^i)\) for
-  \(1 \leq j \leq n\)
-  
-  This produces two distributions of \(MSE_{test}\), one for CART and one
-  for CTree, conditional inference trees.
+  \(1 \leq j \leq n\) This produces two distributions of \(MSE_{test}\),
+  one for CART and one for CTree, conditional inference trees.
   
   \subsection{Figure 11:}\label{figure-11}
   
   \begin{center}\includegraphics{Thesis_files/figure-latex/fig11-1} \end{center}
   
-  While trees may be variable, this variablility appears consistant across
-  the algorithms considered here.
+  ~~~~~The CTree tree outperformed the CART one on \(MSE_{test}\).
   
   \section{Bagged Forests}\label{bagged-forests}
   
@@ -741,6 +716,9 @@ starts here.
   \subsection{Figure 13:}\label{figure-13}
   
   \begin{center}\includegraphics{Thesis_files/figure-latex/fig13-1} \end{center}
+  
+  In this situation, the bagged forest outplayed the random forest.
+  \textbf{Why?}
   
   \chapter{Permuatations Tests Theory and Application to Conditional
   Variable
