@@ -18,4 +18,7 @@ if(!require(reedtemplates)){
 library(reedtemplates)
 ```
 
-#Implementation of Our Method
+#INFTrees and INFforests Variable Importance
+##Theory
+##Implementation
+

@@ -3,16 +3,14 @@
 
   One of the biggest problems for forest methods is that they are not very interperatable. This project attempts to alieviate this by building on the framework created in Strobl et al 2008 to create a method of assigning p-values to variable importance.     
    
-##Outline
+##Schedule for March: Onward and Upward
 
-  To do by December 8th
+2/27 - Chapter 2, Rough notes for Chapter 3, CTree 
 
-##*Proposed* Timeline
+3/6 - Chapter 3
 
-- **October 27th**, literature review done
+3/13 - Spring Break - Polish Package and Chapter 4 
 
-- **December 8th**, outline and first chapter complete
-    
-- **March 30th**, first draft of full document done
+3/20 - Chapter 4
 
-- **April 27th**, final draft of full document done
+3/27 - Conclusion

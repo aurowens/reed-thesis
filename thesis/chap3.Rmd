@@ -28,4 +28,8 @@ library(reedtemplates)
 #flights <- read.csv("data/flights.csv")
 ```
 
-#Permuatations Tests Theory and Application to Conditional Variable Importance
+#Random Forest Variable Importance
+
+##Breiman et al Introduce Permuted Variable Importance (1984)
+
+##Strobl et al Respond (2008)

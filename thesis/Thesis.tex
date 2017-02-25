@@ -601,51 +601,6 @@ starts here.
   
   \begin{center}\includegraphics{Thesis_files/figure-latex/fig9-1} \end{center}
   
-  \subsection{Conditional Inference
-  Trees}\label{conditional-inference-trees}
-  
-  ~~~~~As mentioned in the introduction, CART has the tendency to bias
-  towards variables with the most possible splits and overfitting. There
-  is little head paid to statistical significance or general statistical
-  theory. \emph{Conditional Inference Trees} are a method proposed by
-  Horthon et al, 2006, that utilizes permutation theory to create and
-  algorithm that is sensitive to these issues. A crutial difference
-  between CTree and CART is that while CART is a top down algorithm, CTree
-  initially assumes each row of the dataset is a node and then gradually
-  prunes them.
-  
-  \begin{algorithm}
-  \caption{Conditional Inference Trees}
-  \label{ctree}
-  \begin{algorithmic}[1]
-  \For{$w_i, i \in \{{w_1,...,w_n}\}$}
-  \State Test the global null hypothesis of independence between any of the $m$ covariates and the response. 
-  \If{$H_O$ cannot be rejected} 
-  \State Stop 
-  \Else \State Select predictor $X_j$ with the strongest linear association to $Y$ 
-  \EndIf
-  \State Choose a set $A \in X_j$ such that $A \cup X_j \ A = A$ 
-  \State The case weights, $w_{left}$ and $w_{right}$ are then defined as $w_{left,i} = w_i I (x_j \in X_j, \in A)$ and $w_{right,i} = w_i I(x_j \in X_j, x_j \notin A)$
-  \EndFor
-  \end{algorithmic}
-  \end{algorithm}
-  
-  ~~~~~The case weights, \(w_i \in {w_1,..., w_n}\), correspond to nodes
-  are defined as:\[w_i = I(x_i \in {N_t})\] ~~~~~Where \(x_i\) is a vector
-  of observations and \(N_t\) is a node in the tree. CTree's inferential
-  power comes from their use of permuation tests, which will be expanded
-  upon in Chapter 3. For now, lets compare the CART tree fitted on \(D_2\)
-  above with a conditional inference tree as implemented in the R package
-  \texttt{partykit}.
-  
-  \subsection{Figure 10:}\label{figure-10}
-  
-  \textbf{CART and CTree fitted to \(D_2\)}
-  
-  \begin{center}\includegraphics{Thesis_files/figure-latex/fig10-1} \end{center}
-  
-  \begin{center}\includegraphics{Thesis_files/figure-latex/fig10-2} \end{center}
-  
   ~~~~~Trees can be quite variable, so to get a better idea of the
   differences between the methods let's run a simulation.
   
@@ -671,7 +626,8 @@ starts here.
   
   \begin{center}\includegraphics{Thesis_files/figure-latex/fig11-1} \end{center}
   
-  ~~~~~The CTree tree outperformed the CART one on \(MSE_{test}\).
+  ~~~~~The distribution of 1000 CART trees' \(MSE_{test}\) is roughly
+  normal with a variance of \texttt{var(testmseC)}.
   
   \section{Bagged Forests}\label{bagged-forests}
   
@@ -717,15 +673,20 @@ starts here.
   
   \begin{center}\includegraphics{Thesis_files/figure-latex/fig13-1} \end{center}
   
-  In this situation, the bagged forest outplayed the random forest.
-  \textbf{Why?}
+  \chapter{Random Forest Variable
+  Importance}\label{random-forest-variable-importance}
   
-  \chapter{Permuatations Tests Theory and Application to Conditional
-  Variable
-  Importance}\label{permuatations-tests-theory-and-application-to-conditional-variable-importance}
+  \section{Breiman et al Introduce Permuted Variable Importance
+  (1984)}\label{breiman-et-al-introduce-permuted-variable-importance-1984}
   
-  \chapter{Implementation of Our
-  Method}\label{implementation-of-our-method}
+  \section{Strobl et al Respond (2008)}\label{strobl-et-al-respond-2008}
+  
+  \chapter{INFTrees and INFforests Variable
+  Importance}\label{inftrees-and-infforests-variable-importance}
+  
+  \section{Theory}\label{theory}
+  
+  \section{Implementation}\label{implementation}
   
   \chapter*{Conclusion}\label{conclusion}
   \addcontentsline{toc}{chapter}{Conclusion}
@@ -796,8 +757,46 @@ starts here.
   \end{Highlighting}
   \end{Shaded}
   
-  \chapter{The Second Appendix, for
-  Fun}\label{the-second-appendix-for-fun}
+  \chapter{The Second Appendix: CTree}\label{the-second-appendix-ctree}
+  
+  \subsection{Conditional Inference
+  Trees}\label{conditional-inference-trees}
+  
+  ~~~~~As mentioned in the introduction, CART has the tendency to bias
+  towards variables with the most possible splits and overfitting. There
+  is little head paid to statistical significance or general statistical
+  theory. \emph{Conditional Inference Trees} are a method proposed by
+  Horthon et al, 2006, that utilizes permutation theory to create and
+  algorithm that is sensitive to these issues. A crutial difference
+  between CTree and CART is that while CART is a top down algorithm, CTree
+  initially assumes each row of the dataset is a node and then gradually
+  prunes them.
+  
+  \begin{algorithm}
+  \caption{Conditional Inference Trees}
+  \label{ctree}
+  \begin{algorithmic}[1]
+  \For{$w_i, i \in \{{w_1,...,w_n}\}$}
+  \State Test the global null hypothesis of independence between any of the $m$ covariates and the response. 
+  \If{$H_O$ cannot be rejected} 
+  \State Stop 
+  \Else \State Select predictor $X_j$ with the strongest linear association to $Y$ 
+  \EndIf
+  \State Choose a set $A \in X_j$ such that $A \cup X_j \ A = A$ 
+  \State The case weights, $w_{left}$ and $w_{right}$ are then defined as $w_{left,i} = w_i I (x_j \in X_j, \in A)$ and $w_{right,i} = w_i I(x_j \in X_j, x_j \notin A)$
+  \EndFor
+  \end{algorithmic}
+  \end{algorithm}
+  
+  ~~~~~The case weights, \(w_i \in {w_1,..., w_n}\), correspond to nodes
+  are defined as:\[w_i = I(x_i \in {N_t})\] ~~~~~Where \(x_i\) is a vector
+  of observations and \(N_t\) is a node in the tree.
+  
+  \textbf{CTree fitted to \(D_3\)}
+  
+  \begin{center}\includegraphics{Thesis_files/figure-latex/ctree-1} \end{center}
+  
+  \begin{center}\includegraphics{Thesis_files/figure-latex/ctree-2} \end{center}
   
   \backmatter
   

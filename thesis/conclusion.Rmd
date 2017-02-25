@@ -32,4 +32,77 @@ This first appendix includes all of the R chunks of code that were hidden throug
 ```{r ref.label = 'include_packages_2', results = 'hide', echo = TRUE}
 ```
 
-# The Second Appendix, for Fun
+# The Second Appendix: CTree
+
+
+###Conditional Inference Trees
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As mentioned in the introduction, CART has the tendency to bias towards variables with the most possible splits and overfitting. There is little head paid to statistical significance or general statistical theory. *Conditional Inference Trees* are a method proposed by Horthon et al, 2006, that utilizes permutation theory to create and algorithm that is sensitive to these issues. A crutial difference between CTree and CART is that while CART is a top down algorithm, CTree initially assumes each row of the dataset is a node and then gradually prunes them.
+
+\begin{algorithm}
+\caption{Conditional Inference Trees}
+\label{ctree}
+\begin{algorithmic}[1]
+\For{$w_i, i \in \{{w_1,...,w_n}\}$}
+\State Test the global null hypothesis of independence between any of the $m$ covariates and the response. 
+\If{$H_O$ cannot be rejected} 
+\State Stop 
+\Else \State Select predictor $X_j$ with the strongest linear association to $Y$ 
+\EndIf
+\State Choose a set $A \in X_j$ such that $A \cup X_j \ A = A$ 
+\State The case weights, $w_{left}$ and $w_{right}$ are then defined as $w_{left,i} = w_i I (x_j \in X_j, \in A)$ and $w_{right,i} = w_i I(x_j \in X_j, x_j \notin A)$
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The case weights, $w_i \in {w_1,..., w_n}$, correspond to nodes are defined as:$$w_i = I(x_i \in {N_t})$$ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Where $x_i$ is a vector of observations and $N_t$ is a node in the tree.
+
+**CTree fitted to $D_3$**
+
+```{r ctree, message=FALSE, warning=FALSE, echo=FALSE}
+
+w1 <- rnorm(1000)
+
+w2 <- 2*log(abs(w1)) + rnorm(1000)
+
+w3 <- 2*log(abs(w2)) + rnorm(1000)
+
+w4 <- 2*log(abs(w3)) + rnorm(1000)
+
+mvrnorm(n =n, mu = mu, Sigma = sigma) -> simw5w12
+
+data.frame(w1,w2,w3,w4,simw5w12) -> d3
+              
+c("W1","W2","W3","W4","W5","W6", "W7","W8","W9","W10","W11","W12") -> names(d3)
+
+rep(0, 1000) -> ys #init a vector of zeros
+
+for( i in 1:1000){ #go row by row and create the ys based on the function of e, bts, and d3
+ys[i] <- d3[i,1]*bts[1]+
+    d3[i,2]*bts[2]+ 
+    d3[i,3]*bts[3]+ 
+    d3[i,4]*bts[4]+ 
+    d3[i,5]*bts[5]+ 
+    d3[i,6]*bts[6]+
+    d3[i,7]*bts[7]+ 
+    d3[i,8]*bts[8]+ 
+    d3[i,9]*bts[9]+ 
+    d3[i,10]*bts[10]+ 
+    d3[i,11]*bts[11]+ 
+    d3[i,12]*bts[12] +
+    e[i]
+}
+
+d3$y <- ys
+
+library(partykit)
+
+t2.2 <- ctree(y~., round(d3))
+#t2.2$frame$yval <- round(t2.2$frame$yval)
+
+par(mfrow=c(1,2))
+plot(t2.2, col = c(thesis, rep(thesis, 3)), clip = TRUE, type="simple", drop_terminal = TRUE)
+draw.tree(t2, digits = 2, col = c(thesis, rep(thesis, 3)))
+```
+
+
