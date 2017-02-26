@@ -32,4 +32,23 @@ library(reedtemplates)
 
 ##Breiman et al Introduce Permuted Variable Importance (1984)
 
+###Variable Importance on a Single Tree
+
+Breiman et al in *Classification and Regression Trees* (1984) propose a method for variable importance for individual trees that stems from their definition of $\tilde{s}$, a surrogate split. Surrogate splits help Brieman et al deal with several common problems one may have: modeling with missing data, diagnosing masking, and variable importance. They are defined using logic that resembles the logic behind random forests. 
+
+####Definitions 
+
+Assume the standard structure for tree models. Let $D$ be the dataset composed of $D = {Y, X_1,...X_p}$, where the model we would like to estimate is of the form $T: Y \sim X_1,...X_p$. For any node $t \in T(D)$, $s*$ is the best split of the node into daughters $t_r$ and $t_l$. Take $X_i \in D$ and let $S_i$ be the set of all of the splits on $X_i$ in $T$. Then set $\bar{S_i}$ equal to the complement of $S_i$, $\bar{S_i} = S_i^c$. For any possible split $s_i \in S_i \cup \bar{S_i}$, $s_i$ will split the node $t$ into two daughters, $t_{i,l}$ and $t_{i,r}$. Count the number of times that $s*$ and $s_i$, while splitting differently, generate the same left daughter $t_{l}$ as $N_{LL}$ and the number of times they generate the same right daughter as $N_{RR}$. Then the probability**EXPAND?**
+
+Basically a surrogate split $\tilde{s}$,is one that estimates the best possible univariate split $s*$ on node $t$. 
+
+
+**Defintion: Variable Importance, Single Tree**
+
+$$VI_{tree}(X_i) = \sum_{t \in T} \Delta RSS(\tilde{s_i}, t)$$
+Or the decrease of RSS attributable to $X_i$ accross the tree $T$. 
+
+
+###Variable Importance for a Random Forest
+
 ##Strobl et al Respond (2008)

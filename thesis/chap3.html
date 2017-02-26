@@ -122,8 +122,28 @@ $(document).ready(function () {
 <!--
 You can delete the header-includes (lines 3-6 above) if you like and also the chunk below since it is loaded in the skeleton.Rmd file.  They are included so that chap3.Rmd will compile by itself when you hit Knit PDF.
 -->
-<div id="permuatations-tests-theory-and-application-to-conditional-variable-importance" class="section level1">
-<h1>Permuatations Tests Theory and Application to Conditional Variable Importance</h1>
+<div id="random-forest-variable-importance" class="section level1">
+<h1>Random Forest Variable Importance</h1>
+<div id="breiman-et-al-introduce-permuted-variable-importance-1984" class="section level2">
+<h2>Breiman et al Introduce Permuted Variable Importance (1984)</h2>
+<div id="variable-importance-on-a-single-tree" class="section level3">
+<h3>Variable Importance on a Single Tree</h3>
+<p>Breiman et al in <em>Classification and Regression Trees</em> (1984) propose a method for variable importance for individual trees that stems from their definition of <span class="math inline">\(\tilde{s}\)</span>, a surrogate split. Surrogate splits help Brieman et al deal with several common problems one may have: modeling with missing data, diagnosing masking, and variable importance. They are defined using logic that resembles the logic behind random forests.</p>
+<div id="definitions" class="section level4">
+<h4>Definitions</h4>
+<p>Assume the standard structure for tree models. Let <span class="math inline">\(D\)</span> be the dataset composed of <span class="math inline">\(D = {Y, X_1,...X_p}\)</span>, where the model we would like to estimate is of the form <span class="math inline">\(T: Y \sim X_1,...X_p\)</span>. For any node <span class="math inline">\(t \in T(D)\)</span>, <span class="math inline">\(s*\)</span> is the best split of the node into daughters <span class="math inline">\(t_r\)</span> and <span class="math inline">\(t_l\)</span>. Take <span class="math inline">\(X_i \in D\)</span> and let <span class="math inline">\(S_i\)</span> be the set of all of the splits on <span class="math inline">\(X_i\)</span> in <span class="math inline">\(T\)</span>. Then set <span class="math inline">\(\bar{S_i}\)</span> equal to the complement of <span class="math inline">\(S_i\)</span>, <span class="math inline">\(\bar{S_i} = S_i^c\)</span>. For any possible split <span class="math inline">\(s_i \in S_i \cup \bar{S_i}\)</span>, <span class="math inline">\(s_i\)</span> will split the node <span class="math inline">\(t\)</span> into two daughters, <span class="math inline">\(t_{i,l}\)</span> and <span class="math inline">\(t_{i,r}\)</span>. Count the number of times that <span class="math inline">\(s*\)</span> and <span class="math inline">\(s_i\)</span>, while splitting differently, generate the same left daughter <span class="math inline">\(t_{l}\)</span> as <span class="math inline">\(N_{LL}\)</span> and the number of times they generate the same right daughter as <span class="math inline">\(N_{RR}\)</span>. Then the probability<strong>EXPAND?</strong></p>
+<p>Basically a surrogate split <span class="math inline">\(\tilde{s}\)</span>,is one that estimates the best possible univariate split <span class="math inline">\(s*\)</span> on node <span class="math inline">\(t\)</span>.</p>
+<p><strong>Defintion: Variable Importance, Single Tree</strong></p>
+<p><span class="math display">\[VI_{tree}(X_i) = \sum_{t \in T} \Delta RSS(\tilde{s_i}, t)\]</span> Or the decrease of RSS attributable to <span class="math inline">\(X_i\)</span> accross the tree <span class="math inline">\(T\)</span>.</p>
+</div>
+</div>
+<div id="variable-importance-for-a-random-forest" class="section level3">
+<h3>Variable Importance for a Random Forest</h3>
+</div>
+</div>
+<div id="strobl-et-al-respond-2008" class="section level2">
+<h2>Strobl et al Respond (2008)</h2>
+</div>
 </div>
 
 

@@ -590,7 +590,7 @@ starts here.
   our intial predictions for each partition to be mean value of the
   response according to the observed responses corresponding to the values
   in the partitions. Recursively, this process is repeated for each new
-  partition until some stopping condition is reached. This is a top down,
+  partition until some stopping condition is reached.This is a top down,
   greedy algorithm that functions by creating as large a tree as possible
   and then is pruned down to prevent overfitting.
   
@@ -622,9 +622,9 @@ starts here.
   \(1 \leq j \leq n\) This produces two distributions of \(MSE_{test}\),
   one for CART and one for CTree, conditional inference trees.
   
-  \subsection{Figure 11:}\label{figure-11}
+  \subsection{Figure 10:}\label{figure-10}
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/fig11-1} \end{center}
+  \begin{center}\includegraphics{Thesis_files/figure-latex/fig10-1} \end{center}
   
   ~~~~~The distribution of 1000 CART trees' \(MSE_{test}\) is roughly
   normal with a variance of \texttt{var(testmseC)}.
@@ -646,9 +646,9 @@ starts here.
   We'll build 100 forests of 100 trees each and compare the variability of
   the \(MSE\) distributions.
   
-  \subsection{Figure 12:}\label{figure-12}
+  \subsection{Figure 11:}\label{figure-11}
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/fig12-1} \end{center}
+  \begin{center}\includegraphics{Thesis_files/figure-latex/fig11-1} \end{center}
   
   ~~~~~As one can see, the values of \(MSE_{test}\) for the bagged forest
   were entirely below the \(MSE_test\) for the trees and the variance was
@@ -669,15 +669,53 @@ starts here.
   For an illustration, let's build a random forest on \(D3\) and compare
   the \(MSE\).
   
-  \subsection{Figure 13:}\label{figure-13}
+  \subsection{Figure 12:}\label{figure-12}
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/fig13-1} \end{center}
+  \begin{center}\includegraphics{Thesis_files/figure-latex/fig12-1} \end{center}
   
   \chapter{Random Forest Variable
   Importance}\label{random-forest-variable-importance}
   
   \section{Breiman et al Introduce Permuted Variable Importance
   (1984)}\label{breiman-et-al-introduce-permuted-variable-importance-1984}
+  
+  \subsection{Variable Importance on a Single
+  Tree}\label{variable-importance-on-a-single-tree}
+  
+  Breiman et al in \emph{Classification and Regression Trees} (1984)
+  propose a method for variable importance for individual trees that stems
+  from their definition of \(\tilde{s}\), a surrogate split. Surrogate
+  splits help Brieman et al deal with several common problems one may
+  have: modeling with missing data, diagnosing masking, and variable
+  importance. They are defined using logic that resembles the logic behind
+  random forests.
+  
+  \subsubsection{Definitions}\label{definitions}
+  
+  Assume the standard structure for tree models. Let \(D\) be the dataset
+  composed of \(D = {Y, X_1,...X_p}\), where the model we would like to
+  estimate is of the form \(T: Y \sim X_1,...X_p\). For any node
+  \(t \in T(D)\), \(s*\) is the best split of the node into daughters
+  \(t_r\) and \(t_l\). Take \(X_i \in D\) and let \(S_i\) be the set of
+  all of the splits on \(X_i\) in \(T\). Then set \(\bar{S_i}\) equal to
+  the complement of \(S_i\), \(\bar{S_i} = S_i^c\). For any possible split
+  \(s_i \in S_i \cup \bar{S_i}\), \(s_i\) will split the node \(t\) into
+  two daughters, \(t_{i,l}\) and \(t_{i,r}\). Count the number of times
+  that \(s*\) and \(s_i\), while splitting differently, generate the same
+  left daughter \(t_{l}\) as \(N_{LL}\) and the number of times they
+  generate the same right daughter as \(N_{RR}\). Then the
+  probability\textbf{EXPAND?}
+  
+  Basically a surrogate split \(\tilde{s}\),is one that estimates the best
+  possible univariate split \(s*\) on node \(t\).
+  
+  \textbf{Defintion: Variable Importance, Single Tree}
+  
+  \[VI_{tree}(X_i) = \sum_{t \in T} \Delta RSS(\tilde{s_i}, t)\] Or the
+  decrease of RSS attributable to \(X_i\) accross the tree \(T\).
+  
+  \subsection{Variable Importance for a Random
+  Forest}\label{variable-importance-for-a-random-forest}
   
   \section{Strobl et al Respond (2008)}\label{strobl-et-al-respond-2008}
   

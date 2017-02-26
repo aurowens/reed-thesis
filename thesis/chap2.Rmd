@@ -301,7 +301,7 @@ ggplot(data = d3, aes(x = W2, y = y)) +
 
 ####CART: Regression Trees
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As outlined in the 1984 textbook, *Classification and Regression Trees*, Brieman, Friedman, Olshen, and Stone described their method for creating, pruning, and testing regression trees. There are essentially three steps: one, decide on a variable to split over, two, partition that variable space in two distinct partitions, and three, set our intial predictions for each partition to be mean value of the response according to the observed responses corresponding to the values in the partitions. Recursively, this process is repeated for each new partition until some stopping condition is reached. This is a top down, greedy algorithm that functions by creating as large a tree as possible and then is pruned down to prevent overfitting. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As outlined in the 1984 textbook, *Classification and Regression Trees*, Brieman, Friedman, Olshen, and Stone described their method for creating, pruning, and testing regression trees. There are essentially three steps: one, decide on a variable to split over, two, partition that variable space in two distinct partitions, and three, set our intial predictions for each partition to be mean value of the response according to the observed responses corresponding to the values in the partitions. Recursively, this process is repeated for each new partition until some stopping condition is reached.This is a top down, greedy algorithm that functions by creating as large a tree as possible and then is pruned down to prevent overfitting. 
 
 
 ### Figure 9:
@@ -350,9 +350,9 @@ draw.tree(t3, digits = 2, col = c(thesis, rep(thesis, 3)))
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Where  $n$  is the number of observations in  $D_{2, test}^i$, $y_j \in D_{2, test}^i, \hat{y_j} \in  T^i(D_{2, test}^i)$ for $1 \leq j \leq n$ This produces two distributions of $MSE_{test}$, one for CART and one for CTree, conditional inference trees. 
 
-### Figure 11:
+### Figure 10:
 
-```{r fig11,echo=FALSE, message=FALSE,cache=TRUE}
+```{r fig10,echo=FALSE, message=FALSE,cache=TRUE}
 testmseC <- rep(0,1000)
 #testmseCt <- rep(0,1000)
 
@@ -384,9 +384,9 @@ ggplot(data = testm, aes(fill = variable, x = value)) +
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Let's put that to the test here using our dataset $D3$ again. We'll build 100 forests of 100 trees each and compare the variability of the $MSE$ distributions. 
 
-### Figure 12:
+### Figure 11:
 
-```{r fig12, echo=FALSE, message=FALSE,cache=TRUE}
+```{r fig11, echo=FALSE, message=FALSE,cache=TRUE}
 library(bagRboostR)
 
 mse <- rep(0,1000)
@@ -420,9 +420,9 @@ As the number of trees grown in each forest increases, the $MSE_{test}$ decrease
 
 For an illustration, let's build a random forest on $D3$ and compare the $MSE$. 
 
-### Figure 13:
+### Figure 12:
 
-```{r fig13, echo=FALSE, message=FALSE,cache=TRUE}
+```{r fig12, echo=FALSE, message=FALSE,cache=TRUE}
 
 mseRF <- 0
 
