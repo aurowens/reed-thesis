@@ -34,21 +34,70 @@ library(reedtemplates)
 
 ###Variable Importance on a Single Tree
 
-Breiman et al in *Classification and Regression Trees* (1984) propose a method for variable importance for individual trees that stems from their definition of $\tilde{s}$, a surrogate split. Surrogate splits help Brieman et al deal with several common problems one may have: modeling with missing data, diagnosing masking, and variable importance. They are defined using logic that resembles the logic behind random forests. 
+Breiman et al in *Classification and Regression Trees* (1984) propose a method for variable importance for individual trees that stems from their definition of $\tilde{s}$, a surrogate split. Surrogate splits help Brieman et al deal with several common problems one may have: modeling with missing data, diagnosing masking, and variable importance. They are defined using logic that resembles that behind random forests. 
 
-####Definitions 
+Definitions
 
-Assume the standard structure for tree models. Let $D$ be the dataset composed of $D = {Y, X_1,...X_p}$, where the model we would like to estimate is of the form $T: Y \sim X_1,...X_p$. For any node $t \in T(D)$, $s*$ is the best split of the node into daughters $t_r$ and $t_l$. Take $X_i \in D$ and let $S_i$ be the set of all of the splits on $X_i$ in $T$. Then set $\bar{S_i}$ equal to the complement of $S_i$, $\bar{S_i} = S_i^c$. For any possible split $s_i \in S_i \cup \bar{S_i}$, $s_i$ will split the node $t$ into two daughters, $t_{i,l}$ and $t_{i,r}$. Count the number of times that $s*$ and $s_i$, while splitting differently, generate the same left daughter $t_{l}$ as $N_{LL}$ and the number of times they generate the same right daughter as $N_{RR}$. Then the probability**EXPAND?**
+Assume the standard structure for tree models. Let $D$ be the dataset composed of $D = {Y, X_1,...X_p}$, where the model we would like to estimate is of the form $T: Y \sim X_1,...X_p$. For any node $t \in T(D)$, $s*$ is the best split of the node into daughters $t_r$ and $t_l$. Take $X_i \in D$ and let $S_i$ be the set of all of the splits on $X_i$ in $T$. Then set $\bar{S_i}$ equal to the complement of $S_i$, $\bar{S_i} = S_i^c$. For any possible split $s_i \in S_i \cup \bar{S_i}$, $s_i$ will split the node $t$ into two daughters, $t_{i,l}$ and $t_{i,r}$. Count the number of times that $s*$ and $s_i$, while splitting differently, generate the same left daughter $t_{l}$ as $N_{LL}$ and the number of times they generate the same right daughter as $N_{RR}$. Then the probability that a case falls within $t_L \cap t'_L$ is $P(t_L \cap t'_L) = \sum_j \frac{\pi(j) N_j(LL)}{N_j}$ and the probability that a case falls within $t_R \cap t'_R$ is $P(t_R \cap t'_R) = \sum_j \frac{\pi(j) N_j(RR)}{N_j}$. Where $\pi(j)$ is the prior assumed for the the jth variable.Finally, the probability that a surrogate split predicts $s*$ is $P(s*, s_M) = (t_R \cap t'_R) + P(t_L \cap t'_L)$. Then the surrogate split is the value of $s*$ that maximizes this probability. It is denoted $\tilde{s}$
 
-Basically a surrogate split $\tilde{s}$,is one that estimates the best possible univariate split $s*$ on node $t$. 
-
+A surrogate split $\tilde{s}$,is one that estimates the best possible univariate split $s*$ on node $t$.
 
 **Defintion: Variable Importance, Single Tree**
 
-$$VI_{tree}(X_i) = \sum_{t \in T} \Delta RSS(\tilde{s_i}, t)$$
-Or the decrease of RSS attributable to $X_i$ accross the tree $T$. 
-
+$$VI_{tree}(X_i, T) = \sum_{t \in T} \Delta RSS(\tilde{s_i}, t)$$
+Or the decrease of RSS attributable to $X_i$ across the tree $T$. In *Classification and Regression Trees*,
+Brieman et al, outline several potential problems with this method that the do not attempt to solve. First, that this is only one of a number of reasonable ways to define variable importance. Second, the variable importances for variables $X_1,..,X_p$ can be effected by outliers or random fluctuations within the data. (Ch 5.3)
 
 ###Variable Importance for a Random Forest
 
+One way to define variable importance for a random forest follows directly from Breiman et al's definition for a single tree. Now, however, the measure of decrease in RSS is replaced with the $\bar{B}^{T}$ or the out-of-the-bag error estimate. Recall that each tree in a random forest is fit to a bootstrapped sample of the original observations. To estimate $MSE_test$, therefor, no cross validation is needed - each tree is simply tested against the test set of observations that were not in that tree's initial training set. The OOB error estimate is then averaged over all the trees in the random forest. 
+
+Then the method for variable importance is as follows:
+
+$$VI_{base}(X_i) = \sum_{T \in RF}  \frac{\sum_{i \in \bar{B}^{T}} I(y = \hat{y})} {|\bar{B}^{T}|}$$
+However, this method poses some problems. Namely, while variable importance for random forests is more stable than for the variable importance values for CART, (this is because the model is less variable in general), it is lacking the traditional inferential capabilities of other regression models. In an effort to derive a p-value for variable importance values, Breiman 2001b, describes a *permuted variable importance*. 
+
+\begin{algorithm}
+\caption{Permuted Variable Importance for Random Forests}
+\label{breiman}
+\begin{algorithmic}[1]
+\State Fit a random forest, $RF$ on the dataset $D$ fitting the model $Y~X_1,...,X_p$
+\For{each $T_i \in RF$}
+\State Calculate the oob error before permutation: $$\frac{\sum_{i \in \bar{B}^{T}} I(y = \hat{y})} {|\bar{B}^{T}|}$$
+\For{each $X_i \in {{X_1,...,X_p}}$}
+\State Permute $X_i$
+\State Calculate the oob error again and compare with the estimate before permutation $$VI_{perm1}(X_i, T_i) = \frac{\sum_{i \in \bar{B}^{T}} I(y = \hat{y})} {|\bar{B}^{T}|} -\frac{\sum_{i \in \bar{B}^{T}} I(y = \hat{y^p})} {|\bar{B}^{T}|}$$
+\EndFor
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+The permuted variable importance for each variable $X_i \in {{X_1,..,X_p}}$ is the sum of $VI_{perm1}(X_i, T_i)$ over all $T_i \in RF$.
+
 ##Strobl et al Respond (2008)
+
+Strobl et al (2008) respond to Brieman's method with one main argument: the null hypothesis implied by the permutation distribution utilized in permuted variable importance is that $X_i$ is independent of $Y$ **and** ${X_j \notin X_1,...,X_p}$ so the null hypothesis will be rejected in the case where $X_j$ is independent of $Y$ but not some subset of the other predictors. As correlation among the predictors is very common in data sets that are used for random forests, this is a large problem for Breiman's method. 
+
+To alleiviate this difficulty, Strobl et al propose a permutation scheme under the null hypothesis that $X_j$ given it's relationship with the other predictors is independent of $Y$.  
+
+\begin{algorithm}
+\caption{Conditional Variable Importance for Random Forests}
+\label{strobl}
+\begin{algorithmic}[1]
+\State Fit a random forest, $RF$ on the dataset $D$ fitting the model $Y~X_1,...,X_p$
+\For{each $T_i \in RF$}
+\State Calculate the oob error before permutation: $$\frac{\sum_{i \in \bar{B}^{T}} I(y = \hat{y})} {|\bar{B}^{T}|}$$
+\For{each $X_i \in {{X_1,...,X_p}}$}
+\State Permute the dataset, $D$ conditional on the grid created by the splits on $X_i$ in $T_i$
+\State Calculate the oob error again and compare with the estimate before permutation $$VI_{perm2}(X_i, T_i) = \frac{\sum_{i \in \bar{B}^{T}} I(y = \hat{y})} {|\bar{B}^{T}|} -\frac{\sum_{i \in \bar{B}^{T}} I(y = \hat{y^p})} {|\bar{B}^{T}|}$$
+\EndFor
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+Finally, as above, the permuted variable importance for each variable $X_i \in {{X_1,..,X_p}}$ is the sum of $VI_{perm2}(X_i, T_i)$ over all $T_i \in RF$.
+
+##Inferential Variable Importance
+
+This thesis hopes to be a reponse to conditional variable importance as outlined by Strobl et al 2008. First is that the practice of permuting given the partitions from the model $Y \sim X_1,...,X_p$ instead of $X_j \sim X_1,..,X_p$ 
+

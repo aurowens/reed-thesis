@@ -385,7 +385,7 @@ starts here.
   each other with \(\rho = .9\). They are related to \(Y\) by the linear
   equation:
   \[Y = 5 \cdot V_1 + 5 \cdot V_2 + 2 \cdot V_3 + 0 \cdot V_4 + -5 \cdot V_5 + -5\cdot V_6 + 0\cdot V_7 + 0 \cdot ..... + E, E \sim N(0,\frac 1 2 )\]
-  Note that the coefficents for \(V_7,...,V_{12}\) are all zero.
+  Note that the coefficients for \(V_7,...,V_{12}\) are all zero.
   
   \subsubsection{\texorpdfstring{Table 1: Correlation of \(V_1,..., V_7\)
   and
@@ -431,10 +431,10 @@ starts here.
     \(V_4\), as they are nearly the same (\(\rho \sim 1\)). Then the real
     relationship represented here is
     \(Y \sim (5 + 5 + 2) \cdot V_4 + -5 \cdot V_5 + -5 \cdot V_6 + -2 \cdot V_7\).
-    This model is not unsuccesful in capturing the structure of the data,
+    This model is not unsuccessful in capturing the structure of the data,
     and this is typically the practice used to model data with highly
     correlated predictors. If this seems philosophically satisfying to
-    you, the rest of this thesis may seem a bit unconsequential. I
+    you, the rest of this thesis may seem a bit inconsequential. I
     apologize.}
   
   \subsubsection{Figure 1:}\label{figure-1}
@@ -576,7 +576,7 @@ starts here.
   \begin{center}\includegraphics{Thesis_files/figure-latex/fig8-1} \end{center}
   
   ~~~~~ As the relationship between \(Y\) and \(\omega_2\) was so
-  striking, it is nice to see a scatterplot that represents it.
+  striking, it is nice to see a scatter plot that represents it.
   
   \section{Models and Comparisons}\label{models-and-comparisons}
   
@@ -587,12 +587,12 @@ starts here.
   method for creating, pruning, and testing regression trees. There are
   essentially three steps: one, decide on a variable to split over, two,
   partition that variable space in two distinct partitions, and three, set
-  our intial predictions for each partition to be mean value of the
+  our initial predictions for each partition to be mean value of the
   response according to the observed responses corresponding to the values
   in the partitions. Recursively, this process is repeated for each new
   partition until some stopping condition is reached.This is a top down,
   greedy algorithm that functions by creating as large a tree as possible
-  and then is pruned down to prevent overfitting.
+  and then is pruned down to prevent over fitting.
   
   \subsection{Figure 9:}\label{figure-9}
   
@@ -636,8 +636,8 @@ starts here.
   in the starting data set. As mention briefly in the introduction, bagged
   forests present one solution to this problem. To create a bagged forest,
   as outlined in \emph{An Introduction to Statistical Learning} by James,
-  Witten, Hastie and Tibshirani, 2013, many bootsrtapped samples are taken
-  from the itintial dataset and trees are fitted to them. The final
+  Witten, Hastie and Tibshirani, 2013, many bootstrapped samples are taken
+  from the initial dataset and trees are fitted to them. The final
   predictions are, then, averaged over all of the trees. This ensures that
   while each tree has high variance, when they are aggregated the variance
   will decrease.
@@ -687,10 +687,10 @@ starts here.
   from their definition of \(\tilde{s}\), a surrogate split. Surrogate
   splits help Brieman et al deal with several common problems one may
   have: modeling with missing data, diagnosing masking, and variable
-  importance. They are defined using logic that resembles the logic behind
+  importance. They are defined using logic that resembles that behind
   random forests.
   
-  \subsubsection{Definitions}\label{definitions}
+  Definitions
   
   Assume the standard structure for tree models. Let \(D\) be the dataset
   composed of \(D = {Y, X_1,...X_p}\), where the model we would like to
@@ -703,21 +703,115 @@ starts here.
   two daughters, \(t_{i,l}\) and \(t_{i,r}\). Count the number of times
   that \(s*\) and \(s_i\), while splitting differently, generate the same
   left daughter \(t_{l}\) as \(N_{LL}\) and the number of times they
-  generate the same right daughter as \(N_{RR}\). Then the
-  probability\textbf{EXPAND?}
+  generate the same right daughter as \(N_{RR}\). Then the probability
+  that a case falls within \(t_L \cap t'_L\) is
+  \(P(t_L \cap t'_L) = \sum_j \frac{\pi(j) N_j(LL)}{N_j}\) and the
+  probability that a case falls within \(t_R \cap t'_R\) is
+  \(P(t_R \cap t'_R) = \sum_j \frac{\pi(j) N_j(RR)}{N_j}\). Where
+  \(\pi(j)\) is the prior assumed for the the jth variable.Finally, the
+  probability that a surrogate split predicts \(s*\) is
+  \(P(s*, s_M) = (t_R \cap t'_R) + P(t_L \cap t'_L)\). Then the surrogate
+  split is the value of \(s*\) that maximizes this probability. It is
+  denoted \(\tilde{s}\)
   
-  Basically a surrogate split \(\tilde{s}\),is one that estimates the best
-  possible univariate split \(s*\) on node \(t\).
+  A surrogate split \(\tilde{s}\),is one that estimates the best possible
+  univariate split \(s*\) on node \(t\).
   
   \textbf{Defintion: Variable Importance, Single Tree}
   
-  \[VI_{tree}(X_i) = \sum_{t \in T} \Delta RSS(\tilde{s_i}, t)\] Or the
-  decrease of RSS attributable to \(X_i\) accross the tree \(T\).
+  \[VI_{tree}(X_i, T) = \sum_{t \in T} \Delta RSS(\tilde{s_i}, t)\] Or the
+  decrease of RSS attributable to \(X_i\) across the tree \(T\). In
+  \emph{Classification and Regression Trees}, Brieman et al, outline
+  several potential problems with this method that the do not attempt to
+  solve. First, that this is only one of a number of reasonable ways to
+  define variable importance. Second, the variable importances for
+  variables \(X_1,..,X_p\) can be effected by outliers or random
+  fluctuations within the data. (Ch 5.3)
   
   \subsection{Variable Importance for a Random
   Forest}\label{variable-importance-for-a-random-forest}
   
+  One way to define variable importance for a random forest follows
+  directly from Breiman et al's definition for a single tree. Now,
+  however, the measure of decrease in RSS is replaced with the
+  \(\bar{B}^{T}\) or the out-of-the-bag error estimate. Recall that each
+  tree in a random forest is fit to a bootstrapped sample of the original
+  observations. To estimate \(MSE_test\), therefor, no cross validation is
+  needed - each tree is simply tested against the test set of observations
+  that were not in that tree's initial training set. The OOB error
+  estimate is then averaged over all the trees in the random forest.
+  
+  Then the method for variable importance is as follows:
+  
+  \[VI_{base}(X_i) = \sum_{T \in RF}  \frac{\sum_{i \in \bar{B}^{T}} I(y = \hat{y})} {|\bar{B}^{T}|}\]
+  However, this method poses some problems. Namely, while variable
+  importance for random forests is more stable than for the variable
+  importance values for CART, (this is because the model is less variable
+  in general), it is lacking the traditional inferential capabilities of
+  other regression models. In an effort to derive a p-value for variable
+  importance values, Breiman 2001b, describes a \emph{permuted variable
+  importance}.
+  
+  \begin{algorithm}
+  \caption{Permuted Variable Importance for Random Forests}
+  \label{breiman}
+  \begin{algorithmic}[1]
+  \State Fit a random forest, $RF$ on the dataset $D$ fitting the model $Y~X_1,...,X_p$
+  \For{each $T_i \in RF$}
+  \State Calculate the oob error before permutation: $$\frac{\sum_{i \in \bar{B}^{T}} I(y = \hat{y})} {|\bar{B}^{T}|}$$
+  \For{each $X_i \in {{X_1,...,X_p}}$}
+  \State Permute $X_i$
+  \State Calculate the oob error again and compare with the estimate before permutation $$VI_{perm1}(X_i, T_i) = \frac{\sum_{i \in \bar{B}^{T}} I(y = \hat{y})} {|\bar{B}^{T}|} -\frac{\sum_{i \in \bar{B}^{T}} I(y = \hat{y^p})} {|\bar{B}^{T}|}$$
+  \EndFor
+  \EndFor
+  \end{algorithmic}
+  \end{algorithm}
+  
+  The permuted variable importance for each variable
+  \(X_i \in {{X_1,..,X_p}}\) is the sum of \(VI_{perm1}(X_i, T_i)\) over
+  all \(T_i \in RF\).
+  
   \section{Strobl et al Respond (2008)}\label{strobl-et-al-respond-2008}
+  
+  Strobl et al (2008) respond to Brieman's method with one main argument:
+  the null hypothesis implied by the permutation distribution utilized in
+  permuted variable importance is that \(X_i\) is independent of \(Y\)
+  \textbf{and} \({X_j \notin X_1,...,X_p}\) so the null hypothesis will be
+  rejected in the case where \(X_j\) is independent of \(Y\) but not some
+  subset of the other predictors. As correlation among the predictors is
+  very common in data sets that are used for random forests, this is a
+  large problem for Breiman's method.
+  
+  To alleiviate this difficulty, Strobl et al propose a permutation scheme
+  under the null hypothesis that \(X_j\) given it's relationship with the
+  other predictors is independent of \(Y\).
+  
+  \begin{algorithm}
+  \caption{Conditional Variable Importance for Random Forests}
+  \label{strobl}
+  \begin{algorithmic}[1]
+  \State Fit a random forest, $RF$ on the dataset $D$ fitting the model $Y~X_1,...,X_p$
+  \For{each $T_i \in RF$}
+  \State Calculate the oob error before permutation: $$\frac{\sum_{i \in \bar{B}^{T}} I(y = \hat{y})} {|\bar{B}^{T}|}$$
+  \For{each $X_i \in {{X_1,...,X_p}}$}
+  \State Permute the dataset, $D$ conditional on the grid created by the splits on $X_i$ in $T_i$
+  \State Calculate the oob error again and compare with the estimate before permutation $$VI_{perm2}(X_i, T_i) = \frac{\sum_{i \in \bar{B}^{T}} I(y = \hat{y})} {|\bar{B}^{T}|} -\frac{\sum_{i \in \bar{B}^{T}} I(y = \hat{y^p})} {|\bar{B}^{T}|}$$
+  \EndFor
+  \EndFor
+  \end{algorithmic}
+  \end{algorithm}
+  
+  Finally, as above, the permuted variable importance for each variable
+  \(X_i \in {{X_1,..,X_p}}\) is the sum of \(VI_{perm2}(X_i, T_i)\) over
+  all \(T_i \in RF\).
+  
+  \section{Inferential Variable
+  Importance}\label{inferential-variable-importance}
+  
+  This thesis hopes to be a reponse to conditional variable importance as
+  outlined by Strobl et al 2008. First is that the practice of permuting
+  given the partitions from the model \(Y \sim X_1,...,X_p\) instead of
+  \(X_j \sim X_1,..,X_p\)
   
   \chapter{INFTrees and INFforests Variable
   Importance}\label{inftrees-and-infforests-variable-importance}
