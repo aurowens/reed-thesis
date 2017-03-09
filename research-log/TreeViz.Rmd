@@ -1,0 +1,38 @@
+---
+title: "Tree Visualizations"
+output: pdf_document
+---
+```{r}
+library(ggplot2)
+library(ggtree)
+library(ggdendro)
+```
+
+```{r}
+data("cats")
+names(cats)
+t <- tree(Sex~., data = cats)
+
+plot(t)
+text(t)
+ddata <- dendro_data(t)
+  ggplot() + 
+    geom_segment(data = ddata$segments, 
+                 aes(x = x, y = y, xend = xend, yend = yend)) + 
+    geom_text(data = ddata$labels, 
+              aes(x = x, y = y, label = label), size = 3, vjust = 0) +
+    geom_text(data = ddata$leaf_labels, 
+              aes(x = x, y = y, label = label), size = 3, vjust = 1) +
+    theme_dendro()
+
+ plot(cats$Bwt, cats$Hwt)
+
+ t$frame
+ 
+ggplot(data = cats, aes(y = Hwt, x= Bwt)) + geom_point()+
+  geom_hline(yintercept = 11.25) +
+  geom_segment(x = 2.35, xend = 2.35, y = min(cats$Hwt), yend = 11.25)+
+  geom_segment(x = 2.25, xend = 2.25, y = min(cats$Hwt), yend = 11.25)+
+  geom_segment(x = 2.15, xend = 2.15, y = min(cats$Hwt), yend = 11.25)+
+  geom_segment(y = 10.05, yend = 10.05, x = min(cats$Bwt), xend = 2.35)
+```

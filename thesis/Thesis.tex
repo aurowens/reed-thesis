@@ -673,6 +673,18 @@ starts here.
   
   \begin{center}\includegraphics{Thesis_files/figure-latex/fig12-1} \end{center}
   
+  \subsection{TO DO}\label{to-do}
+  
+  \begin{itemize}
+  \tightlist
+  \item
+    Fix the algorithms to work for regression
+  \item
+    Make the OOB references more clear
+  \item
+    Expand around viz created today 3/8
+  \end{itemize}
+  
   \chapter{Random Forest Variable
   Importance}\label{random-forest-variable-importance}
   
@@ -719,6 +731,9 @@ starts here.
   
   \textbf{Defintion: Variable Importance, Single Tree}
   
+  \emph{oob sample: test yi vs yhat trees that did not include xi in their
+  training sample}
+  
   \[VI_{tree}(X_i, T) = \sum_{t \in T} \Delta RSS(\tilde{s_i}, t)\] Or the
   decrease of RSS attributable to \(X_i\) across the tree \(T\). In
   \emph{Classification and Regression Trees}, Brieman et al, outline
@@ -743,7 +758,7 @@ starts here.
   
   Then the method for variable importance is as follows:
   
-  \[VI_{base}(X_i) = \sum_{T \in RF}  \frac{\sum_{i \in \bar{B}^{T}} I(y = \hat{y})} {|\bar{B}^{T}|}\]
+  \[VI_{base}(X_i) = \sum_{T \in RF}  \frac{\sum_{i \in \bar{B}^{T}} \Delta RSS(x_i,y_i)} {|\bar{B}^{T}|}\]
   However, this method poses some problems. Namely, while variable
   importance for random forests is more stable than for the variable
   importance values for CART, (this is because the model is less variable
@@ -756,7 +771,7 @@ starts here.
   \caption{Permuted Variable Importance for Random Forests}
   \label{breiman}
   \begin{algorithmic}[1]
-  \State Fit a random forest, $RF$ on the dataset $D$ fitting the model $Y~X_1,...,X_p$
+  \State Fit a random forest, $RF$ on the dataset $D$ fitting the model $Y \sim X_1,...,X_p$
   \For{each $T_i \in RF$}
   \State Calculate the oob error before permutation: $$\frac{\sum_{i \in \bar{B}^{T}} I(y = \hat{y})} {|\bar{B}^{T}|}$$
   \For{each $X_i \in {{X_1,...,X_p}}$}
@@ -790,11 +805,11 @@ starts here.
   \caption{Conditional Variable Importance for Random Forests}
   \label{strobl}
   \begin{algorithmic}[1]
-  \State Fit a random forest, $RF$ on the dataset $D$ fitting the model $Y~X_1,...,X_p$
+  \State Fit a random forest, $RF$ on the dataset $D$ fitting the model $Y \sim X_1,...,X_p$
   \For{each $T_i \in RF$}
   \State Calculate the oob error before permutation: $$\frac{\sum_{i \in \bar{B}^{T}} I(y = \hat{y})} {|\bar{B}^{T}|}$$
   \For{each $X_i \in {{X_1,...,X_p}}$}
-  \State Permute the dataset, $D$ conditional on the grid created by the splits on $X_i$ in $T_i$
+  \State Permute the dataset, $D$, conditional on the grid created by the splits on $X_i$ in $T_i$
   \State Calculate the oob error again and compare with the estimate before permutation $$VI_{perm2}(X_i, T_i) = \frac{\sum_{i \in \bar{B}^{T}} I(y = \hat{y})} {|\bar{B}^{T}|} -\frac{\sum_{i \in \bar{B}^{T}} I(y = \hat{y^p})} {|\bar{B}^{T}|}$$
   \EndFor
   \EndFor
@@ -804,6 +819,33 @@ starts here.
   Finally, as above, the permuted variable importance for each variable
   \(X_i \in {{X_1,..,X_p}}\) is the sum of \(VI_{perm2}(X_i, T_i)\) over
   all \(T_i \in RF\).
+  
+  AN EXAMPLE:
+  
+  Fit a simple tree:
+  
+  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-2-1} \end{center}
+  
+  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-2-2} \end{center}
+  
+  \begin{longtable}[]{@{}llllll@{}}
+  \toprule
+  Group & Predicted Value of Y & Min(W2) & Max(W2) & Min(W1) &
+  Max(W1)\tabularnewline
+  \midrule
+  \endhead
+  A & -25.9369010231033 & -7.3 & -5.24 & -0.38 & 0.14\tabularnewline
+  B & -10.1521754868715 & -4.99 & 0.19 & -1.68 & 1.75\tabularnewline
+  C & 0.791053130734821 & 0.3 & 3.1 & -2.84 & 0.8\tabularnewline
+  D & 8.40580623141462 & 0.2 & 1.29 & 0.96 & 2.11\tabularnewline
+  E & 30.7209296380884 & 1.86 & 3.82 & 0.82 & 2.7\tabularnewline
+  \bottomrule
+  \end{longtable}
+  
+  If we permute the \(\omega_1\) values in group \(B\), this is what that
+  plot looks like:
+  
+  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-3-1} \end{center}
   
   \section{Inferential Variable
   Importance}\label{inferential-variable-importance}
@@ -885,7 +927,17 @@ starts here.
     \NormalTok{devtools::}\KeywordTok{install_github}\NormalTok{(}\StringTok{"ismayc/reedtemplates"}\NormalTok{)}
     \NormalTok{\}}
   \KeywordTok{library}\NormalTok{(reedtemplates)}
+  \KeywordTok{library}\NormalTok{(tree)}
+  \KeywordTok{library}\NormalTok{(reedtemplates)}
+  \KeywordTok{library}\NormalTok{(MASS)}
+  \KeywordTok{library}\NormalTok{(ggplot2)}
+  \KeywordTok{library}\NormalTok{(randomForest)}
+  \KeywordTok{library}\NormalTok{(maptree)}
+  \KeywordTok{library}\NormalTok{(knitr)}
+  \KeywordTok{library}\NormalTok{(GGally)}
+  \KeywordTok{library}\NormalTok{(reshape)}
   \CommentTok{#flights <- read.csv("data/flights.csv")}
+  \NormalTok{thesis <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"#245e67"}\NormalTok{, }\StringTok{"#90bd98"}\NormalTok{, }\StringTok{"#cfd0a0"}\NormalTok{, }\StringTok{"#c49e46"}\NormalTok{, }\StringTok{"#d28383"}\NormalTok{)}
   \end{Highlighting}
   \end{Shaded}
   

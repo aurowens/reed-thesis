@@ -25,8 +25,69 @@ if(!require(reedtemplates)){
   devtools::install_github("ismayc/reedtemplates")
   }
 library(reedtemplates)
+library(tree)
+library(reedtemplates)
+library(MASS)
+library(ggplot2)
+library(randomForest)
+library(maptree)
+library(knitr)
+library(GGally)
+library(reshape)
 #flights <- read.csv("data/flights.csv")
+thesis <- c("#245e67", "#90bd98", "#cfd0a0", "#c49e46", "#d28383")
 ```
+
+```{r, echo = FALSE}
+w1 <- rnorm(1000)
+
+w2 <- 2*log(abs(w1)) + rnorm(1000)
+
+w3 <- 2*log(abs(w2)) + rnorm(1000)
+
+w4 <- 2*log(abs(w3)) + rnorm(1000)
+
+n <- 1000
+
+rep(0, 8) -> mu #mean of each variable
+
+diag(8) -> sigma #creates a 12 by 12 diagonal matrix with 1's down the diagonal
+
+mvrnorm(n =n, mu = mu, Sigma = sigma) -> simw5w12
+
+data.frame(w1,w2,w3,w4,simw5w12) -> d3
+              
+c("W1","W2","W3","W4","W5","W6", "W7","W8","W9","W10","W11","W12") -> names(d3)
+
+rep(0, 1000) -> ys #init a vector of zeros
+c(5,5,2,0,-5,-5,-2,0,0,0,0,0) -> bts 
+
+rnorm(1000, mean = 0, sd = .5) -> e 
+
+for( i in 1:1000){ #go row by row and create the ys based on the function of e, bts, and d3
+ys[i] <- d3[i,1]*bts[1]+
+    d3[i,2]*bts[2]+ 
+    d3[i,3]*bts[3]+ 
+    d3[i,4]*bts[4]+ 
+    d3[i,5]*bts[5]+ 
+    d3[i,6]*bts[6]+
+    d3[i,7]*bts[7]+ 
+    d3[i,8]*bts[8]+ 
+    d3[i,9]*bts[9]+ 
+    d3[i,10]*bts[10]+ 
+    d3[i,11]*bts[11]+ 
+    d3[i,12]*bts[12] +
+    e[i]
+}
+
+d3$y <- ys
+```
+
+###TO DO
+
+- Fix the algorithms to work for regression
+- Make the OOB references more clear
+- Expand around viz created today 3/8
 
 #Random Forest Variable Importance
 
@@ -44,6 +105,8 @@ A surrogate split $\tilde{s}$,is one that estimates the best possible univariate
 
 **Defintion: Variable Importance, Single Tree**
 
+*oob sample: test yi vs yhat trees that did not include xi in their training sample* 
+
 $$VI_{tree}(X_i, T) = \sum_{t \in T} \Delta RSS(\tilde{s_i}, t)$$
 Or the decrease of RSS attributable to $X_i$ across the tree $T$. In *Classification and Regression Trees*,
 Brieman et al, outline several potential problems with this method that the do not attempt to solve. First, that this is only one of a number of reasonable ways to define variable importance. Second, the variable importances for variables $X_1,..,X_p$ can be effected by outliers or random fluctuations within the data. (Ch 5.3)
@@ -54,14 +117,14 @@ One way to define variable importance for a random forest follows directly from 
 
 Then the method for variable importance is as follows:
 
-$$VI_{base}(X_i) = \sum_{T \in RF}  \frac{\sum_{i \in \bar{B}^{T}} I(y = \hat{y})} {|\bar{B}^{T}|}$$
+$$VI_{base}(X_i) = \sum_{T \in RF}  \frac{\sum_{i \in \bar{B}^{T}} \Delta RSS(x_i,y_i)} {|\bar{B}^{T}|}$$
 However, this method poses some problems. Namely, while variable importance for random forests is more stable than for the variable importance values for CART, (this is because the model is less variable in general), it is lacking the traditional inferential capabilities of other regression models. In an effort to derive a p-value for variable importance values, Breiman 2001b, describes a *permuted variable importance*. 
 
 \begin{algorithm}
 \caption{Permuted Variable Importance for Random Forests}
 \label{breiman}
 \begin{algorithmic}[1]
-\State Fit a random forest, $RF$ on the dataset $D$ fitting the model $Y~X_1,...,X_p$
+\State Fit a random forest, $RF$ on the dataset $D$ fitting the model $Y \sim X_1,...,X_p$
 \For{each $T_i \in RF$}
 \State Calculate the oob error before permutation: $$\frac{\sum_{i \in \bar{B}^{T}} I(y = \hat{y})} {|\bar{B}^{T}|}$$
 \For{each $X_i \in {{X_1,...,X_p}}$}
@@ -74,6 +137,8 @@ However, this method poses some problems. Namely, while variable importance for 
 
 The permuted variable importance for each variable $X_i \in {{X_1,..,X_p}}$ is the sum of $VI_{perm1}(X_i, T_i)$ over all $T_i \in RF$.
 
+ 
+
 ##Strobl et al Respond (2008)
 
 Strobl et al (2008) respond to Brieman's method with one main argument: the null hypothesis implied by the permutation distribution utilized in permuted variable importance is that $X_i$ is independent of $Y$ **and** ${X_j \notin X_1,...,X_p}$ so the null hypothesis will be rejected in the case where $X_j$ is independent of $Y$ but not some subset of the other predictors. As correlation among the predictors is very common in data sets that are used for random forests, this is a large problem for Breiman's method. 
@@ -84,11 +149,11 @@ To alleiviate this difficulty, Strobl et al propose a permutation scheme under t
 \caption{Conditional Variable Importance for Random Forests}
 \label{strobl}
 \begin{algorithmic}[1]
-\State Fit a random forest, $RF$ on the dataset $D$ fitting the model $Y~X_1,...,X_p$
+\State Fit a random forest, $RF$ on the dataset $D$ fitting the model $Y \sim X_1,...,X_p$
 \For{each $T_i \in RF$}
 \State Calculate the oob error before permutation: $$\frac{\sum_{i \in \bar{B}^{T}} I(y = \hat{y})} {|\bar{B}^{T}|}$$
 \For{each $X_i \in {{X_1,...,X_p}}$}
-\State Permute the dataset, $D$ conditional on the grid created by the splits on $X_i$ in $T_i$
+\State Permute the dataset, $D$, conditional on the grid created by the splits on $X_i$ in $T_i$
 \State Calculate the oob error again and compare with the estimate before permutation $$VI_{perm2}(X_i, T_i) = \frac{\sum_{i \in \bar{B}^{T}} I(y = \hat{y})} {|\bar{B}^{T}|} -\frac{\sum_{i \in \bar{B}^{T}} I(y = \hat{y^p})} {|\bar{B}^{T}|}$$
 \EndFor
 \EndFor
@@ -97,7 +162,83 @@ To alleiviate this difficulty, Strobl et al propose a permutation scheme under t
 
 Finally, as above, the permuted variable importance for each variable $X_i \in {{X_1,..,X_p}}$ is the sum of $VI_{perm2}(X_i, T_i)$ over all $T_i \in RF$.
 
+
+AN EXAMPLE:
+
+Fit a simple tree:
+
+```{r, echo = FALSE, warning=FALSE, message=FALSE}
+
+s <- sample(1000, 200)
+
+  
+d3lite <- d3[s,c(1,2,13)]
+
+
+t <- tree(y ~., data = d3lite)
+t <- prune.tree(t, best = 5)
+
+plot(t)
+text(t)
+
+yhats <- predict(t, d3lite[, -13])
+d3lite$group <- as.factor(yhats)
+d3lite$group <- ifelse(d3lite$group == levels(d3lite$group)[1], "A",
+                ifelse(d3lite$group == levels(d3lite$group)[2], "B",
+                ifelse(d3lite$group == levels(d3lite$group)[3], "C",
+                ifelse(d3lite$group == levels(d3lite$group)[4], "D", "E"))))
+d3lite$ys <- yhats
+
+library(ggplot2)
+library(plotly)
+
+ggplot(d3lite, aes(x=W1, y=W2, color = group)) +
+  geom_point()+
+  ggtitle("Partitions on the Predictor Space W1,W2 from T1")+
+  scale_color_manual(values = thesis)
+
+group <- levels(as.factor(d3lite$group))
+predictions <- levels(as.factor(yhats))
+rangeW1 <- range(d3lite$W1[d3lite$group == "A"])
+rangeW1 <- rbind(rangeW1, range(d3lite$W1[d3lite$group == "B"]))
+rangeW1 <- rbind(rangeW1, range(d3lite$W1[d3lite$group == "C"]))
+rangeW1 <- rbind(rangeW1, range(d3lite$W1[d3lite$group == "D"]))
+rangeW1 <- rbind(rangeW1, range(d3lite$W1[d3lite$group == "E"]))
+
+rangeW2 <- range(d3lite$W2[d3lite$group == "A"])
+rangeW2 <- rbind(rangeW2, range(d3lite$W2[d3lite$group == "B"]))
+rangeW2 <- rbind(rangeW2, range(d3lite$W2[d3lite$group == "C"]))
+rangeW2 <- rbind(rangeW2, range(d3lite$W2[d3lite$group == "D"]))
+rangeW2 <- rbind(rangeW2, range(d3lite$W2[d3lite$group == "E"]))
+
+t1 <- cbind("Group"= group,"Predicted Value of Y" = predictions,
+            "Min(W2)" = round(rangeW2[,1],2), "Max(W2)" = round(rangeW2[,2],2), 
+            "Min(W1)" = round(rangeW1[,1],2),"Max(W1)" = round(rangeW1[,2],2))
+
+row.names(t1) <- c()
+kable(t1)
+```
+
+
+If we permute the $\omega_1$ values in group $B$, this is what that plot looks like:
+
+```{r,echo = FALSE, warning=FALSE, message=FALSE}
+dp <- d3lite
+
+bs <- filter(dp, group == "B")
+bs$W1 <- sample(bs$W1)
+
+dp[dp$group == "B",] <- bs
+ggplot(dp, aes(x=W1, y=W2, color = group)) +
+  geom_point()+
+  ggtitle("Partitions on the Predictor Space W1,W2 from T1")+
+  scale_color_manual(values = thesis)
+
+```
+
+
 ##Inferential Variable Importance
 
 This thesis hopes to be a reponse to conditional variable importance as outlined by Strobl et al 2008. First is that the practice of permuting given the partitions from the model $Y \sim X_1,...,X_p$ instead of $X_j \sim X_1,..,X_p$ 
+
 
