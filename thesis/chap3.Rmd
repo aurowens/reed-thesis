@@ -86,12 +86,6 @@ ys[i] <- d3[i,1]*bts[1]+
 d3$y <- ys
 ```
 
-###TO DO
-
-- Fix the algorithms to work for regression
-- Make the OOB references more clear
-- Expand around viz created today 3/8
-
 #Random Forest Variable Importance
 
 ##Breiman et al Introduce Permuted Variable Importance (1984)
@@ -149,9 +143,9 @@ Again, a large variable importance value suggests that $X_j$ is a valuable predi
 
 ##Strobl et al Respond (2008)
 
-Strobl et al (2008) respond to Brieman's method with one main argument: the null hypothesis implied by the permutation distribution utilized in permuted variable importance is that $X_i$ is independent of $Y$ **and** ${X_j \notin X_1,...,X_p}$ so the null hypothesis will be rejected in the case where $X_j$ is independent of $Y$ but not some subset of the other predictors. As correlation among the predictors is very common in data sets that are used for random forests, this is a large problem for Breiman's method. 
+Strobl et al (2008) respond to Breiman's method with one main argument: the null hypothesis implied by the permutation distribution utilized in permuted variable importance is that $X_i$ is independent of $Y$ **and** ${X_j \notin X_1,...,X_p}$ so the null hypothesis will be rejected in the case where $X_j$ is independent of $Y$ but not some subset of the other predictors. As correlation among the predictors is very common in data sets that are used for random forests, this is a large problem for Breiman's method. 
 
-To alleiviate this difficulty, Strobl et al propose a permutation scheme under the null hypothesis that $X_j$ given it's relationship with the other predictors is independent of $Y$.  
+To alleviate this difficulty, Strobl et al propose a permutation scheme under the null hypothesis that $X_j$ given it's relationship with the other predictors is independent of $Y$.  
 
 \begin{algorithm}
 \caption{Conditional Variable Importance for Random Forests, $VI_{\gamma}$}
@@ -246,6 +240,6 @@ ggplot(dp, aes(x=W1, y=W2, color = group)) +
 
 ##Inferential Variable Importance
 
-This thesis hopes to be a reponse to conditional variable importance as outlined by Strobl et al 2008. First is that the practice of permuting given the partitions from the model $Y \sim X_1,...,X_p$ instead of $X_j \sim X_1,..,X_p$ 
+This thesis hopes to be a response to conditional variable importance as outlined by Strobl et al 2008. First is that the practice of permuting given the partitions from the model $Y \sim X_1,...,X_p$ instead of $X_j \sim X_1,..,X_p$ 
 
 

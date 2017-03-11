@@ -611,7 +611,7 @@ starts here.
   \For{$i \leq 1000$ }
   \State Randomly sample $\frac 2 3$  of the observations in  $D_2$  to a training set,  $D_{2, train}^i$. The other observations,  $x \in D_2, x \notin D_{2, train}^i$ form the testing set $D_{2, test}^i$
   \State Fit a tree, $T^i$, to the data under the model $Y \sim X_1,...,X_2$ using the observations in      $D_{2}^i$
-  \State Calculate the $MSE_test$ of the model using the equation:
+  \State Calculate the $MSE_{test}$ of the model using the equation:
       $MSE_{test} = \frac 1 n \sum (y_j - \hat{y_j})^2$
   \EndFor
   \end{algorithmic}
@@ -672,18 +672,6 @@ starts here.
   \subsection{Figure 12:}\label{figure-12}
   
   \begin{center}\includegraphics{Thesis_files/figure-latex/fig12-1} \end{center}
-  
-  \subsection{TO DO}\label{to-do}
-  
-  \begin{itemize}
-  \tightlist
-  \item
-    Fix the algorithms to work for regression
-  \item
-    Make the OOB references more clear
-  \item
-    Expand around viz created today 3/8
-  \end{itemize}
   
   \chapter{Random Forest Variable
   Importance}\label{random-forest-variable-importance}
@@ -798,7 +786,7 @@ starts here.
   
   \section{Strobl et al Respond (2008)}\label{strobl-et-al-respond-2008}
   
-  Strobl et al (2008) respond to Brieman's method with one main argument:
+  Strobl et al (2008) respond to Breiman's method with one main argument:
   the null hypothesis implied by the permutation distribution utilized in
   permuted variable importance is that \(X_i\) is independent of \(Y\)
   \textbf{and} \({X_j \notin X_1,...,X_p}\) so the null hypothesis will be
@@ -807,7 +795,7 @@ starts here.
   very common in data sets that are used for random forests, this is a
   large problem for Breiman's method.
   
-  To alleiviate this difficulty, Strobl et al propose a permutation scheme
+  To alleviate this difficulty, Strobl et al propose a permutation scheme
   under the null hypothesis that \(X_j\) given it's relationship with the
   other predictors is independent of \(Y\).
   
@@ -831,7 +819,7 @@ starts here.
   \end{algorithm}
   
   As an example for \(5\) in the algorithm above, consider the dataset
-  \(D_{3,lite}\), where \(D_{3,lite} = {{\omega_1, \omega_2}, y}}\) where
+  \(D_{3,lite}\), where \(D_{3,lite} = {\omega_1, \omega_2, y}\) where
   \(D_{3,lite}\) has dimensions \(n = 100\), \(p = 2\). A simple CART tree
   with 5 splits on the model \(Y\) \textasciitilde{}\(\omega_1, \omega_2\)
   
@@ -861,7 +849,7 @@ starts here.
   \section{Inferential Variable
   Importance}\label{inferential-variable-importance}
   
-  This thesis hopes to be a reponse to conditional variable importance as
+  This thesis hopes to be a response to conditional variable importance as
   outlined by Strobl et al 2008. First is that the practice of permuting
   given the partitions from the model \(Y \sim X_1,...,X_p\) instead of
   \(X_j \sim X_1,..,X_p\)
