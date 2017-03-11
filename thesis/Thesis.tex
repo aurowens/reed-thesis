@@ -778,7 +778,7 @@ starts here.
   \begin{algorithm}
   \caption{Permuted Variable Importance for Random Forests, $VI_{\beta}$}
   \label{breiman}
-  \begin{algorithmic}[1]
+  \begin{algorithmic}
   \State Fit a random forest, $R$ on the dataset $D$ fitting the model $Y \sim X_1,...,X_p$.
   \For{each $X_i \in {{X_1,...,X_p}}$}
   \For{each $t \in R$}
@@ -792,6 +792,9 @@ starts here.
   \EndFor
   \end{algorithmic}
   \end{algorithm}
+  
+  Again, a large variable importance value suggests that \(X_j\) is a
+  valuable predictor for the model.
   
   \section{Strobl et al Respond (2008)}\label{strobl-et-al-respond-2008}
   
@@ -809,27 +812,28 @@ starts here.
   other predictors is independent of \(Y\).
   
   \begin{algorithm}
-  \caption{Conditional Variable Importance for Random Forests}
+  \caption{Conditional Variable Importance for Random Forests, $VI_{\gamma}$}
   \label{strobl}
   \begin{algorithmic}[1]
-  \State Fit a random forest, $RF$ on the dataset $D$ fitting the model $Y \sim X_1,...,X_p$
-  \For{each $T_i \in RF$}
-  \State Calculate the oob error before permutation: $$\frac{\sum_{i \in \bar{B}^{T}} I(y = \hat{y})} {|\bar{B}^{T}|}$$
+  \State Fit a random forest, $R$ on the dataset $D$ fitting the model $Y \sim X_1,...,X_p$.
   \For{each $X_i \in {{X_1,...,X_p}}$}
-  \State Permute the dataset, $D$, conditional on the grid created by the splits on $X_i$ in $T_i$
-  \State Calculate the oob error again and compare with the estimate before permutation $$VI_{perm2}(X_i, T_i) = \frac{\sum_{i \in \bar{B}^{T}} I(y = \hat{y})} {|\bar{B}^{T}|} -\frac{\sum_{i \in \bar{B}^{T}} I(y = \hat{y^p})} {|\bar{B}^{T}|}$$
+  \For{each $t \in R$}
+  \State Calculate: $\Psi_o =  \frac 1 {\nu_t} RSS(t,\bar{B}^t)$
+  \State Permute $X_i$ according to the partitions on $X_j$ from $t$ (see notes below on this step)
+  Now find $\Psi^* =  \frac 1 {\nu_t} RSS(t,\bar{B}_t^*)$
+  \State The difference between these values, $\Psi^* - \Psi_o$,  is the variable importance for $X_j$ on $t$,  
   \EndFor
+  \State Average over all $t \in R$ 
+   $$VI_{\gamma}(X_j,R) = \frac 1 {ntree} \sum^{ntree} \Psi^* - \Psi_o$$
+   $$VI_{\beta}(X_j, R) = \frac 1 {ntree} \sum^{ntree} \frac 1 {\nu_t} RSS(t,\bar{B}_t^*) - \frac 1 {\nu_t} RSS(t,\bar{B}^t)$$
   \EndFor
   \end{algorithmic}
   \end{algorithm}
   
-  Finally, as above, the permuted variable importance for each variable
-  \(X_i \in {{X_1,..,X_p}}\) is the sum of \(VI_{perm2}(X_i, T_i)\) over
-  all \(T_i \in RF\).
-  
-  AN EXAMPLE:
-  
-  Fit a simple tree:
+  As an example for \(5\) in the algorithm above, consider the dataset
+  \(D_{3,lite}\), where \(D_{3,lite} = {{\omega_1, \omega_2}, y}}\) where
+  \(D_{3,lite}\) has dimensions \(n = 100\), \(p = 2\). A simple CART tree
+  with 5 splits on the model \(Y\) \textasciitilde{}\(\omega_1, \omega_2\)
   
   \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-2-1} \end{center}
   
