@@ -9,7 +9,17 @@
 
 3/6 - Chapter 3
 
-3/13 - Spring Break - Polish Package and Chapter 4 
+3/10-3/20 Spring Break 
+
+Detailed Outline with Goals
+
+Wednesday 3/15 End of Day- Rough Sketch of Ch4 text
+
+Thursday 3/16 - Return to INFTREEs package, begin polishing and integrating with Ch 4 text 
+
+Friday 3/17 - Incorporating Viz from INFTREEs output
+
+Weekend 3/18-19 - Polish and bring it together 
 
 3/20 - Chapter 4
 

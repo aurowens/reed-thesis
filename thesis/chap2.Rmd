@@ -341,7 +341,7 @@ draw.tree(t3, digits = 2, col = c(thesis, rep(thesis, 3)))
 \For{$i \leq 1000$ }
 \State Randomly sample $\frac 2 3$  of the observations in  $D_2$  to a training set,  $D_{2, train}^i$. The other observations,  $x \in D_2, x \notin D_{2, train}^i$ form the testing set $D_{2, test}^i$
 \State Fit a tree, $T^i$, to the data under the model $Y \sim X_1,...,X_2$ using the observations in      $D_{2}^i$
-\State Calculate the $MSE_test$ of the model using the equation:
+\State Calculate the $MSE_{test}$ of the model using the equation:
     $MSE_{test} = \frac 1 n \sum (y_j - \hat{y_j})^2$
 \EndFor
 \end{algorithmic}
