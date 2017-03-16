@@ -160,8 +160,8 @@ Now find $\Psi^* =  \frac 1 {\nu_t} RSS(t,\bar{B}_t^*)$
 \State The difference between these values, $\Psi^* - \Psi_o$,  is the variable importance for $X_j$ on $t$,  
 \EndFor
 \State Average over all $t \in R$ 
- $$VI_{\gamma}(X_j,R) = \frac 1 {ntree} \sum^{ntree} \Psi^* - \Psi_o$$
- $$VI_{\beta}(X_j, R) = \frac 1 {ntree} \sum^{ntree} \frac 1 {\nu_t} RSS(t,\bar{B}_t^*) - \frac 1 {\nu_t} RSS(t,\bar{B}^t)$$
+ $$VI_{\gamma}(X_i,R) = \frac 1 {ntree} \sum^{ntree} \Psi^* - \Psi_o$$
+ $$VI_{\gamma}(X_i, R) = \frac 1 {ntree} \sum^{ntree} \frac 1 {\nu_t} RSS(t,\bar{B}_t^*) - \frac 1 {\nu_t} RSS(t,\bar{B}^t)$$
 \EndFor
 \end{algorithmic}
 \end{algorithm}
@@ -240,6 +240,6 @@ ggplot(dp, aes(x=W1, y=W2, color = group)) +
 
 ##Inferential Variable Importance
 
-This thesis hopes to be a response to conditional variable importance as outlined by Strobl et al 2008. First is that the practice of permuting given the partitions from the model $Y \sim X_1,...,X_p$ instead of $X_j \sim X_1,..,X_p$ 
+This thesis hopes to be a response to conditional variable importance as outlined by Strobl et al 2008. First is that the practice of permuting given the partitions from the model $Y \sim X_1,...,X_p$ instead of $X_j \sim X_1,..,X_p$. This procedure is reminisent of Breiman et al's notions of grouped predictors in the book *Classification and Regression Trees*.  
 
 

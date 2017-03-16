@@ -812,8 +812,8 @@ starts here.
   \State The difference between these values, $\Psi^* - \Psi_o$,  is the variable importance for $X_j$ on $t$,  
   \EndFor
   \State Average over all $t \in R$ 
-   $$VI_{\gamma}(X_j,R) = \frac 1 {ntree} \sum^{ntree} \Psi^* - \Psi_o$$
-   $$VI_{\beta}(X_j, R) = \frac 1 {ntree} \sum^{ntree} \frac 1 {\nu_t} RSS(t,\bar{B}_t^*) - \frac 1 {\nu_t} RSS(t,\bar{B}^t)$$
+   $$VI_{\gamma}(X_i,R) = \frac 1 {ntree} \sum^{ntree} \Psi^* - \Psi_o$$
+   $$VI_{\gamma}(X_i, R) = \frac 1 {ntree} \sum^{ntree} \frac 1 {\nu_t} RSS(t,\bar{B}_t^*) - \frac 1 {\nu_t} RSS(t,\bar{B}^t)$$
   \EndFor
   \end{algorithmic}
   \end{algorithm}
@@ -852,14 +852,73 @@ starts here.
   This thesis hopes to be a response to conditional variable importance as
   outlined by Strobl et al 2008. First is that the practice of permuting
   given the partitions from the model \(Y \sim X_1,...,X_p\) instead of
-  \(X_j \sim X_1,..,X_p\)
+  \(X_j \sim X_1,..,X_p\). This procedure is reminisent of Breiman et al's
+  notions of grouped predictors in the book \emph{Classification and
+  Regression Trees}.
   
   \chapter{INFTrees and INFforests Variable
   Importance}\label{inftrees-and-infforests-variable-importance}
   
   \section{Theory}\label{theory}
   
-  \section{Implementation}\label{implementation}
+  The theory behind INFtrees combines the permuatation approach to
+  variable importance found in Strobl et al with Breiman et al 1984's
+  notion of grouped predictors.
+  
+  \subsection{Grouped Predictors}\label{grouped-predictors}
+  
+  \subsection{INFTrees}\label{inftrees}
+  
+  For a CART, \(T\), representing the model \(Y~X_1,...,X_p\) where
+  \(Y,X_1,...,X_p\) are vectors of length n, the INFTrees algorithm
+  proceeds as follows:
+  
+  \begin{algorithm}
+  \caption{INFTree, $VI_{inf}(T)$}
+  \label{inftree}
+  \begin{algorithmic}
+  \For{each $X_i \in {{X_1,...,X_p}}$}
+  \State Calculate: $\Phi_o =  RSS(T, (Y,X_1,..X_p))$
+  \State Fit the tree $T_{X_i}$, where $T_{X_i} : X_i \sim X_1,...,X_{i-1}, X_{i+1},...X_p$
+  \State Extract the set $P_{X_i}$ of partitions on $X_i$ from $T_{X_i}$
+  \State Permute $X_i$ with respect to $P_{X_i}$
+  \State Find $\Phi^* =  RSS(T, (Y,X_1,..., \bar{X_i},...X_p))$
+  \State The difference between these values, $\Phi^* - \Phi_o$, is the variable importance for $X_j$ on $T$,  
+  \EndFor
+  \end{algorithmic}
+  \end{algorithm}
+  
+  This procedure allows the null hypothesis that Y is independent of
+  \(X_i\) given the values of \(X_1,...X_{i-1},X_{i+1},...X_p\) to be
+  tested. Therefor, values of \(VI_{inf}\) could be compared in a similar
+  manner to the coefficients of linear regression.
+  
+  \subsection{INFForests}\label{infforests}
+  
+  The algorithm for determining \(VI_{inf}(R)\) follows similarly.
+  
+  \begin{algorithm}
+  \caption{INFForests, $VI_{inf}(R)$}
+  \label{infforest}
+  \begin{algorithmic}[1]
+  \State Fit a random forest, $R$ on the dataset $D$ fitting the model $Y \sim X_1,...,X_p$.
+  \For{each $X_i \in {{X_1,...,X_p}}$}
+  \For{each $t \in R$}
+  \State Calculate: $\Xi_o =  \frac 1 {\nu_t} RSS(t,\bar{B}^t)$
+  \State Calculate a tree $T_i$ that predicts $X_i \sim X_1,...,X_{i-1}, X_{i+1},...X_p$ using the subset of the observations used to fit $t$  
+  \State Permute the subset of $X_i$ contained in $\bar{B}_t$ with respect to the set of partions $P_{xi}$ from $T_i$.
+  \State Now find $\Xi^* =  \frac 1 {\nu_t} RSS(t,\bar{B}_t^*)$
+  \State The difference between these values, $\Xi^* - \Xi_o$,  is the variable importance for $X_i$ on $t$
+  \EndFor
+  \State Average over all $t \in R$ 
+   $$VI_{inf}(X_i,R) = \frac 1 {ntree} \sum^{ntree} \Xi^* - \Xi_o$$
+   $$VI_{inf}(X_j, R) = \frac 1 {ntree} \sum^{ntree} \frac 1 {\nu_t} RSS(t,\bar{B}_t^*) - \frac 1 {\nu_t} RSS(t,\bar{B}^t)$$
+  \EndFor
+  \end{algorithmic}
+  \end{algorithm}
+  
+  \section{Comparisons and
+  Applications}\label{comparisons-and-applications}
   
   \chapter*{Conclusion}\label{conclusion}
   \addcontentsline{toc}{chapter}{Conclusion}
