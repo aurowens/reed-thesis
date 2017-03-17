@@ -861,11 +861,24 @@ starts here.
   
   \section{Theory}\label{theory}
   
+  While conditional variable importance (Strobl et al) conditionally
+  permutes each variable given the structure signified by the model that
+  predicts the response, our method conditionally permutes each variable
+  given the structure outlined in a new model with the variable of
+  interest as the response. This is not the most straightforward process,
+  as trees partition the sample space, however, in INFTrees these
+  partitions on the variables \(X_1,...X_{i-1},X_{i+1},...X_p\) are
+  treated as psuedo partitions on the variable of interest, \(X_i\). This
+  is accomplished by first partitioning on the sample predictors
+  \(X_1,...X_{i-1},X_{i+1},...X_p\) and then infering the partitions on
+  \(X_i\). As a visualizaiton of this, lets return to the \(D_{3lite}\)
+  dataset discussed in the previous chapter.
+  
+  \subsection{Grouped Predictors}\label{grouped-predictors}
+  
   The theory behind INFtrees combines the permuatation approach to
   variable importance found in Strobl et al with Breiman et al 1984's
   notion of grouped predictors.
-  
-  \subsection{Grouped Predictors}\label{grouped-predictors}
   
   \subsection{INFTrees}\label{inftrees}
   

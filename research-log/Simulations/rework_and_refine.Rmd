@@ -12,7 +12,6 @@ output:
 ---
 
 
-The function `tree` was used in previous iterations of these functions but following the guidance of the MASS textbook, I am reworking them to use `rpart`. The process for simulating the data is the same as in previous reports. 
 
 ```{r loadlib, message=FALSE, warning=FALSE}
 library(MASS)
@@ -98,8 +97,6 @@ cond.varImp <- function(xs, data) {
   return(v)
 }
 
-
-
 ```
 
 
@@ -165,7 +162,5 @@ varim <- cond.varImp(xs = data[,-13] ,data =mvn.data)
 varim
 ```
 
-```{r rforest}
 
-```
 
