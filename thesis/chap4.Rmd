@@ -22,10 +22,21 @@ if(!require(reedtemplates)){
 library(reedtemplates)
 ```
 
+**TO DO**
+
+- describe how inf trees works with viz
+
+- describe grouped predictors
+
+- compare viz from all three rf variable importances on D3 
+
 #INFTrees and INFforests Variable Importance
 ##Theory
 
-While conditional variable importance (Strobl et al) conditionally permutes each variable given the structure signified by the model that predicts the response, our method conditionally permutes each variable given the structure outlined in a new model with the variable of interest as the response. This is not the most straightforward process, as trees partition the sample space, however, in INFTrees these partitions on the variables $X_1,...X_{i-1},X_{i+1},...X_p$ are treated as psuedo partitions on the variable of interest, $X_i$. This is accomplished by first partitioning on the sample predictors $X_1,...X_{i-1},X_{i+1},...X_p$  and then infering the partitions on $X_i$. As a visualizaiton of this, lets return to the $D_{3lite}$ dataset discussed in the previous chapter. 
+While conditional variable importance (Strobl et al) conditionally permutes each variable given the structure signified by the model that predicts the response, $Y \sim X_1,...,X_i,...,X_p$, our method conditionally permutes each variable given the structure outlined in a new model with the variable of interest as the response, $X_i \sim X_1,...X_{i-1},X_{i+1},...X_p$. This is not the most straightforward process, as trees partition the sample space, however, in INFTrees these partitions on the variables $X_1,...X_{i-1},X_{i+1},...X_p$ are treated as psuedo partitions on the variable of interest, $X_i$. This is accomplished by first partitioning on the sample predictors $X_1,...X_{i-1},X_{i+1},...X_p$  and then infering the partitions on $X_i$. As a visualizaiton of this, lets return to the $D_{3}$ dataset discussed in chapter 2. 
+
+####Figure __: A scatterplot of the first 
+
 
 ###Grouped Predictors
 
