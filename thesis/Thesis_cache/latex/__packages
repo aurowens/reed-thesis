@@ -19,3 +19,5 @@ cluster
 rpart
 maptree
 partykit
+dplyr
+plotly

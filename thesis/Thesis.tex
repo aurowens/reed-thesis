@@ -856,6 +856,10 @@ starts here.
   notions of grouped predictors in the book \emph{Classification and
   Regression Trees}.
   
+  \textbf{TO DO} - The code I wrote for inftrees only gives one value for
+  inftrees, when - compare viz from all three rf variable importances on
+  D3
+  
   \chapter{INFTrees and INFforests Variable
   Importance}\label{inftrees-and-infforests-variable-importance}
   
@@ -863,22 +867,59 @@ starts here.
   
   While conditional variable importance (Strobl et al) conditionally
   permutes each variable given the structure signified by the model that
-  predicts the response, our method conditionally permutes each variable
-  given the structure outlined in a new model with the variable of
-  interest as the response. This is not the most straightforward process,
-  as trees partition the sample space, however, in INFTrees these
-  partitions on the variables \(X_1,...X_{i-1},X_{i+1},...X_p\) are
-  treated as psuedo partitions on the variable of interest, \(X_i\). This
-  is accomplished by first partitioning on the sample predictors
-  \(X_1,...X_{i-1},X_{i+1},...X_p\) and then infering the partitions on
-  \(X_i\). As a visualizaiton of this, lets return to the \(D_{3lite}\)
-  dataset discussed in the previous chapter.
+  predicts the response, \(Y \sim X_1,...,X_i,...,X_p\), our method
+  conditionally permutes each variable given the structure outlined in a
+  new model with the variable of interest as the response,
+  \(X_i \sim X_1,...X_{i-1},X_{i+1},...X_p\). This is not the most
+  straightforward process, as trees partition the sample space, however,
+  in INFTrees these partitions on the variables
+  \(X_1,...X_{i-1},X_{i+1},...X_p\) are treated as psuedo partitions on
+  the variable of interest, \(X_i\). This is accomplished by first
+  partitioning on the sample predictors \(X_1,...X_{i-1},X_{i+1},...X_p\)
+  and then infering the partitions on \(X_i\). As a visualizaiton of this,
+  lets return to the \(D_{3}\) dataset discussed in chapter 2.
   
-  \subsection{Grouped Predictors}\label{grouped-predictors}
+  \subsubsection{\texorpdfstring{Figure \_\_: A Tree of the Model
+  \(Y \sim \omega_1,.. \omega_4\)}{Figure \_\_: A Tree of the Model Y \textbackslash{}sim \textbackslash{}omega\_1,.. \textbackslash{}omega\_4}}\label{figure-__-a-tree-of-the-model-y-sim-omega_1..-omega_4}
   
-  The theory behind INFtrees combines the permuatation approach to
-  variable importance found in Strobl et al with Breiman et al 1984's
-  notion of grouped predictors.
+  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-4-1} \end{center}
+  
+  Lets say we are interested in the variable importance of \(\omega_2\).
+  Then using the conditional variable importance (Strobl et al)'s
+  permutation scheme, we would first look at the partitions on
+  \(\omega_2\) from this tree.
+  
+  \subsubsection{Figure \_\_.}\label{figure-__.}
+  
+  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-5-1} \end{center}
+  
+  Clearly, the values of \(\omega_2\) are less important to the
+  patitioning structure than the interations of \(\omega_2\) and the other
+  variables.
+  
+  \subsubsection{Figure\_\_:}\label{figure__}
+  
+  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-6-1} \end{center}
+  
+  Under the INFTrees method, before permuting, fit another tree to the
+  model \(\omega_2 \sim \omega_1, \omega_3, \omega_4\)
+  
+  \subsubsection{\texorpdfstring{Figure \_\_\_: Tree of the model
+  \(\omega_2 \sim \omega_1, \omega_3, \omega_4\)}{Figure \_\_\_: Tree of the model \textbackslash{}omega\_2 \textbackslash{}sim \textbackslash{}omega\_1, \textbackslash{}omega\_3, \textbackslash{}omega\_4}}\label{figure-___-tree-of-the-model-omega_2-sim-omega_1-omega_3-omega_4}
+  
+  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-7-1} \end{center}
+  
+  The partitions on \(\omega_2\) implied by this model are:
+  
+  \subsubsection{Figure \_\_.}\label{figure-__.-1}
+  
+  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-8-1} \end{center}
+  
+  \subsubsection{Figure \_\_\_}\label{figure-___}
+  
+  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-9-1} \end{center}
+  
+  \textbf{Need a better way to viz this}
   
   \subsection{INFTrees}\label{inftrees}
   
@@ -896,7 +937,8 @@ starts here.
   \State Extract the set $P_{X_i}$ of partitions on $X_i$ from $T_{X_i}$
   \State Permute $X_i$ with respect to $P_{X_i}$
   \State Find $\Phi^* =  RSS(T, (Y,X_1,..., \bar{X_i},...X_p))$
-  \State The difference between these values, $\Phi^* - \Phi_o$, is the variable importance for $X_j$ on $T$,  
+  \State Repeat the above procedure to find the distribution of $\Phi^*$
+  \State Test the null hypothesis that $\Phi_o$ is the likely value of $RSS(T, (Y,X_1,..X_p))$
   \EndFor
   \end{algorithmic}
   \end{algorithm}
@@ -923,15 +965,38 @@ starts here.
   \State Now find $\Xi^* =  \frac 1 {\nu_t} RSS(t,\bar{B}_t^*)$
   \State The difference between these values, $\Xi^* - \Xi_o$,  is the variable importance for $X_i$ on $t$
   \EndFor
-  \State Average over all $t \in R$ 
-   $$VI_{inf}(X_i,R) = \frac 1 {ntree} \sum^{ntree} \Xi^* - \Xi_o$$
-   $$VI_{inf}(X_j, R) = \frac 1 {ntree} \sum^{ntree} \frac 1 {\nu_t} RSS(t,\bar{B}_t^*) - \frac 1 {\nu_t} RSS(t,\bar{B}^t)$$
+  \State Test the null hypothesis that $\Xi_o$ is the likely value of $\frac 1 {\nu_t} RSS(t,\bar{B}_t^*)$ using the distribution of values of $\Xi^*$ gathered from each tree in $R$
   \EndFor
   \end{algorithmic}
   \end{algorithm}
   
   \section{Comparisons and
   Applications}\label{comparisons-and-applications}
+  
+  \subsection{Trees}\label{trees-1}
+  
+  \begin{longtable}[]{@{}lrrr@{}}
+  \toprule
+  variable & inftree.variable.importance & base.variable.importance &
+  coefficients\tabularnewline
+  \midrule
+  \endhead
+  W1 & 63898.35 & 70101.32 & 5\tabularnewline
+  W2 & 187013.73 & 282218.79 & 5\tabularnewline
+  W3 & 0.00 & 0.00 & 2\tabularnewline
+  W4 & 0.00 & 0.00 & 0\tabularnewline
+  W5 & 0.00 & 57067.54 & -5\tabularnewline
+  W6 & 0.00 & 60276.91 & -5\tabularnewline
+  W7 & 0.00 & 0.00 & -2\tabularnewline
+  W8 & 0.00 & 0.00 & 0\tabularnewline
+  W9 & 0.00 & 0.00 & 0\tabularnewline
+  W10 & 0.00 & 0.00 & 0\tabularnewline
+  W11 & 0.00 & 0.00 & 0\tabularnewline
+  W12 & 0.00 & 0.00 & 0\tabularnewline
+  \bottomrule
+  \end{longtable}
+  
+  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-10-1} \end{center}
   
   \chapter*{Conclusion}\label{conclusion}
   \addcontentsline{toc}{chapter}{Conclusion}

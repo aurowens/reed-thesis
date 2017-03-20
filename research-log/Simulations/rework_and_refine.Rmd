@@ -157,7 +157,7 @@ mvn.data$y <- ys
 ```{r trees}
 a <- tree(y~., data = mvn.data)
 
-#data <- mvn.data
+data <- mvn.data
 varim <- cond.varImp(xs = data[,-13] ,data =mvn.data)
 varim
 ```
