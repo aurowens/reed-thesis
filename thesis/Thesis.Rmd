@@ -23,7 +23,8 @@ bibliography: bib/thesis.bib
 csl: csl/apa.csl
 # Download your specific csl file and refer to it in the line above.
 output: 
-  reedtemplates::reed_thesis:
+  thesisdown::thesis_pdf:
+#  reedtemplates::reed_thesis:
     toc: true
 #    toc_depth: 5
 # Delete the # in line 28 to specify the depth of your table of contents

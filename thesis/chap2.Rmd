@@ -36,6 +36,9 @@ library(reshape)
 
 thesis <- c("#245e67", "#90bd98", "#cfd0a0", "#c49e46", "#d28383")
 ```
+
+*T as a piece-wise constant function from the predictors to Y*
+
 #Simulations and Comparisons
 
 ##Simulated Data
@@ -415,6 +418,8 @@ ggplot(aes(x = value, fill = variable), data = msebag) +
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As one can see, the values of $MSE_{test}$ for the bagged forest were entirely below the $MSE_test$ for the trees and the variance was much smaller. 
 
 ##Random Forests
+
+*EXPAND AND BEGIN NOTATION OF R AS RANDOM FOREST*
 
 As the number of trees grown in each forest increases, the $MSE_{test}$ decreases (cite). Still, this can become computationally intensive on larger data sets where we would like very accurate models. Random forests are often seen as a solution to this problem. In a bagged forest, every variable is considered when each split is made but in a random forest only $mtry, mtry \leq p$ are considered. This allows us to assume that the trees have a level of independence not found in bagged forests, and that a small random forest will often out perform the bagged forest. 
 

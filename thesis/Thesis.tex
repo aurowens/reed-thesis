@@ -39,14 +39,16 @@
 % Added by CII
 \usepackage{hyperref}
 \usepackage{lmodern}
+\usepackage{float}
+\floatplacement{figure}{H}
 % End of CII addition
 \usepackage{rotating}
 
 % Next line commented out by CII
 %%% \usepackage{natbib}
-% Comment out the natbib line above and uncomment the following two lines to use the new 
-% biblatex-chicago style, for Chicago A. Also make some changes at the end where the 
-% bibliography is included. 
+% Comment out the natbib line above and uncomment the following two lines to use the new
+% biblatex-chicago style, for Chicago A. Also make some changes at the end where the
+% bibliography is included.
 %\usepackage{biblatex-chicago}
 %\bibliography{thesis}
 
@@ -59,7 +61,7 @@
 \def\subsectionautorefname{Subsection}
 % End of CII addition
 
-% Added by CII 
+% Added by CII
 \usepackage{caption}
 \captionsetup{width=5in}
 % End of CII addition
@@ -361,6 +363,8 @@ starts here.
   are made from the random forest corresponding to the formula of
   \(Y~X_1,...,X_n\) instead of a model of \(X_j~X_1,...,X_n\).
   
+  \emph{T as a piece-wise constant function from the predictors to Y}
+  
   \chapter{Simulations and Comparisons}\label{simulations-and-comparisons}
   
   \section{Simulated Data}\label{simulated-data}
@@ -391,27 +395,25 @@ starts here.
   and
   \(Y\)}{Table 1: Correlation of V\_1,..., V\_7 and Y}}\label{table-1-correlation-of-v_1...-v_7-and-y}
   
-  \begin{longtable}[]{@{}lrrrrrrrrr@{}}
-  \toprule
-  & V1 & V2 & V3 & V4 & V5 & V6 & V7 & y & beta\tabularnewline
-  \midrule
-  \endhead
-  V1 & 1.000 & 0.915 & 0.908 & 0.907 & -0.034 & 0.006 & 0.012 & 0.829 &
-  5\tabularnewline
-  V2 & 0.915 & 1.000 & 0.914 & 0.914 & -0.020 & -0.001 & -0.001 & 0.830 &
-  5\tabularnewline
-  V3 & 0.908 & 0.914 & 1.000 & 0.903 & -0.017 & -0.007 & 0.007 & 0.808 &
-  2\tabularnewline
-  V4 & 0.907 & 0.914 & 0.903 & 1.000 & -0.002 & -0.015 & 0.023 & 0.789 &
-  0\tabularnewline
-  V5 & -0.034 & -0.020 & -0.017 & -0.002 & 1.000 & 0.044 & 0.005 & -0.388
-  & -5\tabularnewline
-  V6 & 0.006 & -0.001 & -0.007 & -0.015 & 0.044 & 1.000 & -0.005 & -0.364
-  & -5\tabularnewline
-  V7 & 0.012 & -0.001 & 0.007 & 0.023 & 0.005 & -0.005 & 1.000 & -0.141 &
-  -2\tabularnewline
-  \bottomrule
-  \end{longtable}
+  \begin{tabular}{l|r|r|r|r|r|r|r|r|r}
+  \hline
+    & V1 & V2 & V3 & V4 & V5 & V6 & V7 & y & beta\\
+  \hline
+  V1 & 1.000 & 0.915 & 0.908 & 0.907 & -0.034 & 0.006 & 0.012 & 0.829 & 5\\
+  \hline
+  V2 & 0.915 & 1.000 & 0.914 & 0.914 & -0.020 & -0.001 & -0.001 & 0.830 & 5\\
+  \hline
+  V3 & 0.908 & 0.914 & 1.000 & 0.903 & -0.017 & -0.007 & 0.007 & 0.808 & 2\\
+  \hline
+  V4 & 0.907 & 0.914 & 0.903 & 1.000 & -0.002 & -0.015 & 0.023 & 0.789 & 0\\
+  \hline
+  V5 & -0.034 & -0.020 & -0.017 & -0.002 & 1.000 & 0.044 & 0.005 & -0.388 & -5\\
+  \hline
+  V6 & 0.006 & -0.001 & -0.007 & -0.015 & 0.044 & 1.000 & -0.005 & -0.364 & -5\\
+  \hline
+  V7 & 0.012 & -0.001 & 0.007 & 0.023 & 0.005 & -0.005 & 1.000 & -0.141 & -2\\
+  \hline
+  \end{tabular}
   
   ~~~~~As can be seen from the last column in the table, ``beta'',
   although \(V4\) was not included in the model \(Y \sim V1,..V_{12}\),
@@ -439,14 +441,14 @@ starts here.
   
   \subsubsection{Figure 1:}\label{figure-1}
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/fig1-1} \end{center}
+  \includegraphics{Thesis_files/figure-latex/fig1-1.pdf}
   
   ~~~~~ As can be seen above in Figure 1 the densities of \(V_1,...,V_5\)
   are all very similar due to the way they were generated.
   
   \subsubsection{Figure 2:}\label{figure-2}
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/fig2-1} \end{center}
+  \includegraphics{Thesis_files/figure-latex/fig2-1.pdf}
   
   ~~~~~ Figure 2 is an illustration of the relationship between
   \(Y\sim V_4\) with linear correlation of .789.
@@ -467,27 +469,25 @@ starts here.
   and
   \(Y\)}{Table 2: Correlation of X\_1,..., X\_7 and Y}}\label{table-2-correlation-of-x_1...-x_7-and-y}
   
-  \begin{longtable}[]{@{}lrrrrrrrrr@{}}
-  \toprule
-  & X1 & X2 & X3 & X4 & X5 & X6 & X7 & y & beta\tabularnewline
-  \midrule
-  \endhead
-  X1 & 1.000 & 0.693 & 0.605 & 0.552 & -0.043 & 0.009 & -0.006 & 0.760 &
-  5\tabularnewline
-  X2 & 0.693 & 1.000 & 0.847 & 0.745 & 0.004 & 0.006 & -0.018 & 0.845 &
-  5\tabularnewline
-  X3 & 0.605 & 0.847 & 1.000 & 0.877 & 0.007 & 0.005 & -0.024 & 0.785 &
-  2\tabularnewline
-  X4 & 0.552 & 0.745 & 0.877 & 1.000 & 0.011 & 0.006 & -0.032 & 0.696 &
-  0\tabularnewline
-  X5 & -0.043 & 0.004 & 0.007 & 0.011 & 1.000 & -0.008 & 0.020 & -0.318 &
-  -5\tabularnewline
-  X6 & 0.009 & 0.006 & 0.005 & 0.006 & -0.008 & 1.000 & -0.046 & -0.310 &
-  -5\tabularnewline
-  X7 & -0.006 & -0.018 & -0.024 & -0.032 & 0.020 & -0.046 & 1.000 & -0.133
-  & -2\tabularnewline
-  \bottomrule
-  \end{longtable}
+  \begin{tabular}{l|r|r|r|r|r|r|r|r|r}
+  \hline
+    & X1 & X2 & X3 & X4 & X5 & X6 & X7 & y & beta\\
+  \hline
+  X1 & 1.000 & 0.693 & 0.605 & 0.552 & -0.043 & 0.009 & -0.006 & 0.760 & 5\\
+  \hline
+  X2 & 0.693 & 1.000 & 0.847 & 0.745 & 0.004 & 0.006 & -0.018 & 0.845 & 5\\
+  \hline
+  X3 & 0.605 & 0.847 & 1.000 & 0.877 & 0.007 & 0.005 & -0.024 & 0.785 & 2\\
+  \hline
+  X4 & 0.552 & 0.745 & 0.877 & 1.000 & 0.011 & 0.006 & -0.032 & 0.696 & 0\\
+  \hline
+  X5 & -0.043 & 0.004 & 0.007 & 0.011 & 1.000 & -0.008 & 0.020 & -0.318 & -5\\
+  \hline
+  X6 & 0.009 & 0.006 & 0.005 & 0.006 & -0.008 & 1.000 & -0.046 & -0.310 & -5\\
+  \hline
+  X7 & -0.006 & -0.018 & -0.024 & -0.032 & 0.020 & -0.046 & 1.000 & -0.133 & -2\\
+  \hline
+  \end{tabular}
   
   ~~~~~As one can see, Table 2 mirrors Table 1. For this dataset, however,
   the correlation structure is more complicated. \(X_1\) and \(X_2\) are
@@ -495,18 +495,18 @@ starts here.
   
   \subsubsection{Figure 3:}\label{figure-3}
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/fig3-1} \end{center}
+  \includegraphics{Thesis_files/figure-latex/fig3-1.pdf}
   
   \subsubsection{Figure 4:}\label{figure-4}
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/fig4-1} \end{center}
+  \includegraphics{Thesis_files/figure-latex/fig4-1.pdf}
   
   ~~~~~As seen in Figure 4, the pattern observed between \(X_1\) and
   \(X_2\) does not carry over to the other correlated predictors.
   
   \subsubsection{Figure 5:}\label{figure-5}
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/fig5-1} \end{center}
+  \includegraphics{Thesis_files/figure-latex/fig5-1.pdf}
   
   ~~~~~Figure 5 demonstrate how the correlation between a few of the
   predictors and \(Y\) may be effected by slope. Scale is much more a
@@ -527,27 +527,25 @@ starts here.
   \(\omega_1,..., \omega_7\) and
   \(Y\)}{Table 3:Correlation of \textbackslash{}omega\_1,..., \textbackslash{}omega\_7 and Y}}\label{table-3correlation-of-omega_1...-omega_7-and-y}
   
-  \begin{longtable}[]{@{}lrrrrrrrrr@{}}
-  \toprule
-  & W1 & W2 & W3 & W4 & W5 & W6 & W7 & y & beta\tabularnewline
-  \midrule
-  \endhead
-  W1 & 1.000 & -0.056 & -0.040 & 0.041 & 0.002 & -0.034 & -0.028 & 0.322 &
-  5\tabularnewline
-  W2 & -0.056 & 1.000 & -0.533 & -0.279 & -0.002 & 0.049 & -0.003 & 0.668
-  & 5\tabularnewline
-  W3 & -0.040 & -0.533 & 1.000 & -0.002 & -0.019 & -0.031 & -0.010 &
-  -0.096 & 2\tabularnewline
-  W4 & 0.041 & -0.279 & -0.002 & 1.000 & -0.007 & -0.008 & -0.079 & -0.223
-  & 0\tabularnewline
-  W5 & 0.002 & -0.002 & -0.019 & -0.007 & 1.000 & -0.012 & -0.019 & -0.382
-  & -5\tabularnewline
-  W6 & -0.034 & 0.049 & -0.031 & -0.008 & -0.012 & 1.000 & 0.004 & -0.358
-  & -5\tabularnewline
-  W7 & -0.028 & -0.003 & -0.010 & -0.079 & -0.019 & 0.004 & 1.000 & -0.159
-  & -2\tabularnewline
-  \bottomrule
-  \end{longtable}
+  \begin{tabular}{l|r|r|r|r|r|r|r|r|r}
+  \hline
+    & W1 & W2 & W3 & W4 & W5 & W6 & W7 & y & beta\\
+  \hline
+  W1 & 1.000 & -0.056 & -0.040 & 0.041 & 0.002 & -0.034 & -0.028 & 0.322 & 5\\
+  \hline
+  W2 & -0.056 & 1.000 & -0.533 & -0.279 & -0.002 & 0.049 & -0.003 & 0.668 & 5\\
+  \hline
+  W3 & -0.040 & -0.533 & 1.000 & -0.002 & -0.019 & -0.031 & -0.010 & -0.096 & 2\\
+  \hline
+  W4 & 0.041 & -0.279 & -0.002 & 1.000 & -0.007 & -0.008 & -0.079 & -0.223 & 0\\
+  \hline
+  W5 & 0.002 & -0.002 & -0.019 & -0.007 & 1.000 & -0.012 & -0.019 & -0.382 & -5\\
+  \hline
+  W6 & -0.034 & 0.049 & -0.031 & -0.008 & -0.012 & 1.000 & 0.004 & -0.358 & -5\\
+  \hline
+  W7 & -0.028 & -0.003 & -0.010 & -0.079 & -0.019 & 0.004 & 1.000 & -0.159 & -2\\
+  \hline
+  \end{tabular}
   
   ~~~~~The linear correlation structure in \(D_3\) is not as striking as
   in \(D_1\). The two strongest linear relationships are between
@@ -556,7 +554,7 @@ starts here.
   
   \subsubsection{Figure 6:}\label{figure-6}
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/fig6-1} \end{center}
+  \includegraphics{Thesis_files/figure-latex/fig6-1.pdf}
   
   ~~~~~Figure 6 provides another way of visualizing some of the
   information given in Table 3. Here we can see the densities as well as
@@ -564,7 +562,7 @@ starts here.
   
   \subsubsection{Figure 7:}\label{figure-7}
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/fig7-1} \end{center}
+  \includegraphics{Thesis_files/figure-latex/fig7-1.pdf}
   
   ~~~~~There is more variation between the densities of
   \(\omega_1,...,\omega_5\) then we have seen in the other data sets.
@@ -573,10 +571,9 @@ starts here.
   
   \subsection{Figure 8:}\label{figure-8}
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/fig8-1} \end{center}
-  
-  ~~~~~ As the relationship between \(Y\) and \(\omega_2\) was so
-  striking, it is nice to see a scatter plot that represents it.
+  \includegraphics{Thesis_files/figure-latex/fig8-1.pdf} ~~~~~ As the
+  relationship between \(Y\) and \(\omega_2\) was so striking, it is nice
+  to see a scatter plot that represents it.
   
   \section{Models and Comparisons}\label{models-and-comparisons}
   
@@ -599,7 +596,7 @@ starts here.
   \textbf{CART Representing Y\textasciitilde{}, from datasets D1, D2, and
   D3}
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/fig9-1} \end{center}
+  \includegraphics{Thesis_files/figure-latex/fig9-1.pdf}
   
   ~~~~~Trees can be quite variable, so to get a better idea of the
   differences between the methods let's run a simulation.
@@ -624,7 +621,7 @@ starts here.
   
   \subsection{Figure 10:}\label{figure-10}
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/fig10-1} \end{center}
+  \includegraphics{Thesis_files/figure-latex/fig10-1.pdf}
   
   ~~~~~The distribution of 1000 CART trees' \(MSE_{test}\) is roughly
   normal with a variance of \texttt{var(testmseC)}.
@@ -648,13 +645,15 @@ starts here.
   
   \subsection{Figure 11:}\label{figure-11}
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/fig11-1} \end{center}
+  \includegraphics{Thesis_files/figure-latex/fig11-1.pdf}
   
   ~~~~~As one can see, the values of \(MSE_{test}\) for the bagged forest
   were entirely below the \(MSE_test\) for the trees and the variance was
   much smaller.
   
   \section{Random Forests}\label{random-forests}
+  
+  \emph{EXPAND AND BEGIN NOTATION OF R AS RANDOM FOREST}
   
   As the number of trees grown in each forest increases, the
   \(MSE_{test}\) decreases (cite). Still, this can become computationally
@@ -671,7 +670,7 @@ starts here.
   
   \subsection{Figure 12:}\label{figure-12}
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/fig12-1} \end{center}
+  \includegraphics{Thesis_files/figure-latex/fig12-1.pdf}
   
   \chapter{Random Forest Variable
   Importance}\label{random-forest-variable-importance}
@@ -823,28 +822,29 @@ starts here.
   \(D_{3,lite}\) has dimensions \(n = 100\), \(p = 2\). A simple CART tree
   with 5 splits on the model \(Y\) \textasciitilde{}\(\omega_1, \omega_2\)
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-2-1} \end{center}
+  \includegraphics{Thesis_files/figure-latex/unnamed-chunk-2-1.pdf}
+  \includegraphics{Thesis_files/figure-latex/unnamed-chunk-2-2.pdf}
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-2-2} \end{center}
-  
-  \begin{longtable}[]{@{}llllll@{}}
-  \toprule
-  Group & Predicted Value of Y & Min(W2) & Max(W2) & Min(W1) &
-  Max(W1)\tabularnewline
-  \midrule
-  \endhead
-  A & -25.9369010231033 & -7.3 & -5.24 & -0.38 & 0.14\tabularnewline
-  B & -10.1521754868715 & -4.99 & 0.19 & -1.68 & 1.75\tabularnewline
-  C & 0.791053130734821 & 0.3 & 3.1 & -2.84 & 0.8\tabularnewline
-  D & 8.40580623141462 & 0.2 & 1.29 & 0.96 & 2.11\tabularnewline
-  E & 30.7209296380884 & 1.86 & 3.82 & 0.82 & 2.7\tabularnewline
-  \bottomrule
-  \end{longtable}
+  \begin{tabular}{l|l|l|l|l|l}
+  \hline
+  Group & Predicted Value of Y & Min(W2) & Max(W2) & Min(W1) & Max(W1)\\
+  \hline
+  A & -20.6371274522749 & -10.84 & -4.01 & -0.44 & 0.18\\
+  \hline
+  B & -9.42120832603296 & -3.75 & 1.1 & -2.06 & 0.61\\
+  \hline
+  C & 0.185428736865235 & -2.52 & 0.96 & 0.62 & 2.14\\
+  \hline
+  D & 2.41489200540137 & 1.12 & 4.79 & -3 & -1.02\\
+  \hline
+  E & 17.3087050358659 & 0.98 & 2.7 & 0.77 & 2.78\\
+  \hline
+  \end{tabular}
   
   If we permute the \(\omega_1\) values in group \(B\), this is what that
   plot looks like:
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-3-1} \end{center}
+  \includegraphics{Thesis_files/figure-latex/unnamed-chunk-3-1.pdf}
   
   \section{Inferential Variable
   Importance}\label{inferential-variable-importance}
@@ -856,9 +856,7 @@ starts here.
   notions of grouped predictors in the book \emph{Classification and
   Regression Trees}.
   
-  \textbf{TO DO} - The code I wrote for inftrees only gives one value for
-  inftrees, when - compare viz from all three rf variable importances on
-  D3
+  \textbf{TO DO}
   
   \chapter{INFTrees and INFforests Variable
   Importance}\label{inftrees-and-infforests-variable-importance}
@@ -882,7 +880,7 @@ starts here.
   \subsubsection{\texorpdfstring{Figure \_\_: A Tree of the Model
   \(Y \sim \omega_1,.. \omega_4\)}{Figure \_\_: A Tree of the Model Y \textbackslash{}sim \textbackslash{}omega\_1,.. \textbackslash{}omega\_4}}\label{figure-__-a-tree-of-the-model-y-sim-omega_1..-omega_4}
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-4-1} \end{center}
+  \includegraphics{Thesis_files/figure-latex/unnamed-chunk-4-1.pdf}
   
   Lets say we are interested in the variable importance of \(\omega_2\).
   Then using the conditional variable importance (Strobl et al)'s
@@ -891,15 +889,28 @@ starts here.
   
   \subsubsection{Figure \_\_.}\label{figure-__.}
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-5-1} \end{center}
+  \includegraphics{Thesis_files/figure-latex/unnamed-chunk-5-1.pdf}
   
   Clearly, the values of \(\omega_2\) are less important to the
   patitioning structure than the interations of \(\omega_2\) and the other
   variables.
   
-  \subsubsection{Figure\_\_:}\label{figure__}
+  \begin{Shaded}
+  \begin{Highlighting}[]
+  \KeywordTok{ggplot}\NormalTok{(dp, }\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x=}\NormalTok{W2, }\DataTypeTok{y=}\NormalTok{W3, }\DataTypeTok{color =} \NormalTok{group)) +}
+  \StringTok{  }\KeywordTok{geom_point}\NormalTok{()+}
+  \StringTok{  }\KeywordTok{scale_color_manual}\NormalTok{(}\DataTypeTok{values =} \NormalTok{thesis)}
+  \end{Highlighting}
+  \end{Shaded}
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-6-1} \end{center}
+  \begin{figure}[htbp]
+  \centering
+  \includegraphics{Thesis_files/figure-latex/blah-1.pdf}
+  \caption{\label{fig:blah}Partitions on the Predictor Space W2 from
+  Y\textasciitilde{}W1,..,W4}
+  \end{figure}
+  
+  As you can see in Figure \ref{fig:blah} above, \ldots{}
   
   Under the INFTrees method, before permuting, fit another tree to the
   model \(\omega_2 \sim \omega_1, \omega_3, \omega_4\)
@@ -907,17 +918,15 @@ starts here.
   \subsubsection{\texorpdfstring{Figure \_\_\_: Tree of the model
   \(\omega_2 \sim \omega_1, \omega_3, \omega_4\)}{Figure \_\_\_: Tree of the model \textbackslash{}omega\_2 \textbackslash{}sim \textbackslash{}omega\_1, \textbackslash{}omega\_3, \textbackslash{}omega\_4}}\label{figure-___-tree-of-the-model-omega_2-sim-omega_1-omega_3-omega_4}
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-7-1} \end{center}
+  \includegraphics{Thesis_files/figure-latex/unnamed-chunk-7-1.pdf}
   
   The partitions on \(\omega_2\) implied by this model are:
   
   \subsubsection{Figure \_\_.}\label{figure-__.-1}
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-8-1} \end{center}
+  \includegraphics{Thesis_files/figure-latex/unnamed-chunk-8-1.pdf}
   
-  \subsubsection{Figure \_\_\_}\label{figure-___}
-  
-  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-9-1} \end{center}
+  \includegraphics{Thesis_files/figure-latex/unnamed-chunk-9-1.pdf}
   
   \textbf{Need a better way to viz this}
   
@@ -975,28 +984,17 @@ starts here.
   
   \subsection{Trees}\label{trees-1}
   
-  \begin{longtable}[]{@{}lrrr@{}}
-  \toprule
-  variable & inftree.variable.importance & base.variable.importance &
-  coefficients\tabularnewline
-  \midrule
-  \endhead
-  W1 & 63898.35 & 70101.32 & 5\tabularnewline
-  W2 & 187013.73 & 282218.79 & 5\tabularnewline
-  W3 & 0.00 & 0.00 & 2\tabularnewline
-  W4 & 0.00 & 0.00 & 0\tabularnewline
-  W5 & 0.00 & 57067.54 & -5\tabularnewline
-  W6 & 0.00 & 60276.91 & -5\tabularnewline
-  W7 & 0.00 & 0.00 & -2\tabularnewline
-  W8 & 0.00 & 0.00 & 0\tabularnewline
-  W9 & 0.00 & 0.00 & 0\tabularnewline
-  W10 & 0.00 & 0.00 & 0\tabularnewline
-  W11 & 0.00 & 0.00 & 0\tabularnewline
-  W12 & 0.00 & 0.00 & 0\tabularnewline
-  \bottomrule
-  \end{longtable}
+  \begin{Shaded}
+  \begin{Highlighting}[]
+  \NormalTok{viW2 <-}\StringTok{ }\KeywordTok{as.data.frame}\NormalTok{(viW2)}
+  \KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =} \NormalTok{viW2), }\DataTypeTok{data =} \NormalTok{viW2) +}\StringTok{ }
+  \StringTok{  }\KeywordTok{geom_density}\NormalTok{(}\DataTypeTok{fill =} \NormalTok{thesis[}\DecValTok{1}\NormalTok{], }\DataTypeTok{alpha =} \NormalTok{.}\DecValTok{8}\NormalTok{) +}
+  \StringTok{  }\KeywordTok{ggtitle}\NormalTok{(}\StringTok{"Distribution of RSS when W2 is Conditionally Permuted"}\NormalTok{)+}
+  \StringTok{  }\KeywordTok{geom_vline}\NormalTok{(}\DataTypeTok{xintercept =} \NormalTok{inft[}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{])}
+  \end{Highlighting}
+  \end{Shaded}
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/unnamed-chunk-10-1} \end{center}
+  \subsection{Random Forests}\label{random-forests-1}
   
   \chapter*{Conclusion}\label{conclusion}
   \addcontentsline{toc}{chapter}{Conclusion}
@@ -1114,9 +1112,8 @@ starts here.
   
   \textbf{CTree fitted to \(D_3\)}
   
-  \begin{center}\includegraphics{Thesis_files/figure-latex/ctree-1} \end{center}
-  
-  \begin{center}\includegraphics{Thesis_files/figure-latex/ctree-2} \end{center}
+  \includegraphics{Thesis_files/figure-latex/ctree-1.pdf}
+  \includegraphics{Thesis_files/figure-latex/ctree-2.pdf}
   
   \backmatter
   
@@ -1144,4 +1141,3 @@ starts here.
   % Index?
 
 \end{document}
-

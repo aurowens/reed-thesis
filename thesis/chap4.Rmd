@@ -162,8 +162,7 @@ d3$y <- ys
 
 ```
 **TO DO**
-- The code I wrote for inftrees only gives one value for inftrees, when 
-- compare viz from all three rf variable importances on D3 
+
 
 #INFTrees and INFforests Variable Importance
 ##Theory
@@ -212,7 +211,7 @@ ggplot(d3lite, aes(x=W2, y=W3, color = group)) +
 
 Clearly, the values of $\omega_2$ are less important to the patitioning structure than the interations of $\omega_2$ and the other variables. 
 
-####Figure__: 
+
 
 ```{r,echo = FALSE, warning=FALSE, message=FALSE}
 dp <- d3lite
@@ -221,13 +220,15 @@ as <- filter(dp, group == "A")
 as$W2 <- sample(as$W2)
 
 dp[dp$group == "A",] <- as
+```
 
+```{r blah, fig.cap="Partitions on the Predictor Space W2 from Y~W1,..,W4", results="asis"}
 ggplot(dp, aes(x=W2, y=W3, color = group)) +
   geom_point()+
-  ggtitle("Partitions on the Predictor Space W2 from Y~W1,..,W4")+
   scale_color_manual(values = thesis)
-
 ```
+
+As you can see in Figure \@ref(fig:blah) above, ...
 
 Under the INFTrees method, before permuting, fit another tree to the model $\omega_2 \sim \omega_1, \omega_3, \omega_4$ 
 
@@ -265,7 +266,7 @@ ggplot(d3lite, aes(x=W2, y = W3, color = group)) +
 ```
 
 
-####Figure ___ 
+
 
 ```{r,echo = FALSE, warning=FALSE, message=FALSE}
 dp <- d3lite
@@ -333,7 +334,7 @@ The algorithm for determining $VI_{inf}(R)$ follows similarly.
 ##Comparisons and Applications
 ###Trees 
 
-```{r, cache=TRUE, echo = FALSE}
+```{r, cache=TRUE, echo = FALSE, eval =FALSE}
 t <- tree(y ~., d3)
 t$frame$yval <- round(t$frame$yval, 2)
 
@@ -350,7 +351,7 @@ for( i in 1:1000){
 }
 ```
 
-```{r}
+```{r, eval=FALSE}
 viW2 <- as.data.frame(viW2)
 ggplot(aes(x = viW2), data = viW2) + 
   geom_density(fill = thesis[1], alpha = .8) +
