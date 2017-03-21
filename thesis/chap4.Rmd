@@ -114,8 +114,6 @@ inftrees <- function(xs, data, n) {
 
 ```
 
-
-
 ```{r d3ch4, echo = FALSE}
 w1 <- rnorm(1000)
 
@@ -161,8 +159,6 @@ ys[i] <- d3[i,1]*bts[1]+
 d3$y <- ys
 
 ```
-**TO DO**
-
 
 #INFTrees and INFforests Variable Importance
 ##Theory
@@ -170,26 +166,26 @@ d3$y <- ys
 While conditional variable importance (Strobl et al) conditionally permutes each variable given the structure signified by the model that predicts the response, $Y \sim X_1,...,X_i,...,X_p$, our method conditionally permutes each variable given the structure outlined in a new model with the variable of interest as the response, $X_i \sim X_1,...X_{i-1},X_{i+1},...X_p$. This is not the most straightforward process, as trees partition the sample space, however, in INFTrees these partitions on the variables $X_1,...X_{i-1},X_{i+1},...X_p$ are treated as psuedo partitions on the variable of interest, $X_i$. This is accomplished by first partitioning on the sample predictors $X_1,...X_{i-1},X_{i+1},...X_p$  and then infering the partitions on $X_i$. As a visualizaiton of this, lets return to the $D_{3}$ dataset discussed in chapter 2. 
 
 
-####Figure __: A Tree of the Model $Y \sim \omega_1,.. \omega_4$
-
 ```{r,echo = FALSE, warning=FALSE, message=FALSE}
 test <- sample(1000, 200)
 
 d3lite <- round(d3,2)
 
-d3lite <- dplyr::select(d3lite, W1, W2, W3, W4, y)
+d3lite <- dplyr::select(d3lite, W1, W2, y)
 
-t1 <- tree(y~ W1+ W2 + W3 + W4, data = d3lite[-test,])
+t1 <- tree(y~ W1+ W2, data = d3lite[-test,])
 t1$frame$yval <- round(t1$frame$yval,2)
 t1 <- prune.tree(t1, best = 5)
-#find a way to plot this tree. error: "figure margins too large"???? >:(
+```
+
+```{r t1ch4, echo = FALSE, fig.cap="A Tree of the Model Y~W1,W2", results="asis"}
+
 plot(t1)
 text(t1)
 ```
 
 Lets say we are interested in the variable importance of $\omega_2$. Then using the conditional variable importance (Strobl et al)'s permutation scheme, we would first look at the partitions on $\omega_2$ from this tree. 
 
-####Figure __. 
 
 ```{r,echo = FALSE, warning=FALSE, message=FALSE}
 yhats <- predict(t1, d3lite[test,-5])
@@ -203,9 +199,13 @@ d3lite$ys <- yhats
 library(ggplot2)
 library(plotly)
 
-ggplot(d3lite, aes(x=W2, y=W3, color = group)) +
+
+```
+
+```{r p2ch4, echo = FALSE, fig.cap="Partitions on the Predictor Space W2 from Y~W1,..,W4", results="asis"}
+
+ggplot(d3lite, aes(x=W2, y=W1, color = group)) +
   geom_point()+
-  ggtitle("Partitions on the Predictor Space W2 from Y~W1,..,W4")+
   scale_color_manual(values = thesis)
 ```
 
@@ -222,25 +222,28 @@ as$W2 <- sample(as$W2)
 dp[dp$group == "A",] <- as
 ```
 
-```{r blah, fig.cap="Partitions on the Predictor Space W2 from Y~W1,..,W4", results="asis"}
-ggplot(dp, aes(x=W2, y=W3, color = group)) +
+```{r p3ch4, echo = FALSE, fig.cap="Partitions on the Predictor Space W2 from Y~W1,..,W4", results="asis"}
+ggplot(dp, aes(x=W2, y=W1, color = group)) +
   geom_point()+
   scale_color_manual(values = thesis)
 ```
 
 As you can see in Figure \@ref(fig:blah) above, ...
 
-Under the INFTrees method, before permuting, fit another tree to the model $\omega_2 \sim \omega_1, \omega_3, \omega_4$ 
-
-####Figure ___: Tree of the model $\omega_2 \sim \omega_1, \omega_3, \omega_4$ 
+Under the INFTrees method, before permuting, fit another tree to the model $\omega_2 \sim \omega_1$ 
 
 ```{r,echo = FALSE, warning=FALSE, message=FALSE}
-t2 <- tree(W2 ~ W1 + W3 + W4, data = d3lite[-test,])
+t2 <- tree(W2 ~ W1, data = d3lite[-test,])
 t2$frame$yval <- round(t2$frame$yval,2)
 t2 <- prune.tree(t2, best = 5)
+```
+
+```{r t2ch4, echo = FALSE, fig.cap="A Tree of the Model W2~W1", results="asis"}
+
 plot(t2)
 text(t2)
 ```
+
 
 The partitions on $\omega_2$ implied by this model are:
 
@@ -259,13 +262,15 @@ d3lite$ys <- yhats
 library(ggplot2)
 library(plotly)
 
-ggplot(d3lite, aes(x=W2, y = W3, color = group)) +
-  geom_point()+
-  ggtitle("Partitions on the Predictor Space W2 from Y~W1,..,W4")+
-  scale_color_manual(values = thesis)
+
 ```
 
 
+```{r p4ch4, echo = FALSE, fig.cap="Partitions on the Predictor Space W2 from W2~W1", results="asis"}
+ggplot(d3lite, aes(x=W2, y = W1, color = group)) +
+  geom_point()+
+  scale_color_manual(values = thesis)
+```
 
 
 ```{r,echo = FALSE, warning=FALSE, message=FALSE}
@@ -276,14 +281,15 @@ as$W2 <- sample(as$W2)
 
 dp[dp$group == "A",] <- as
 
-ggplot(dp, aes(x=W2, y=W3, color = group)) +
-  geom_point()+
-  ggtitle("Partitions on the Predictor Space W2 from W2~W1+W3+W4")+
-  scale_color_manual(values = thesis)
-
 ```
 
-**Need a better way to viz this**
+```{r p5ch4, echo = FALSE, fig.cap="The Result of Permuting W2 WRT The Partitions", results="asis"}
+ggplot(dp, aes(x=W2, y=W1, color = group)) +
+  geom_point()+
+  scale_color_manual(values = thesis)
+```
+
+
 
 ###INFTrees
 
@@ -334,7 +340,7 @@ The algorithm for determining $VI_{inf}(R)$ follows similarly.
 ##Comparisons and Applications
 ###Trees 
 
-```{r, cache=TRUE, echo = FALSE, eval =FALSE}
+```{r, cache=TRUE, echo = FALSE}
 t <- tree(y ~., d3)
 t$frame$yval <- round(t$frame$yval, 2)
 

@@ -1,0 +1,107 @@
+---
+title: "thesis scratchwork"
+output: html_document
+---
+
+-- \usepackage{algorithms}
+
+
+end{document}
+
+\begin{alg}
+\begin{algorithmic}
+  \For{<i \leq 1000>}
+   <1.Randomly sample  \frac 2 3  of the observations in  D_2  to a training set,  D_{2, train}^i .       The other observations,  x \in D_2, x \notin D_{2, train}^i  form the testing set  D_{2, test}^i 
+    2. Fit a tree,  T^i , to the data under the model  Y \sim X_1,...,X_2  using the observations in       D_{2}^i 
+    3. Calculate the  MSE_test  of the model using the equation:
+    MSE_{test} = \frac 1 n (y_j - \hat{y_j})^2>
+\EndFor
+\end{algorithmic}
+\end{alg}
+
+
+
+##Old work
+
+
+Any discussion of tree-based statistical methods must begin with a single tree. Even at the first glance, a tree is fairly easy to interpret. Here we have an example using the `mtcars` dataset from the `MASS` package. 
+
+```{r, echo=FALSE, message=FALSE}
+data("mtcars")
+
+mpg <- mtcars$mpg
+weight <- mtcars$wt
+
+tree1 <- tree(mpg ~ weight) #Maybe use a different package. One with titles?
+plot(tree1)
+text(tree1)
+```
+
+
+The diagram gives the whole model. It predicts that for cars weighing less than 2,260lbs, the MPG will be 30.07, for cars weighing less than 3,325lbs but more than 2,260lbs the MPG will be 21.18, etc. Each phrase "weight < X" is called a *split* and each prediction Y is called a *node*. Trees are primarily predictive models, so a good way to test ours is to find the Mean Squared Error. The MSE is the mean, squared difference between the Y values we would expect given our model and the actual values of Y we observed. 
+$$MSE = \frac 1 n \sum_{1}^n (\hat{Y} - Y)^2$$ 
+In this case, $Y$ is vector of recorded values for MPG and $\hat{Y}$ is the predictions we get from our model. $\hat{Y}$ only has four possible values, $30.07, 21.18, 17.8,$ and $14.7$. The MSE for this tree is:
+```{r, echo=FALSE, message=FALSE}
+mse <- mean((mpg - predict(tree1))^2)
+mse
+```
+There are some apparent downsides to this model that should be apparent. It is difficult to tell how well it is performing. 5.349 seems like a fine number but we would need to use a more rigorous method, like cross validation, to check this intuition. *Add another?*
+
+We can also check how well this model is performing by plotting the predicted points on top of the observed ones:
+
+```{r, echo=FALSE, message=FALSE}
+
+fspl <- data.frame(x = c(1.513, 2.26), y = c(30.07, 30.07))
+fspl2 <- data.frame(x = c(2.26, 3.325), y = c(21.18, 21.18))
+fspl3 <- data.frame(x = c(3.325, 3.49), y = c(17.8, 17.8))
+fspl4 <- data.frame(x = c(3.49, 5.424), y = c(14.7, 14.7))
+
+ggplot(data = mtcars, aes(x = mtcars$wt)) +
+  geom_point(aes(y = mtcars$mpg))+
+  geom_vline(xintercept = 2.26, color = "#02401B")+
+  geom_vline(xintercept = 3.325, color = "#02401B")+
+  geom_vline(xintercept = 3.49, color = "#02401B")+
+  geom_segment(aes(x = x[1], y = y[1], xend = x[2], yend = y[2]), data = fspl, color = "#D8B70A")+
+  geom_segment(aes(x = x[1], y = y[1], xend = x[2], yend = y[2]), data = fspl2, color = "#D8B70A")+
+  geom_segment(aes(x = x[1], y = y[1], xend = x[2], yend = y[2]), data = fspl3, color = "#D8B70A")+
+  geom_segment(aes(x = x[1], y = y[1], xend = x[2], yend = y[2]), data = fspl4, color = "#D8B70A")+
+  ggtitle("Visualizing the Model's Splits on the Feature Space")+
+  xlab("weight")+
+  ylab("mpg")
+```
+
+**Tree Algorithm**
+
+To get any further on this topic, we must develop the framework behind trees, namely the splitting algorithm. In the regression case, which is what is considered here the algorithm looks like this:
+
+Begin by considering the entire feature space $X_1, ..., X_n$. Then:
+
+1. Consider every possible pair of partitions of this feature space, $P_1, P_2$, so that if $X_1 = x_1 , X_2 = x_2,..., X_n = x_n$ where ${x_1,...,x_n}  \in P_1$ then our prediction is the mean value of $y$ given $x_1,..,x_n \in P_1$. 
+
+2. Choose the partitions that minimize RSS 
+
+3. For each new partition, repeat steps 1 and 2 until some stopping condition is reached. 
+
+*Potential issue: it seems like this (which looks like the CART algorithm) is different from the algorithm used in `tree`, `rpart` and in my package. This starts with a model that has no splits and moves downward creating a greedy algorithm, whereas deviance to me only makes sense if we start with the saturated model where every y value is it's own partition and move toward a smaller model - like a hierarchical model*
+
+
+Many packages in R for fitting trees report the *deviance* of a particular node. Deviance is a goodness of fit metric often defined as:
+
+$$D(y)= -2(log(p(y|\hat{\theta_0})) - log(p(y|\hat{\theta_s}))) $$
+Or twice the difference between the log likelihood of the estimated model and the log likelihood of the saturated model that fits the data perfectly. In our situation, the saturated model is the model where each value of the response corresponds to a node. **does a tree partition the response or the feature space?** Because of this, the deviance measure only makes sense at the nodes.
+
+
+**Random Forests**
+
+Single trees are traditionally thought to be poorer predictors than other models. However, if we enlist many trees we can greatly improve our predictions. There are several common methods that accomplish this: random, bagged, and boosted forests. Here we will address random forest models because that is the context in which variable importance is often used. Random forests generate many trees and average the predictions across all of them. However, they restrict the number of variables that can be split on in each tree. This parameter, called `mtry`, can be tuned to generate the optimal model.  Base variable importance is defined as: 
+
+$$VI(v_1) = \sum$$
+
+**Variable Importance Measures**
+
+There are many ways to measure variable importance in random forests besides the method mentioned previously. In their paper, *Variable Selection Using Random Forests*, Marco Sandri and Paola Zuccolotto from the University of Bresica outline several methods for variable importance and propose a new method. 
+
+*Considering deleting this section (Variable Importance Measures). I'm not sure that it's critical to the work I've done*
+
+
+
