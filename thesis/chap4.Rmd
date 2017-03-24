@@ -30,6 +30,8 @@ library(maptree)
 library(knitr)
 library(GGally)
 library(reshape)
+library(ggplot2)
+library(plotly)
 #flights <- read.csv("data/flights.csv")
 thesis <- c("#245e67", "#90bd98", "#cfd0a0", "#c49e46", "#d28383")
 ```
@@ -179,7 +181,6 @@ t1 <- prune.tree(t1, best = 5)
 ```
 
 ```{r t1ch4, echo = FALSE, fig.cap="A Tree of the Model Y~W1,W2", results="asis"}
-
 plot(t1)
 text(t1)
 ```
@@ -202,11 +203,9 @@ library(plotly)
 
 ```
 
-```{r p2ch4, echo = FALSE, fig.cap="Partitions on the Predictor Space W2 from Y~W1,..,W4", results="asis"}
+```{r p2ch4, echo = FALSE, fig.cap="Partitions on the Predictor Space W2 from Y~W1,W1", results="asis"}
 
-ggplot(d3lite, aes(x=W2, y=W1, color = group)) +
-  geom_point()+
-  scale_color_manual(values = thesis)
+partition.tree(t1)
 ```
 
 Clearly, the values of $\omega_2$ are less important to the patitioning structure than the interations of $\omega_2$ and the other variables. 
@@ -247,9 +246,6 @@ text(t2)
 
 The partitions on $\omega_2$ implied by this model are:
 
-
-####Figure __. 
-
 ```{r,echo = FALSE, warning=FALSE, message=FALSE}
 yhats <- predict(t2, d3lite[test,-5])
 d3lite$group <- as.factor(yhats)
@@ -258,11 +254,6 @@ d3lite$group <- ifelse(d3lite$group == levels(d3lite$group)[1], "A",
                 ifelse(d3lite$group == levels(d3lite$group)[3], "C",
                 ifelse(d3lite$group == levels(d3lite$group)[4], "D", "E"))))
 d3lite$ys <- yhats
-
-library(ggplot2)
-library(plotly)
-
-
 ```
 
 
@@ -280,7 +271,6 @@ as <- filter(dp, group == "A")
 as$W2 <- sample(as$W2)
 
 dp[dp$group == "A",] <- as
-
 ```
 
 ```{r p5ch4, echo = FALSE, fig.cap="The Result of Permuting W2 WRT The Partitions", results="asis"}
@@ -347,6 +337,7 @@ t$frame$yval <- round(t$frame$yval, 2)
 inft <- inftrees(d3[,c(1:12)], d3)
 
 inft$coefficients <- bts
+
 kable(inft)
 
 viW2<- rep(0,1000)
@@ -355,13 +346,12 @@ for( i in 1:1000){
   data <-d3[-test,]
   viW2[i] <- inftrees(data[,c(1:12)], data)[2,2]
 }
+viW2 <- as.data.frame(viW2)
 ```
 
-```{r, eval=FALSE}
-viW2 <- as.data.frame(viW2)
+```{r p6ch4, echo = FALSE, fig.cap="Distribution of RSS when W2 is Conditionally Permuted", results="asis"}
 ggplot(aes(x = viW2), data = viW2) + 
   geom_density(fill = thesis[1], alpha = .8) +
-  ggtitle("Distribution of RSS when W2 is Conditionally Permuted")+
   geom_vline(xintercept = inft[2,3])
 ```
 
