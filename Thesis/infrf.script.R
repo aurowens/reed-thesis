@@ -22,7 +22,7 @@ max.cor <- function(y,xss){
 
 split.rf <- function(y,x, min) {
   sp <- list()
-  op.partition <- optimise(rss.tree, interval = range(x), a = y, maximum = FALSE)
+  op.partition <- optimise(rss.tree, interval = range(x), a = y, maximum = FALSE, tol = .0001)
   if(length(x[x < op.partition[[1]]]) < min | length(x[x >= op.partition[[1]]]) < min) {
     return(NULL)
     } else {
@@ -43,7 +43,7 @@ split.rf <- function(y,x, min) {
 node1 <- function(y, xs, mtry, spl){
   xssrd <- xs[,sample(ncol(xs),mtry)]
   maxxr <- max.cor(y,xs)
-  sprd <- split.rf(y, maxxr[[1]], min = round(nrow(xs)/20))
+  sprd <- split.rf(y, maxxr[[1]], min = round(nrow(xs)/5))
   frame <- c()
   if(is.null(sprd)) {
     frame <- c("<leaf>",nrow(xssrd), mean(y), rss.tree(maxxr[[1]], y), 0)
@@ -94,11 +94,16 @@ tree.rf <- function(y,xs, mtry){
   maxx <- max.cor(y, xss)
   max.name <- maxx[[2]]
   max <- maxx[[1]]
-  spli <- split.rf(y, max, min = 10)
+  spli <- split.rf(y, max, min = round(nrow(xs)/5))
   
   frame <- node1(y,xs, sp = spli[[1]], mtry)
+  if (frame[1] == "<leaf>"){
+    tree <- frame
+    return(tree)
+  } else{
   frame <- noder(y,xs,sp = spli[[1]], list(xs[,frame[1]], frame[1]), mtry, tree = frame)
   tree <- frame
+  }
   return(tree)
 }
 
