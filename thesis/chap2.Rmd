@@ -108,23 +108,26 @@ kable(cord1)
 [^2]: Another point that could be said is that, no $V_4$ is not unimportant, $V_1, V_2,$ and $V_3$ are just stand ins for the real star, $V_4$, as they are nearly the same ($\rho \sim 1$). Then the real relationship represented here is $Y \sim (5 + 5 + 2) \cdot V_4 + -5 \cdot V_5 + -5 \cdot V_6 + -2 \cdot V_7$. This model is not unsuccessful in capturing the structure of the data, and this is typically the practice used to model data with highly correlated predictors. If this seems philosophically satisfying to you, the rest of this thesis may seem a bit inconsequential. I apologize. 
 
 
-#### Figure 1:
-```{r fig1, warning=FALSE, message=FALSE, echo=FALSE}
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
 t <-  melt(d1[,1:5])
 #levels(t$variable) <- rev(levels(t$variable))
+```
+
+
+```{r denv1v5, echo = FALSE, fig.cap="Density Graphs for V1 through V5", results="asis"}
 ggplot(data = t, aes(x = value, fill = variable)) + 
   geom_density(alpha = .8)+
-  scale_fill_manual(values = thesis)+
-  ggtitle("Comparisons of the Density Graphs for V1 through V5")
+  scale_fill_manual(values = thesis)
 ```
+
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; As can be seen above in Figure 1 the densities of $V_1,...,V_5$ are all very similar due to the way they were generated. 
 
-#### Figure 2:
-```{r fig2, echo=FALSE}
+
+```{r yv4, echo = FALSE, fig.cap="Plot of Y ~ V4, Correlation = .789", results="asis"}
 ggplot(data = d1, aes(x = V4, y = y)) + 
-  geom_point(color = thesis[4], alpha = .8) +
-  ggtitle("Y ~ V4, Correlation = .789")
+  geom_point(color = thesis[4], alpha = .8) 
 ```
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Figure 2 is an illustration of the relationship between $Y\sim V_4$ with linear correlation of .789.
@@ -185,34 +188,34 @@ kable(cord2)
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As one can see, Table 2 mirrors Table 1. For this dataset, however, the correlation structure is more complicated. $X_1$ and $X_2$ are highly correlated with $\rho = .7$. 
 
-#### Figure 3:
-
-```{r fig3, echo=FALSE}
+```{r x2x2, echo = FALSE, fig.cap="Plot of X2~X1, Correlation = .7", results="asis"}
 ggplot(data = d2, aes(x = X1, y = X2)) + 
-  geom_point(color = thesis[1])+
-  ggtitle("X2~X1, Correlation = .7")
+  geom_point(color = thesis[1])
 ```
 
-#### Figure 4:
-```{r fig4, echo=FALSE}
+
+```{r compsD2, echo = FALSE, fig.cap="Correlation Structure of the First Four Variables in D2", results="asis"}
 ggpairs(
   data =d2,
-  columns = c(1:4),
-  title = "Correlation Structure of the First Four Variables"
+  columns = c(1:4)
 )
 ```
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As seen in Figure 4, the pattern observed between $X_1$ and $X_2$ does not carry over to the other correlated predictors. 
 
-#### Figure 5:
 
-```{r fig5, warning=FALSE, message=FALSE, echo=FALSE}
+```{r, echo=FALSE, message=FALSE}
 t <-  melt(d2[,1:5])
+```
+
+
+
+```{r densityD2, echo = FALSE, fig.cap="Comparisons of the Density Graphs for X1 through X5", results="asis"}
 ggplot(data = t, aes(x = value, fill = variable)) + 
   geom_density(alpha = .8)+
-  scale_fill_manual(values = thesis)+
-  ggtitle("Comparisons of the Density Graphs for X1 through X5")
+  scale_fill_manual(values = thesis)
 ```
+
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Figure 5 demonstrate how the correlation between a few of the predictors and $Y$ may be effected by slope. Scale is much more a factor in this dataset, with some variables like $X_3$ having a larger range than the variables $X_1 \sim N(0,1)$ or $X_5,...,X_{12} \sim MVN()$. 
 
@@ -223,7 +226,6 @@ $$\omega_2 = log(\omega_1) + E, E \sim N(1,0)$$
 $$\omega_3 = log(\omega_2) + E, E \sim N(1,0)$$
 $$\omega_4 = log(\omega_4) + E, E \sim N(1,0)$$
 
-#### Table 3:Correlation of $\omega_1,..., \omega_7$ and $Y$ 
 ```{r logAbs,echo=FALSE, message=FALSE}
 w1 <- rnorm(1000)
 
@@ -262,42 +264,48 @@ d3$y <- ys
 cord3 <- round(cor(d3)[c(1:7),c(1:7,13)], digits = 3)
 cord3 <- cbind(cord3, "beta"= bts[1:7])
 
+
+```
+
+
+```{r cortableD3, echo = FALSE, fig.cap="Table 3:Correlation of omega_1,..., omega_7 and Y ", results="asis"}
 kable(cord3)
 ```
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The linear correlation structure in $D_3$ is not as striking as in $D_1$. The two strongest linear relationships are between $\omega_2$ and $\omega_3$ with $\rho = -.534$ and between $Y$ and $\omega_2$ with $\rho = .700$. 
 
-#### Figure 6:
 
-```{r fig6,warning=FALSE, message=FALSE, echo=FALSE}
+```{r corstructD3, echo = FALSE, fig.cap="Correlation Structure of the First Four Variables in D3", results="asis"}
 ggpairs(
   data =d3,
-  columns = c(1:4),
-  title = "Correlation Structure of the First Four Variables"
+  columns = c(1:4)
 )
 ```
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Figure 6 provides another way of visualizing some of the information given in Table 3. Here we can see the densities as well as the paired correlations of the first four variables in $D_3$.
 
-#### Figure 7:
 
-```{r fig7, warning=FALSE, message=FALSE, echo=FALSE}
+```{r, echo=FALSE, message=FALSE}
 t <-  melt(d3[,1:5])
+```
+
+
+```{r compw1w5, echo = FALSE, fig.cap="Comparisons of the Density Graphs for W1 through W5", results="asis"}
+
 ggplot(data = t, aes(x = value, fill = variable)) + 
   geom_density(alpha = .8)+
-  scale_fill_manual(values = thesis)+
-  ggtitle("Comparisons of the Density Graphs for W1 through W5")
+  scale_fill_manual(values = thesis)
 ```
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;There is more variation between the densities of $\omega_1,...,\omega_5$ then we have seen in the other data sets. $\omega_2,\omega_3,$ and $\omega_4$ have greater spread than their counterparts that are generated under the normal distribution.
 
-### Figure 8:
 
-```{r fig8,warning=FALSE, message=FALSE, echo=FALSE}
+
+```{r yw2, echo = FALSE, fig.cap="Plot of Y~W2, Correlation = .7", results="asis"}
 ggplot(data = d3, aes(x = W2, y = y)) + 
-  geom_point(color = thesis[2])+
-  ggtitle("Y~W2, Correlation = .7")
+  geom_point(color = thesis[2])
 ```
+
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; As the relationship between $Y$ and $\omega_2$ was so striking, it is nice to see a scatter plot that represents it. 
 
 ##Models and Comparisons
@@ -306,10 +314,6 @@ ggplot(data = d3, aes(x = W2, y = y)) +
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As outlined in the 1984 textbook, *Classification and Regression Trees*, Brieman, Friedman, Olshen, and Stone described their method for creating, pruning, and testing regression trees. There are essentially three steps: one, decide on a variable to split over, two, partition that variable space in two distinct partitions, and three, set our initial predictions for each partition to be mean value of the response according to the observed responses corresponding to the values in the partitions. Recursively, this process is repeated for each new partition until some stopping condition is reached.This is a top down, greedy algorithm that functions by creating as large a tree as possible and then is pruned down to prevent over fitting. 
 
-
-### Figure 9:
-
-**CART Representing Y~, from datasets D1, D2, and D3**
 
 
 ```{r fig9,echo=FALSE, message=FALSE,cache=TRUE}
@@ -326,13 +330,14 @@ t3 <- prune.tree(t3, k = 6)
 t1$frame$yval <- round(t1$frame$yval)
 t2$frame$yval <- round(t2$frame$yval)
 t3$frame$yval <- round(t3$frame$yval)
+```
 
+```{r carts, echo = FALSE, fig.cap="CART for the Model Y~, from D1,D2, and D3", results="asis"}
 par(mfrow=c(1,3))
 draw.tree(t1, digits = 2, col = c(thesis, rep(thesis, 3)))
 draw.tree(t2, digits = 2, col = c(thesis, rep(thesis, 3)))
 draw.tree(t3, digits = 2, col = c(thesis, rep(thesis, 3)))
 ```
-
 
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Trees can be quite variable, so to get a better idea of the differences between the methods let's run a simulation.
@@ -353,7 +358,6 @@ draw.tree(t3, digits = 2, col = c(thesis, rep(thesis, 3)))
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Where  $n$  is the number of observations in  $D_{2, test}^i$, $y_j \in D_{2, test}^i, \hat{y_j} \in  T^i(D_{2, test}^i)$ for $1 \leq j \leq n$ This produces two distributions of $MSE_{test}$, one for CART and one for CTree, conditional inference trees. 
 
-### Figure 10:
 
 ```{r fig10,echo=FALSE, message=FALSE,cache=TRUE}
 testmseC <- rep(0,1000)
@@ -371,13 +375,18 @@ testmse <- data.frame( CART= testmseC)
 
 testm <- melt(testmse)
 
-ggplot(data = testm, aes(fill = variable, x = value)) + 
-  geom_density(alpha = .5)+
-  ggtitle("Comparison of the Simulated MSEtest Distributions of CART")+
-  scale_fill_manual(values = thesis)+
-  guides(fill=guide_legend(title=NULL))
+
 
 ```
+
+
+```{r cartmse, echo = FALSE, fig.cap="Comparison of the Simulated MSEtest Distributions of CART", results="asis"}
+ggplot(data = testm, aes(fill = variable, x = value)) + 
+  geom_density(alpha = .5)+
+  scale_fill_manual(values = thesis)+
+  guides(fill=guide_legend(title=NULL))
+```
+
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The distribution of 1000 CART trees' $MSE_{test}$ is roughly normal with a variance of `var(testmseC)`. 
 
@@ -387,7 +396,7 @@ ggplot(data = testm, aes(fill = variable, x = value)) +
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Let's put that to the test here using our dataset $D3$ again. We'll build 100 forests of 100 trees each and compare the variability of the $MSE$ distributions. 
 
-### Figure 11:
+
 
 ```{r fig11, echo=FALSE, message=FALSE,cache=TRUE}
 library(bagRboostR)
@@ -407,13 +416,17 @@ msebag <- data.frame(BaggedForest = mse, CART = sample(testmseC,100))
 
 msebag <- melt(msebag)
 
-ggplot(aes(x = value, fill = variable), data = msebag) + 
-  geom_density(alpha = .5)+
-  ggtitle("Comparison of the Simulated MSEtest Distributions of Bagged Forests and CART")+
-  scale_fill_manual(values = thesis)+
-  guides(fill=guide_legend(title=NULL))
+
 
 ```
+
+```{r baggedvcart, echo = FALSE, fig.cap="the Simulated MSEtest Distributions of Bagged Forests and CART", results="asis"}
+ggplot(aes(x = value, fill = variable), data = msebag) + 
+  geom_density(alpha = .5)+
+  scale_fill_manual(values = thesis)+
+  guides(fill=guide_legend(title=NULL))
+```
+
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As one can see, the values of $MSE_{test}$ for the bagged forest were entirely below the $MSE_test$ for the trees and the variance was much smaller. 
 
@@ -425,7 +438,6 @@ As the number of trees grown in each forest increases, the $MSE_{test}$ decrease
 
 For an illustration, let's build a random forest on $D3$ and compare the $MSE$. 
 
-### Figure 12:
 
 ```{r fig12, echo=FALSE, message=FALSE,cache=TRUE}
 
@@ -442,9 +454,12 @@ mserf <- data.frame(BaggedForest = sample(mse, length(mseRF)), CART = sample(tes
 
 mserf<- melt(mserf)
 
+
+```
+
+```{r baggedvcartvforest, echo = FALSE, fig.cap="Simulated MSEtest Distributions of CART, Random, and Bagged Forests", results="asis"}
 ggplot(aes(x = value, fill = variable), data = mserf) + 
   geom_density(alpha = .5)+
-  ggtitle("Comparison of the Simulated MSEtest Distributions of CART, Random, and Bagged Forests")+
   scale_fill_manual(values = thesis)+
   guides(fill=guide_legend(title=NULL))
 ```
