@@ -4,15 +4,25 @@
 ############################################################################################
 ############################################################################################
 
-rss <- function(b,a) { 
+rss.tree <- function(b,a) { 
   a <- rep(mean(a),length(a))
   sum((a-b)^2)
 }
 
+max.cor <- function(y,xss){
+  max <- list()
+  cors <- cbind(rep(0,ncol(xss)),seq(1,ncol(xss)))
+  for(i in 1:ncol(xss)){
+    cors[i,1] <- cor(y,xss[,i])
+    }
+  max[[length(max)+1]] <- xss[,cors[cors[,1] == max(cors[,1]),2]]
+  max[[length(max)+1]] <- names(xss)[cors[cors[,1] == max(cors[,1]),2]]
+  return(max)
+}
 
-splitter <- function(y,x, min) {
+split.rf <- function(y,x, min) {
   sp <- list()
-  op.partition <- optimise(rss, interval = range(x), a = y, maximum = FALSE)
+  op.partition <- optimise(rss.tree, interval = range(x), a = y, maximum = FALSE)
   if(length(x[x < op.partition[[1]]]) < min | length(x[x >= op.partition[[1]]]) < min) {
     return(NULL)
     } else {
@@ -21,137 +31,82 @@ splitter <- function(y,x, min) {
       sp[[length(sp)+1]]<- mean(y[x >= op.partition[[1]]]) #ypred right daughter
       sp[[length(sp)+1]]<- x[x < op.partition[[1]]] #xsleftdaughter
       sp[[length(sp)+1]]<- x[x >= op.partition[[1]]] #xsrightdaughter
-      sp[[length(sp)+1]] <- rss(x[x < op.partition[[1]]], y[x < op.partition[[1]]]) #ldrss
+      sp[[length(sp)+1]] <- rss.tree(x[x < op.partition[[1]]], y[x < op.partition[[1]]]) #ldrss
       return(sp)
     }
 }
 
 
-node <- function (){
+
+##yrd <- y[max >= spl]
+##do first   xs <- xs[max >= spl,]
+node1 <- function(y, xs, mtry, spl){
+  xssrd <- xs[,sample(ncol(xs),mtry)]
+  maxxr <- max.cor(y,xs)
+  sprd <- split.rf(y, maxxr[[1]], min = round(nrow(xs)/20))
+  frame <- c()
+  if(is.null(sprd)) {
+    frame <- c("<leaf>",nrow(xssrd), mean(y), rss.tree(maxxr[[1]], y), 0)
+  } else {
+    frame <- c(maxxr[[2]],
+              nrow(xssrd),
+              mean(y),
+              rss.tree(xssrd, y),
+              sprd[[1]])
+  }
+  return(frame)
+}
+
+
+noder <- function(y,xs,sp,max,mtry, tree){
   
+  l1 <- node1(y[max[[1]] < sp],xs[max[[1]] < sp,], mtry, sp)
+  r1 <- node1(y[max[[1]] >= sp],xs[max[[1]] >= sp,], mtry, sp)
+  
+  var.l1 <- l1[1]
+  var.r1 <- r1[1]
+  
+  tree <-  rbind(tree,l1)
+  tree <-  rbind(tree,r1)
+  
+  if(var.r1 == "<leaf>" & var.l1 == "<leaf>"){
+    return(tree)
+  } else if(var.r1 == "<leaf>" & var.l1 != "<leaf>") {
+    print("right daughter null, following left")
+    noder(y,xs,as.numeric(l1[5]),list(xs[,l1[1]], l1[1]),mtry, tree)
+  } else if (var.r1 != "<leaf>" & var.l1 == "<leaf>"){
+    print("left daughter null, following right")
+    noder(y,xs,as.numeric(r1[5]),list(xs[,r1[1]], r1[1]),mtry, tree)
+  } else {
+    print("neither null, following all")
+    noder(y,xs,as.numeric(r1[5]),list(xs[,r1[1]], r1[1]),mtry, tree)
+    noder(y,xs,as.numeric(l1[5]),list(xs[,l1[1]], l1[1]),mtry, tree)
+  }
 }
 
 tree.rf <- function(y,xs, mtry){
   tree <- list()
-  
+  bootsample <- sample(length(y), length(y), replace = TRUE)
+  xs <- xs[bootsample,]
+  y <- y[bootsample]
   xss <- xs[,sample(ncol(xs),mtry)]
-  cors <- cbind(rep(NA,ncol(xss)),seq(1,ncol(xss)))
- 
-################ONE SPLIT AND TWO DAUGHTERS
-#######FIRST SPLIT
-  for(i in 1:ncol(xss)){
-    cors[i,1] <- cor(y,xss[,i])}
-  maxx <- xss[,cors[cors[,1] == max(cors[,1]),2]]
-  sp <- splitter(y, maxx, min = 4)
-  
-  if(is.null(sp)) {
-     return(data.frame("ypred" = mean(y), "rss" = rss(xss,y)))
-  } else{
-    frame <- data.frame("var" = names(xss)[cors[cors[,1] == max(cors[,1]),2]], 
-                        "n"= nrow(xss),
-                        "yval" = mean(y),
-                        "rss" = rss(y,maxx))
-    split <- c(paste("x <", sp[[1]]))
-       
-    frame$split <- split
-    frame$var <- as.character(frame$var) 
-  }
-######LEFT DAUGHTER  
-  spld <- sp
-  maxxl <- maxx
-  sprd <- sp
-  maxxr <- maxx
 
-    xssld <- xs[maxxl < spld[[1]],]
-    xssld <- xssld[,sample(ncol(xssld),mtry)]
-    yld <- y[maxxl < spld[[1]]]
-    for(i in 1:ncol(xssld)){
-      cors[i,1] <- cor(yld,xssld[,i])}
-    maxxl <- xssld[,cors[cors[,1] == max(cors[,1]),2]]
-    spld <- splitter(yld, maxxl, min = 4)
-    
-    if(is.null(spld)) {
-      frame[nrow(frame)+1,] <- c("<leaf>",nrow(xssld), mean(yld), rss(xssld, yld), "")
-      
-    } else {
-      frame[nrow(frame)+1,] <- c(names(xssld)[cors[cors[,1] == max(cors[,1]),2]],
-                                 nrow(xssld),
-                                 mean(yld), 
-                                 rss(xssld, yld),
-                                 paste("x <", spld[[1]]))
-    }
-    
-##right daughter
-    xssrd <- xs[maxxr >= sprd[[1]],]
-    xssrd <- xssrd[,sample(ncol(xssrd),mtry)]
-    yrd <- y[maxxr >= sprd[[1]]]
-    for(i in 1:ncol(xssrd)){
-      cors[i,1] <- cor(yrd,xssrd[,i])}
-    maxxr <- xssrd[,cors[cors[,1] == max(cors[,1]),2]]
-    sprd <- splitter(yrd, maxxr, min = 4)
-    
-    if(is.null(sprd)) {
-      frame[nrow(frame)+1,] <- c("<leaf>",nrow(xssrd), mean(yrd), rss(maxxr, yrd), "")
-    } else {
-      frame[nrow(frame)+1,] <- c(names(xssrd)[cors[cors[,1] == max(cors[,1]),2]],
-                                 nrow(xssrd),
-                                 mean(yrd),
-                                 rss(xssrd, yrd),
-                                 paste("x <", sprd[[1]]))
-      
-    }
-    
-    
+  maxx <- max.cor(y, xss)
+  max.name <- maxx[[2]]
+  max <- maxx[[1]]
+  spli <- split.rf(y, max, min = 10)
   
-   tree <- frame
+  frame <- node1(y,xs, sp = spli[[1]], mtry)
+  frame <- noder(y,xs,sp = spli[[1]], list(xs[,frame[1]], frame[1]), mtry, tree = frame)
+  tree <- frame
   return(tree)
 }
-
-##steps for tree fitting
-###each split: choose var, choose split, record var, rss, and split
 
 ############################################################################################
 #####################################GRAVEYARD##############################################
 ############################################################################################
 ############################################################################################
 
-
-split.rf <- function(y,x,min) {
-  
-  #right split, x < split
-  xsplit <- c()
-  xsplit[1] <- sort(x)[min]
-  ymean <- mean(y[x <= xsplit])
-  rssl0 <- rss(y[x <= xsplit], rep(ymean, length(y[x <= xsplit])))
-  rssr0 <- rss(y[x > xsplit], rep(ymean, length(y[x > xsplit])))
-  rssl <- rssl0
-  rssr <- rssr0
-  rss1 <- rssl + rssr
-  rssl[2] <- 10000000000
-  rssr[2] <- 10000000000
-  rss1[2] <- 10000000000
-  i <- 2
-  split <- c()
-  while(length(x[x > xsplit[i-1]]) >= min){ 
-    xsplit[i] <- min(sort(x)[sort(x) > xsplit[i-1]])
-    ymean[i] <- mean(y[x <= xsplit[i]])
-    rssl[i] <- rss(y[x <= xsplit[i]], rep(ymean, length(y[x <= xsplit[i]])))
-    rssr[i] <- rss(y[x > xsplit[i]], rep(ymean, length(y[x > xsplit[i]])))
-    rss1[i] <- rssl[i] + rssr[i]
-    i <- i + 1
-  }
-  split1 <- c("x < " = xsplit[rss1 == min(rss1)], "ypred" = ymean[rss1 == min(rss1)], "rss" =min(rss1))
-  return(split1)
-}
-
-for(i in 5:145){
-  rsses[i-5] <- split.rf(y = iris$Sepal.Length, x = iris$Petal.Length, min = i) [3]
-}
-
-
-#########################TO DO:
-  
-#####  Imma have to write my own random forest code, y'all 
 
 rf <- function(form, d, mtry, ntree) { 
   #imputs: formula to be tested and the dset to test on. outputs: tribble,
@@ -180,14 +135,4 @@ rf <- function(form, d, mtry, ntree) {
     }
   rforest[[length(rforest)+1]] <- B
   return(rforest)
-}
-f <- function(a) {
-  c <- 0
-  if(length(a) > 1){
-    a <- a[c(1:(length(a)-1))] 
-    c <- c + sum(a)
-    f(a)
-  } else { 
-    return(c)
-  }
 }
