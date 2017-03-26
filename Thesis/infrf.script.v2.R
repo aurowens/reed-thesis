@@ -14,7 +14,7 @@ mtry <- 2
 form <- as.formula("Sepal.Length ~.")
 
 tree.rf(y,xs,mtry)
-r <- rforest(form, d, mtry, ntree = 2)
+r <- rforest(form, d, mtry, ntree = 50)
 ###################################BUILDING A TREE#########################################
 
 rss.tree.to.minimize <- function(i,y,x) { 
@@ -32,17 +32,33 @@ rss.tree <- function(a){
 
 max.cor <- function(yy,sxs){
   print("max cor")
-  print(length(yy))
+  print("y")
+  print((yy))
+  print("xs")
+  print(sxs)
   max <- list()
   cors <- cbind(rep(0,ncol(sxs)),seq(1,ncol(sxs)))
   for(i in 1:ncol(sxs)){
-    cors[i,1] <- cor(yy,sxs[,i])
+    cors[i,1] <- ifelse(sd(sxs[,i]) == 0, -100000, cor(yy, sxs[,i]))
   }
+  print("is na cor?")
+  print(cors)
+  cors[is.na(cors[,1]), 1] <- 0
+  print(cors)
+  print("cor finding done, lets take a look and see if we have more than 1 max")
+  print(sum(cors[,1] == max(cors[,1], na.rm = TRUE), na.rm = TRUE) > 1)
   if (sum(cors[,1] == max(cors[,1], na.rm = TRUE), na.rm = TRUE) > 1) {
+    print("we do!")
     max1 <- sample(as.numeric(cors[,1] == max(cors[,1], na.rm = TRUE)), 1)  
+    print("our winning var is")
+    print(max1)
   } else {
+    print("we don't")
     max1 <- cors[cors[,1] == max(cors[,1], na.rm = TRUE),2]
+    print("our winning var is")
+    print(max1)
   }
+ # print(max1)
   
   max[[length(max)+1]] <- sxs[,max1]
   max[[length(max)+1]] <- names(sxs)[max1]
