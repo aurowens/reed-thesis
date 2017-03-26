@@ -203,8 +203,17 @@ predict.tree.rf <- funciton(t,y,xs) {
   #inherits all the partitions given by the splits above it. or, rather xs >= split.cutleft
   partitions <- t[[2]][c(1:as.numeric(row.names(l1))-1),]
   
-  t <- 
+  t <- t[[2]] 
   rd <- 
+  ld <- 
+  
+###SKIPPING CONDITION
+    #there's no need to map out the whole tree and have it on file, each y just needs the tree to 
+    #a. check the split condition, i.e. xs[,var] < split.cutleft 
+    #b. if yes, go two ahead
+    #b.2. if no, go one ahead
+    #c. stop at leaf, pred[i] <- ypred
+    
     
   for(i in 1:length(y)){
     yh <- y[i]
