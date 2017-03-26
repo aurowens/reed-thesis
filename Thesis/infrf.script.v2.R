@@ -13,7 +13,7 @@ xs <- iris[2:4]
 mtry <- 2
 form <- as.formula("Sepal.Length ~.")
 
-tree.rf(y,xs,mtry)
+t <- tree.rf(y,xs,mtry)
 r <- rforest(form, d, mtry, ntree = 50)
 ###################################GROWING A TREE#########################################
 
@@ -98,6 +98,7 @@ split.rf <- function(y,x, min) {
 tree.rf <- function(y,xs, mtry){
   tree <- list()
   tree.frame <- list()
+  leaf.partitions <- list()
   
   noder <- function(y,xs,mtry, min){
     
@@ -136,11 +137,15 @@ tree.rf <- function(y,xs, mtry){
     xssrd <- xs[,sample(ncol(xs),mtry)]
     frame <- data.frame("", 0,0,0,0)
     frame[,1] <- as.character(frame[,1])
+    leaf.p <- data.frame(rep(0,2), rep(0,2), rep(0,2))
+    
     
     if(length(y) < min) {
       frame[1,] <- c("<leaf>",nrow(xssrd), rss(y), mean(y), 0)
       print("node1 done, leaf")
       tree.frame <<- rbind(tree.frame, frame)
+      leaf.p <- sapply(xs, range)
+      leaf.partitions[[length(leaf.partitions)+1]] <<- leaf.p
       return(frame)
       
     } else {
@@ -151,13 +156,17 @@ tree.rf <- function(y,xs, mtry){
         frame[1,] <- c("<leaf>",nrow(xssrd),rss.leaf(y),  mean(y), 0)
         print("node1 done, leaf")
         tree.frame <<- rbind(tree.frame, frame)
+        leaf.p <- sapply(xs, range)
+        leaf.partitions[[length(leaf.partitions)+1]] <<- leaf.p
         return(frame)
       
         } else if(length(maxxr[[1]] < sprd[[1]]) < min |length(maxxr[[1]] >= sprd[[1]]) < min  ) {
         
-        frame[1,] <- c("<leaf>",nrow(xssrd),rss.leaf(y),mean(y), 0)
+        frame[1,] <- c("<leaf>",nrow(xssrd),rss.leaf(y), mean(y), 0)
         print("node1 done, leaf, too small")
         tree.frame <<- rbind(tree.frame, frame)
+        leaf.p <- sapply(xs, range)
+        leaf.partitions[[length(leaf.partitions)+1]] <<- leaf.p
         return(frame)
         }
       
@@ -179,15 +188,36 @@ tree.rf <- function(y,xs, mtry){
   min <- 5
   
   noder(y, xs, mtry,min)
-  names(tree.frame) <- c("var", "n", "ypred", "dev", "splits.cutleft")
+  names(tree.frame) <- c("var", "n", "ypred", "dev", "split.cutleft")
   tree[[1]] <- bootsample
   tree[[2]] <- tree.frame
+  tree[[3]] <- leaf.partitions
   return(tree)
 }
 
 ###################################AUX TREE FUNCTIONS#######################################
 predict.tree.rf <- funciton(t,y,xs) {
+  l1 <- t[[2]][t[[2]]$var == "<leaf>",]
+  l1 <- l1[1,]
+  ####since it is the first leaf, and since the tree grows to the right first, the first leaf 
+  #inherits all the partitions given by the splits above it. or, rather xs >= split.cutleft
+  partitions <- t[[2]][c(1:as.numeric(row.names(l1))-1),]
   
+  t <- 
+  rd <- 
+    
+  for(i in 1:length(y)){
+    yh <- y[i]
+    xsh <- xs[i,]
+    
+    
+    if(xs[t[[2]][1,"var"]] >= t[[2]][1,"split.cutleft"]){
+      #go right, so down?
+    } else { #skip to the left daughter 
+      
+    }
+  }
+
 }
 ###################################GROWING A FOREST#########################################
 
