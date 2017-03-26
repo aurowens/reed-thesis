@@ -197,16 +197,17 @@ tree.rf <- function(y,xs, mtry){
 
 ###################################AUX TREE FUNCTIONS#######################################
 predict.tree.rf <- funciton(t,y,xs) {
-  l1 <- t[[2]][t[[2]]$var == "<leaf>",]
-  l1 <- l1[1,]
-  ####since it is the first leaf, and since the tree grows to the right first, the first leaf 
-  #inherits all the partitions given by the splits above it. or, rather xs >= split.cutleft
-  partitions <- t[[2]][c(1:as.numeric(row.names(l1))-1),]
-  
   t <- t[[2]] 
-  rd <- 
-  ld <- 
-  
+  t$n <- as.numeric(t$n)
+  t$split.cutleft <- as.numeric(t$split.cutleft)
+  rdn <- t$n[2]
+  ldn <- t$n[1] - rdn 
+  ldname <- as.numeric(row.names(t[t$n == ldn,]))
+  right.daughter <- t[1:(ldname[length(ldname)]-1),]
+  left.daughter <- t[ldname[length(ldname)]:nrow(t),]
+  first.split <- t[1,]
+  j <- 0
+  predictions <- c(rep(100000, length(y)))
 ###SKIPPING CONDITION
     #there's no need to map out the whole tree and have it on file, each y just needs the tree to 
     #a. check the split condition, i.e. xs[,var] < split.cutleft 
@@ -214,19 +215,39 @@ predict.tree.rf <- funciton(t,y,xs) {
     #b.2. if no, go one ahead
     #c. stop at leaf, pred[i] <- ypred
     
-    
   for(i in 1:length(y)){
     yh <- y[i]
     xsh <- xs[i,]
     
-    
-    if(xs[t[[2]][1,"var"]] >= t[[2]][1,"split.cutleft"]){
-      #go right, so down?
-    } else { #skip to the left daughter 
-      
+    if(xsh[,first.split$var] < first.split$split.cutleft){
+      #left daughter
+      ld <- left.daughter[1,]
+      j <- 1
+      while (ld$var != "<leaf>"){
+        if (xsh[,ld$var] < ld$split.cutleft) {
+          j <- j+2
+        } else {
+          j <- j+1
+        }
+        ld <- left.daughter[j,]
+      }
+      predictions[i] <- ld$ypred
+    } else {
+      #right daughter
+      rd <- right.daughter[2,]
+      j <- 2
+      while (rd$var != "<leaf>"){
+        if (xsh[,rd$var] < rd$split.cutleft) {
+          j <- j+2
+        } else {
+          j <- j+1
+        }
+        rd <- right.daughter[j,]
+      }
+      predictions[i] <- rd$ypred
     }
   }
-
+  return(predictions)
 }
 ###################################GROWING A FOREST#########################################
 
