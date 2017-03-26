@@ -35,7 +35,7 @@ split.rf <- function(y,x, min) {
     print("split.rf, leaf")
     return(NULL)
   } else {
-  op.partition <- optimise(rss.tree, interval = range(x[c(min:(length(x)-min))]), a = y, maximum = FALSE, tol = .01)
+  op.partition <- optimise(rss.tree, interval = range(x), a = y, maximum = FALSE, tol = .01)
       sp[[length(sp)+1]] <- op.partition[[1]] #partition on x
       sp[[length(sp)+1]]<-  mean(y[x< op.partition[[1]]]) #ypred left daughter
       sp[[length(sp)+1]]<- mean(y[x >= op.partition[[1]]]) #ypred right daughter
@@ -59,7 +59,7 @@ node1 <- function(y, xs, mtry, min){
     print("node1 done, leaf")
     return(frame)
   } else {
-  maxxr <- max.cor(yy=y,sxs=xs)
+  maxxr <- max.cor(yy = y,sxs= xssrd)
   sprd <- split.rf(y, maxxr[[1]], min)
   if(is.null(sprd)) {
     frame[1,] <- c("<leaf>",nrow(xssrd), mean(y), 0, 0)
@@ -78,33 +78,37 @@ node1 <- function(y, xs, mtry, min){
 }
 
 
-noder <- function(y,xs,mtry, tree, min){
+noder <- function(y,xs,mtry, df, min){
   
   ##what i want this function to do:
   ###given y,xs (like an interval of them):
   ####1. find the split between them 
   print("noder:starting node")
   frame <- node1(y,xs, mtry, min)
-
-  tree <-  rbind(tree,frame)
+  df <-  rbind(df,frame)
   ####2. call itself on each side of the split
   split <- as.numeric(frame[5])
   spliton <- frame[1]
   
   if(frame[1] == "<leaf>"){
-    return(tree)
+    print(df)
+    return(df)
   }
- 
+  print(df)
   yhatl <- y[xs[,spliton[[1]]] < split]
   xsl <- xs[xs[,spliton[[1]]] < split,]
   yhatr <- y[xs[,spliton[[1]]] >= split]
   xsr <- xs[xs[,spliton[[1]]] >= split, ]
   
   if(length(yhatl) < min & length(yhatr) < min){
-    return(tree)
+    print(df)
+    return(df)
   } else {
-    noder(y = yhatr,xs = xsr,mtry, tree, min)
-    noder(y = yhatl,xs = xsl,mtry, tree, min)
+    #y = yhatr
+    #xs = xsr
+    noder(y = yhatr,xs = xsr,mtry, df, min)
+    noder(y = yhatl,xs = xsl,mtry, df, min)
+   
   }
 }
 
@@ -112,16 +116,34 @@ tree.rf <- function(y,xs, mtry){
   tree <- list()
   bootsample <- sample(length(y), length(y), replace = TRUE)
   xs <- xs[bootsample,]
+  xss <- xs[,sample(ncol(xs),mtry)]
   y <- y[bootsample]
-  
   min <- round(nrow(xs)/5)
-  frame <- noder(y,xs,mtry, tree = list(), min)
+  
+####First split   
+  first.split <- node1(y,xss,mtry,min)
+  if(first.split[1] == "<leaf>"){
+    return(first.split)
+  }
+  
+  
+  yhatl <- y[xss[,first.split[[1]]] < first.split[[5]]]
+  xsl <- xs[xss[,first.split[[1]]] < first.split[[5]],]
+  yhatr <- y[xss[,first.split[[1]]] >= first.split[[5]]]
+  xsr <- xs[xss[,first.split[[1]]] >= first.split[[5]],]
+  
+  frame <- first.split
+  
+  frameld <- noder(yhatl,xsl,mtry, tree = frame, min)
+  framerd <- noder(yhatr, xsr, mtry, tree = frame, min)
+  tree <- rbind(frame, frameld, framerd)
   return(tree)
 }
 
 t <- tree.rf(y = d1$y, xs = d1[,1:12], mtry = 5)
-y = d1$y
-xs = d1[,1:12]
+t <- tree.rf(y = iris$Sepal.Length, xs = iris[,2:4], mtry = 2)
+y = iris$Sepal.Length
+xs = iris[,2:4]
 ############################################################################################
 #####################################GRAVEYARD##############################################
 ############################################################################################
@@ -154,4 +176,19 @@ rf <- function(form, d, mtry, ntree) {
     }
   rforest[[length(rforest)+1]] <- B
   return(rforest)
+}
+
+noo <- function(c){
+  return(moo(c))
+}
+
+foo <- function(a) {
+  bee <<- 0
+  moo <- function(b){
+    b <- b +1
+    bee <<- 9
+    return(b)
+  }
+  a <- noo(a)
+  return(c(a,bee))
 }
