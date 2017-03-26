@@ -21,6 +21,7 @@ p <- predict.tree.rf(t1, y[-t1[[1]]], xs[-t1[[1]],])
 vi <- inftrees(t1, y[-t1[[1]]], xs[-t1[[1]],])
 
 virf <- infforest(r,y,xs)
+virfStrobl <- conditional.inf(r,y,xs)
 ###################################GROWING A TREE#########################################
 
 rss.node <- function(i,y,x) { 
@@ -285,6 +286,18 @@ infforest <- function(rf,y,xs) {
   return(vi.frame)
 }
 
+##############################CONDITIONAL VARIABLE IMPORTANCE################################
+
+conditional.inf <- function(rf, y, xs) {
+  vi.frame <- data.frame()
+  for(i in 1:(length(rf))){ ##random forest is a list, pairs of trees + bootsamples
+    t <- rf[[i]]
+    vi.frame <- rbind(vi.frame,strobltrees(t, y[-t[[1]]], xs[-t[[1]],]))
+  }
+  names(vi.frame) <- names(xs)
+  return(vi.frame)
+}
+
 ###################################INFTREES SUPPORT###########################################
 
 VIdev<- function(t2, x){
@@ -314,6 +327,36 @@ inftrees <- function(t, y, xs) {
     for (j in 1:length(levels(xs.for.permuting.i$groups))) {
       xs.for.permuting.i[xs.for.permuting.i$group == levels(xs.for.permuting.i$groups)[j],i] <-
         sample(xs.for.permuting.i[xs.for.permuting.i$group == levels(xs.for.permuting.i$groups)[j],i], 
+               replace = TRUE)
+    }
+    
+    predictions.for.y.xi.perm <- predict.tree.rf(ta,y,xs.for.permuting.i)
+    rss.post[i] <- sum((y - as.numeric(predictions.for.y.xi.perm))^2) 
+  }
+  rss.post <- rss.post/sum(rss.post)
+  names(rss.post) <- names(xs)
+  return(rss.post)
+}
+
+strobltrees <- function(t,y,xs) {
+  rss.post <- rep(0, ncol(xs))
+  vi <- rep(0, ncol(xs))
+  rss.pre <- rep(0, ncol(xs))
+  
+  ta <- t
+  t <- t[[2]]
+
+  set.seed(1)
+  for(i in 1:ncol(xs)){
+    xs.for.permuting.i <- xs
+#    ti <- tree.rf(xs[,i], xs[,-i], mtry = ncol(xs[,-i])) 
+    xi.partitions <- predict.tree.rf(ta, y, xs)
+    xs.for.permuting.i$groups <- as.factor(xi.partitions)
+    
+    for (j in 1:length(levels(xs.for.permuting.i$groups))) {
+      
+      xs.for.permuting.i[xs.for.permuting.i$group == levels(xs.for.permuting.i$groups)[j],i] <-
+              sample(xs.for.permuting.i[xs.for.permuting.i$group == levels(xs.for.permuting.i$groups)[j],i], 
                replace = TRUE)
     }
     
