@@ -4,6 +4,17 @@
 ############################################################################################
 ############################################################################################
 
+########################################TESTING#############################################
+
+data("iris")
+d <- iris[1:4]
+y <- iris$Sepal.Length
+xs <- iris[2:4]
+mtry <- 2
+form <- as.formula("Sepal.Length ~.")
+
+tree.rf(y,xs,mtry)
+r <- rforest(form, d, mtry, ntree = 2)
 ###################################BUILDING A TREE#########################################
 
 rss.tree.to.minimize <- function(i,y,x) { 
@@ -21,6 +32,7 @@ rss.tree <- function(a){
 
 max.cor <- function(yy,sxs){
   print("max cor")
+  print(length(yy))
   max <- list()
   cors <- cbind(rep(0,ncol(sxs)),seq(1,ncol(sxs)))
   for(i in 1:ncol(sxs)){
@@ -65,28 +77,28 @@ split.rf <- function(y,x, min) {
 
 tree.rf <- function(y,xs, mtry){
   tree <- list()
+  tree.frame <- list()
   
-  noder <- function(y,xs,mtry, df, min){
+  noder <- function(y,xs,mtry, min){
     
     ##what i want this function to do:
     ###given y,xs (like an interval of them):
     ####1. find the split between them 
     print("noder:starting node")
     frame <- node1(y,xs, mtry, min)
-    df <-  rbind(df,frame)
+    #df <-  rbind(df,frame)
     ####2. call itself on each side of the split
     split <- as.numeric(frame[5])
     spliton <- frame[1]
     
     if(frame[1] == "<leaf>"){
-      print(df)
-      return(df)
-    }
-    print(df)
-    yhatl <- y[xs[,spliton[[1]]] < split]
-    xsl <- xs[xs[,spliton[[1]]] < split,]
-    yhatr <- y[xs[,spliton[[1]]] >= split]
-    xsr <- xs[xs[,spliton[[1]]] >= split, ]
+      return(frame)
+    } else {
+      #print(df)
+        yhatl <- y[xs[,spliton[[1]]] < split]
+        xsl <- xs[xs[,spliton[[1]]] < split,]
+        yhatr <- y[xs[,spliton[[1]]] >= split]
+        xsr <- xs[xs[,spliton[[1]]] >= split, ]
     
 #    if(length(yhatl) < min & length(yhatr) < min){
 #      print(df)
@@ -94,9 +106,9 @@ tree.rf <- function(y,xs, mtry){
 #    } else {
       #y = yhatr
       #xs = xsr
-      noder(y = yhatr,xs = xsr,mtry, df, min)
-      noder(y = yhatl,xs = xsl,mtry, df, min)
-      
+        noder(y = yhatr,xs = xsr,mtry, min)
+        noder(y = yhatl,xs = xsl,mtry, min)
+      }
   #  }
   }
   node1 <- function(y, xs, mtry, min){
@@ -104,25 +116,31 @@ tree.rf <- function(y,xs, mtry){
     xssrd <- xs[,sample(ncol(xs),mtry)]
     frame <- data.frame("", 0,0,0,0)
     frame[,1] <- as.character(frame[,1])
+    
     if(length(y) < min) {
       frame[1,] <- c("<leaf>",nrow(xssrd), rss(y), mean(y), 0)
       print("node1 done, leaf")
-      tree <<- rbind(tree, frame)
+      tree.frame <<- rbind(tree.frame, frame)
       return(frame)
+      
     } else {
+      
       maxxr <- max.cor(yy = y,sxs= xssrd)
       sprd <- split.rf(y, maxxr[[1]], min)
       if(is.null(sprd)) {
         frame[1,] <- c("<leaf>",nrow(xssrd),rss.tree(y),  mean(y), 0)
         print("node1 done, leaf")
-        tree <<- rbind(tree, frame)
+        tree.frame <<- rbind(tree.frame, frame)
         return(frame)
-      } else if(length(maxxr[[1]] < sprd[[1]]) < min |length(maxxr[[1]] >= sprd[[1]]) < min  ) {
+      
+        } else if(length(maxxr[[1]] < sprd[[1]]) < min |length(maxxr[[1]] >= sprd[[1]]) < min  ) {
+        
         frame[1,] <- c("<leaf>",nrow(xssrd),rss.tree(y),mean(y), 0)
         print("node1 done, leaf, too small")
-        tree <<- rbind(tree, frame)
+        tree.frame <<- rbind(tree.frame, frame)
         return(frame)
-      }
+        }
+      
       frame[1,] <- c(maxxr[[2]],
                      nrow(xssrd),
                      rss.tree(y),
@@ -131,7 +149,7 @@ tree.rf <- function(y,xs, mtry){
       # frame[2:4] <- as.numeric(frame[2:4])
     }
     print("node1 done")
-    tree <<- rbind(tree, frame)
+    tree.frame <<- rbind(tree.frame, frame)
     return(frame)
   }
 
@@ -140,8 +158,34 @@ tree.rf <- function(y,xs, mtry){
   y <- y[bootsample]
   min <- 5
   
-  noder(y, xs, mtry, df = list(), min)
-  names(tree) <- c("var", "n", "ypred", "dev", "splits.cutleft")
+  noder(y, xs, mtry,min)
+  names(tree.frame) <- c("var", "n", "ypred", "dev", "splits.cutleft")
+  tree[[1]] <- bootsample
+  tree[[2]] <- tree.frame
   return(tree)
 }
+
+###################################BUILDING A FOREST#########################################
+
+rforest <- function(form, d, mtry, ntree) { 
+  #imputs: formula to be tested and the dset to test on. outputs: list,
+  #contains: total oob error, trees, and bootsample for the tree  
+  rforest <- list() #define empty list for the rf. length = ntree*2+1
+  #where each tree is a list, bootsample + frame  
+  xsi <- c()
+  di <- data.frame()
+  form <- as.character(form)
+  yn <- form[2]
+  yi <- as.numeric(names(d) == yn)
+  y <- d[,yi]
+  xs <- d[,-(yi)]
+  
+  while (length(rforest) < ntree) {
+    rforest[[length(rforest)+1]] <- tree.rf(y,xs,mtry)
+  }
+  return(rforest)
+}
+
+
+###############################CONDITIONAL INFERENCE#########################################
 
