@@ -22,6 +22,7 @@ vi <- inftrees(t1, y[-t1[[1]]], xs[-t1[[1]],])
 
 virf <- infforest(r,y,xs)
 virfStrobl <- conditional.inf(r,y,xs)
+
 ###################################GROWING A TREE#########################################
 
 rss.node <- function(i,y,x) { 
@@ -289,13 +290,11 @@ infforest <- function(rf,y,xs) {
 ##############################CONDITIONAL VARIABLE IMPORTANCE################################
 
 conditional.inf <- function(rf, y, xs) {
-  vi.frame <- data.frame()
-  for(i in 1:(length(rf))){ ##random forest is a list, pairs of trees + bootsamples
-    t <- rf[[i]]
-    vi.frame <- rbind(vi.frame,strobltrees(t, y[-t[[1]]], xs[-t[[1]],]))
+  v <- strobltrees(rf[[1]],y,xs)
+  for (i in 2:length(rf)){
+    v <- rbind(v, strobltrees(rf[[i]],y,xs))
   }
-  names(vi.frame) <- names(xs)
-  return(vi.frame)
+  return(v)
 }
 
 ###################################INFTREES SUPPORT###########################################
@@ -342,21 +341,23 @@ strobltrees <- function(t,y,xs) {
   rss.post <- rep(0, ncol(xs))
   vi <- rep(0, ncol(xs))
   rss.pre <- rep(0, ncol(xs))
-  
   ta <- t
   t <- t[[2]]
-
+  
+  xs.for.permuting.i <- xs
+  #    ti <- tree.rf(xs[,i], xs[,-i], mtry = ncol(xs[,-i])) 
+  xi.partitions <- predict.tree.rf(ta, y, xs)
+  xi.partitions <- as.factor(xi.partitions)
+  
+  
   set.seed(1)
   for(i in 1:ncol(xs)){
     xs.for.permuting.i <- xs
-#    ti <- tree.rf(xs[,i], xs[,-i], mtry = ncol(xs[,-i])) 
-    xi.partitions <- predict.tree.rf(ta, y, xs)
-    xs.for.permuting.i$groups <- as.factor(xi.partitions)
     
-    for (j in 1:length(levels(xs.for.permuting.i$groups))) {
-      
-      xs.for.permuting.i[xs.for.permuting.i$group == levels(xs.for.permuting.i$groups)[j],i] <-
-              sample(xs.for.permuting.i[xs.for.permuting.i$group == levels(xs.for.permuting.i$groups)[j],i], 
+    for (j in 1:length(levels(xi.partitions))) {
+      print(paste("j = ", levels(xi.partitions)[j]))  
+      xs.for.permuting.i[xi.partitions == levels(xi.partitions)[j],i] <-
+              sample(xs.for.permuting.i[xi.partitions == levels(xi.partitions)[j],i], 
                replace = TRUE)
     }
     
