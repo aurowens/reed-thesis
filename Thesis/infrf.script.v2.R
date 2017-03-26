@@ -15,9 +15,9 @@ form <- as.formula("Sepal.Length ~.")
 
 tree.rf(y,xs,mtry)
 r <- rforest(form, d, mtry, ntree = 50)
-###################################BUILDING A TREE#########################################
+###################################GROWING A TREE#########################################
 
-rss.tree.to.minimize <- function(i,y,x) { 
+rss.node <- function(i,y,x) { 
   yleftpred <- mean(y[x< i])
   yrightpred <- mean(y[x >= i])
   rssl <- sum((y[x< i]-yleftpred)^2)
@@ -25,7 +25,7 @@ rss.tree.to.minimize <- function(i,y,x) {
   return(rssl + rssr)
 }
 
-rss.tree <- function(a){
+rss.leaf <- function(a){
   a1 <- rep(mean(a), length(a))
   sum((a-a1)^2)
 }
@@ -39,22 +39,26 @@ max.cor <- function(yy,sxs){
   max <- list()
   cors <- cbind(rep(0,ncol(sxs)),seq(1,ncol(sxs)))
   for(i in 1:ncol(sxs)){
-    cors[i,1] <- ifelse(sd(sxs[,i]) == 0, -100000, cor(yy, sxs[,i]))
+    cors[i,1] <- ifelse(sd(sxs[,i]) == 0,0, cor(yy, sxs[,i]))
   }
   print("is na cor?")
   print(cors)
   cors[is.na(cors[,1]), 1] <- 0
   print(cors)
   print("cor finding done, lets take a look and see if we have more than 1 max")
-  print(sum(cors[,1] == max(cors[,1], na.rm = TRUE), na.rm = TRUE) > 1)
-  if (sum(cors[,1] == max(cors[,1], na.rm = TRUE), na.rm = TRUE) > 1) {
+  print(sum(cors[,1] == max(abs(cors[,1]), na.rm = TRUE), na.rm = TRUE) > 1)
+  if (sum(cors[,1] == max(abs(cors[,1]), na.rm = TRUE), na.rm = TRUE) > 1) {
     print("we do!")
-    max1 <- sample(as.numeric(cors[,1] == max(cors[,1], na.rm = TRUE)), 1)  
+    if(sum(abs(cors[,1])) == 0){
+      print("all null!")
+      return(NULL)
+    }
+    max1 <- sample(as.numeric(cors[,1] == max(abs(cors[,1]), na.rm = TRUE)), 1)  
     print("our winning var is")
     print(max1)
   } else {
     print("we don't")
-    max1 <- cors[cors[,1] == max(cors[,1], na.rm = TRUE),2]
+    max1 <- cors[abs(cors[,1]) == max(abs(cors[,1]), na.rm = TRUE),2]
     print("our winning var is")
     print(max1)
   }
@@ -73,7 +77,7 @@ split.rf <- function(y,x, min) {
     print("split.rf, leaf")
     return(NULL)
   } else {
-    op.partition <- optimise(rss.tree.to.minimize, interval = range(x), y=y,x=x, maximum = FALSE, tol = .01)
+    op.partition <- optimise(rss.node, interval = range(x), y=y,x=x, maximum = FALSE, tol = .01)
     
     
     if (length(x[x < op.partition[[1]]]) < min | length(x[x >= op.partition[[1]]]) < min){
@@ -144,14 +148,14 @@ tree.rf <- function(y,xs, mtry){
       maxxr <- max.cor(yy = y,sxs= xssrd)
       sprd <- split.rf(y, maxxr[[1]], min)
       if(is.null(sprd)) {
-        frame[1,] <- c("<leaf>",nrow(xssrd),rss.tree(y),  mean(y), 0)
+        frame[1,] <- c("<leaf>",nrow(xssrd),rss.leaf(y),  mean(y), 0)
         print("node1 done, leaf")
         tree.frame <<- rbind(tree.frame, frame)
         return(frame)
       
         } else if(length(maxxr[[1]] < sprd[[1]]) < min |length(maxxr[[1]] >= sprd[[1]]) < min  ) {
         
-        frame[1,] <- c("<leaf>",nrow(xssrd),rss.tree(y),mean(y), 0)
+        frame[1,] <- c("<leaf>",nrow(xssrd),rss.leaf(y),mean(y), 0)
         print("node1 done, leaf, too small")
         tree.frame <<- rbind(tree.frame, frame)
         return(frame)
@@ -159,7 +163,7 @@ tree.rf <- function(y,xs, mtry){
       
       frame[1,] <- c(maxxr[[2]],
                      nrow(xssrd),
-                     rss.tree(y),
+                     rss.node(sprd[[1]], y, maxxr[[1]]),
                      mean(y),
                      sprd[[1]])
       # frame[2:4] <- as.numeric(frame[2:4])
@@ -181,7 +185,11 @@ tree.rf <- function(y,xs, mtry){
   return(tree)
 }
 
-###################################BUILDING A FOREST#########################################
+###################################AUX TREE FUNCTIONS#######################################
+predict.tree.rf <- funciton(t,y,xs) {
+  
+}
+###################################GROWING A FOREST#########################################
 
 rforest <- function(form, d, mtry, ntree) { 
   #imputs: formula to be tested and the dset to test on. outputs: list,
@@ -206,7 +214,11 @@ rforest <- function(form, d, mtry, ntree) {
 ###################################INFFOREST#################################################
 
 infforest <- function(rf,d) {
-  for(i in 1:(length(rf)/2)){ ##random forest is a list, pairs of trees + bootsamples
+  vi.frame <- list()
+  for(i in 1:(length(rf))){ ##random forest is a list, pairs of trees + bootsamples
+    t <- rf[[i]]
+    vi.frame[[length(vi.frame)+1]] <- inftree(t[[2]], d[-t[[1]],])
+    
     ##send tree off to inftrees with the -bootsampled data
     ##get back frame
   }
@@ -247,13 +259,9 @@ VIdevBagged<- function(b, x){
   return(as.numeric(as.data.frame(b$mtrees[[1]]$btree$frame)[,c(1,4)] %>% filter(var == x) %>% dplyr::summarise(sum = sum(dev))))
 }
 
-VIdev<- function(t2, x){
-  return(as.data.frame(t2$frame)[,c(1,3)] %>% 
-           filter(var == x) %>% dplyr::summarise(sum = sum(dev)))
-}
 
 variable.importance.dev <- function(t1, x, d){
-  if(length(t1$frame$splits[,1]) == 1) {
+  if(length(t1[[2]]) == 1) {
     return(VIdev(t1, x))
   } else {
     interval <- intervalReturn(t1$frame$splits[,1])
@@ -266,23 +274,24 @@ variable.importance.dev <- function(t1, x, d){
   }
 }
 
-cond.varImp <- function(xs, data) {
-  x <- names(xs)
-  vi <- rep(0,length(x))
-  vo <- rep(0, length(x))
-  
-  t0 <- tree(y~., data)
+VIdev<- function(t2, x){
+  return(sum(as.numeric(t2[t2$var == x, 3])))
+}
+
+inftrees <- function(t, y, xs) {
+
+  vi <- rep(0, ncol(xs))
+  vo <- rep(0, ncol(xs))
   
   set.seed(1)
-  for(i in 1:length(x)){
-    vo[i] <- VIdev(t0, x[i])
+  for(i in 1:ncol(xs)){
+    vo[i] <- VIdev(t, names(xs)[i])
   }
   
   set.seed(1)
   for(i in 1:length(x)){
-    form <- as.formula(paste(x[i], "~."))
-    ti <- tree(form, xs)
-    vi[i] <- variable.importance.dev(ti, x[i], data)
+    ti <- tree.rf(xs[,i], xs[,-i], mtry = 2) #original mtry
+    vi[i] <- variable.importance.dev(ti, names(x)[i], d)
   }
   
   v <- data.frame("variable" = x, "permuted_variable_importance" = as.numeric(vi), "base_variable_importance"= as.numeric(vo))
