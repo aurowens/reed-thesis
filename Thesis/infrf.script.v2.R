@@ -1,11 +1,22 @@
+
 ############################################################################################
 #####################################INFFORESTS#############################################
 ############################################################################################
 ############################################################################################
 
-rss.tree <- function(b,a) { 
-  a <- rep(mean(a),length(a))
-  sum((a-b)^2)
+###################################BUILDING A TREE#########################################
+
+rss.tree.to.minimize <- function(i,y,x) { 
+  yleftpred <- mean(y[x< i])
+  yrightpred <- mean(y[x >= i])
+  rssl <- sum((y[x< i]-yleftpred)^2)
+  rssr <- sum((y[x >= i] - yrightpred)^2)
+  return(rssl + rssr)
+}
+
+rss.tree <- function(a){
+  a1 <- rep(mean(a), length(a))
+  sum((a-a1)^2)
 }
 
 max.cor <- function(yy,sxs){
@@ -34,13 +45,19 @@ split.rf <- function(y,x, min) {
     print("split.rf, leaf")
     return(NULL)
   } else {
-    op.partition <- optimise(rss.tree, interval = range(x), a = y, maximum = FALSE, tol = .01)
+    op.partition <- optimise(rss.tree.to.minimize, interval = range(x), y=y,x=x, maximum = FALSE, tol = .01)
+    
+    
+    if (length(x[x < op.partition[[1]]]) < min | length(x[x >= op.partition[[1]]]) < min){
+      print("split.rf, leaf")
+      return(NULL)
+    }
     sp[[length(sp)+1]] <- op.partition[[1]] #partition on x
     sp[[length(sp)+1]]<-  mean(y[x< op.partition[[1]]]) #ypred left daughter
     sp[[length(sp)+1]]<- mean(y[x >= op.partition[[1]]]) #ypred right daughter
     sp[[length(sp)+1]]<- x[x < op.partition[[1]]] #xsleftdaughter
     sp[[length(sp)+1]]<- x[x >= op.partition[[1]]] #xsrightdaughter
-    sp[[length(sp)+1]] <- rss.tree(x[x < op.partition[[1]]], y[x < op.partition[[1]]]) #ldrss
+    sp[[length(sp)+1]] <- rss.tree( y[x < op.partition[[1]]]) #ldrss
     print("split.rf done")
     return(sp)
   }
@@ -71,16 +88,16 @@ tree.rf <- function(y,xs, mtry){
     yhatr <- y[xs[,spliton[[1]]] >= split]
     xsr <- xs[xs[,spliton[[1]]] >= split, ]
     
-    if(length(yhatl) < min & length(yhatr) < min){
-      print(df)
-      return(df)
-    } else {
+#    if(length(yhatl) < min & length(yhatr) < min){
+#      print(df)
+#      return(df)
+#    } else {
       #y = yhatr
       #xs = xsr
       noder(y = yhatr,xs = xsr,mtry, df, min)
       noder(y = yhatl,xs = xsl,mtry, df, min)
       
-    }
+  #  }
   }
   node1 <- function(y, xs, mtry, min){
     print("splitting on a new interval")
@@ -88,7 +105,7 @@ tree.rf <- function(y,xs, mtry){
     frame <- data.frame("", 0,0,0,0)
     frame[,1] <- as.character(frame[,1])
     if(length(y) < min) {
-      frame[1,] <- c("<leaf>",nrow(xssrd), mean(y), 0, 0)
+      frame[1,] <- c("<leaf>",nrow(xssrd), rss(y), mean(y), 0)
       print("node1 done, leaf")
       tree <<- rbind(tree, frame)
       return(frame)
@@ -96,15 +113,20 @@ tree.rf <- function(y,xs, mtry){
       maxxr <- max.cor(yy = y,sxs= xssrd)
       sprd <- split.rf(y, maxxr[[1]], min)
       if(is.null(sprd)) {
-        frame[1,] <- c("<leaf>",nrow(xssrd), mean(y), 0, 0)
+        frame[1,] <- c("<leaf>",nrow(xssrd),rss.tree(y),  mean(y), 0)
         print("node1 done, leaf")
+        tree <<- rbind(tree, frame)
+        return(frame)
+      } else if(length(maxxr[[1]] < sprd[[1]]) < min |length(maxxr[[1]] >= sprd[[1]]) < min  ) {
+        frame[1,] <- c("<leaf>",nrow(xssrd),rss.tree(y),mean(y), 0)
+        print("node1 done, leaf, too small")
         tree <<- rbind(tree, frame)
         return(frame)
       }
       frame[1,] <- c(maxxr[[2]],
                      nrow(xssrd),
+                     rss.tree(y),
                      mean(y),
-                     rss.tree(xssrd, y),
                      sprd[[1]])
       # frame[2:4] <- as.numeric(frame[2:4])
     }
@@ -116,11 +138,10 @@ tree.rf <- function(y,xs, mtry){
   bootsample <- sample(length(y), length(y), replace = TRUE)
   xs <- xs[bootsample,]
   y <- y[bootsample]
-  min <- round(nrow(xs)/5)
+  min <- 5
   
   noder(y, xs, mtry, df = list(), min)
-  
+  names(tree) <- c("var", "n", "ypred", "dev", "splits.cutleft")
   return(tree)
 }
 
-t <- tree.rf(y = iris$Sepal.Length, xs = iris[,2:4], mtry = 2)
