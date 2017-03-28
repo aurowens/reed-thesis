@@ -23,7 +23,10 @@ mtry = 6
 form <- as.formula("y~.")
 
 t1 <- tree.rf(y,xs,mtry)
-r <- rforest(y,xs, mtry, ntree = 50)
+
+start <- sys.time()
+r <- rforest(y,xs, mtry, ntree = 100)
+print(start - Sys.time())
 
 p <- predict.tree.rf(r[[1]], y[-r[[1]][[1]]], xs[-r[[1]][[1]],])
 
@@ -58,7 +61,7 @@ max.cor <- function(yy,sxs){
   max <- list()
   cors <- cbind(rep(0,ncol(sxs)),seq(1,ncol(sxs)))
   for(i in 1:ncol(sxs)){
-    cors[i,1] <- ifelse(sd(sxs[,i]) == 0,0, cor(yy, sxs[,i]))
+    cors[i,1] <- ifelse(sd(sxs[,i]) == 0,0, suppressWarnings(cor(yy, sxs[,i])))
   }
 
   cors[is.na(cors[,1]), 1] <- 0
@@ -90,8 +93,10 @@ split.rf <- function(y,x, min) {
 
     return(NULL)
   } else {
-
-    op.partition <- optimise(rss.node, interval = range(x), upper = max(x), y=y,x=x, maximum = FALSE)
+    
+    #gives a warning if it cannot find an optimal solution and instead gives the max point
+    op.partition <- suppressWarnings(optimise(rss.node, interval = range(x), 
+                                              upper = max(x), y=y,x=x, maximum = FALSE))
     
     
     if (length(x[x < op.partition[[1]]]) < min | length(x[x >= op.partition[[1]]]) < min){
@@ -365,7 +370,7 @@ inftrees <- function(t, y, xs) {
   #  rss.pre[i] <- VIdev(t, names(xs)[i])
   #}
   
-  rss.pre <- sum((y - as.numeric(predict.tree.rf(ta, y, xs)))^2)
+  rss.pre <- sum((y - as.numeric(predict.tree.rf(ta, y, xs)))^2)/length(y)
   
   set.seed(1)
   for(i in 1:ncol(xs)){
@@ -381,9 +386,9 @@ inftrees <- function(t, y, xs) {
     }
     
     predictions.for.y.xi.perm <- predict.tree.rf(ta,y,xs.for.permuting.i)
-    rss.post[i] <- abs(sum((y - as.numeric(predictions.for.y.xi.perm))^2) - rss.pre)
+    rss.post[i] <- abs(sum((y - as.numeric(predictions.for.y.xi.perm))^2)/length(y) - rss.pre)
   }
-  rss.post <- rss.post/sum(abs(rss.post))
+  rss.post <- rss.post/max(abs(rss.post))
   names(rss.post) <- names(xs)
   return(rss.post)
 }
@@ -395,7 +400,7 @@ strobltrees <- function(t,y,xs) {
   t <- t[[2]]
    
   predictions <- as.numeric(predict.tree.rf(ta, y, xs))
-  rss.pre <- sum((y - predictions)^2)
+  rss.pre <- sum((y - predictions)^2)/length(y)
   
   xs.for.permuting.i <- xs
   #    ti <- tree.rf(xs[,i], xs[,-i], mtry = ncol(xs[,-i])) 
@@ -410,13 +415,13 @@ strobltrees <- function(t,y,xs) {
     }
     
     predictions.for.y.xi.perm <- predict.tree.rf(ta,y,xs.for.permuting.i)
-    rss.post[i] <- abs(sum((y - as.numeric(predictions.for.y.xi.perm))^2) - rss.pre)
+    rss.post[i] <- abs(sum((y - as.numeric(predictions.for.y.xi.perm))^2)/length(y) - rss.pre)
     xs.for.permuting.i <- xs
   }
   if(sum(abs(rss.post)) == 0) {
     return(rss.post)  
   } else{
-    rss.post <- rss.post/sum(abs(rss.post))
+    rss.post <- rss.post/max(abs(rss.post))
     # names(rss.post) <- names(xs)
     return(rss.post)
   }
@@ -437,7 +442,7 @@ briemantrees <- function (t,y,xs){
     rss.post[i] <- abs(sum((y - as.numeric(predictions.for.y.xi.perm))^2) - rss.pre)
     xs.for.permuting <- xs
   }
-  rss.post <- rss.post/sum(rss.post)
+  rss.post <- rss.post/max(abs(rss.post))
   names(rss.post) <- names(xs)
   return(rss.post)
 }

@@ -420,18 +420,15 @@ starts here.
   its' strong correlation with more influential predictors \(V_1,...,V_3\)
   insures that it still shows a strong linear correlation with \(Y\). A
   linear model would likely \emph{overstate} the effect of \(V_4\) on
-  \(Y\).\footnote{A brief note on uncertainty is needed here. It's true
-    that in this setting we can say that \(V_4\) is actually unimportant
-    to understanding \(Y\), but in situations with real data this is
-    profoundly more difficult to parse. Often like in the social science
-    situations that Morgan and Sonquist encountered, the real relationship
-    between correlated predictors is complicated and often there is some
-    theoretical backing or other insight that is gained to include
-    variables that may not be important to the model.}\footnote{Another
-    point that could be said is that, no \(V_4\) is not unimportant,
-    \(V_1, V_2,\) and \(V_3\) are just stand ins for the real star,
-    \(V_4\), as they are nearly the same (\(\rho \sim 1\)). Then the real
-    relationship represented here is
+  \(Y\).\footnote{A great deal of effort was undertaken by the author to
+    find the defenative, authentic CART algorithm. This implementation
+    follows the rough strokes set out in the 1984 text
+    \emph{Classification and Regression Trees} to the best of the author's
+    ability and may not be exactly the algorithm found in R packages like
+    `tree()'}\footnote{Another point that could be said is that, no
+    \(V_4\) is not unimportant, \(V_1, V_2,\) and \(V_3\) are just stand
+    ins for the real star, \(V_4\), as they are nearly the same
+    (\(\rho \sim 1\)). Then the real relationship represented here is
     \(Y \sim (5 + 5 + 2) \cdot V_4 + -5 \cdot V_5 + -5 \cdot V_6 + -2 \cdot V_7\).
     This model is not unsuccessful in capturing the structure of the data,
     and this is typically the practice used to model data with highly
@@ -439,16 +436,20 @@ starts here.
     you, the rest of this thesis may seem a bit inconsequential. I
     apologize.}
   
-  \subsubsection{Figure 1:}\label{figure-1}
-  
-  \includegraphics{Thesis_files/figure-latex/fig1-1.pdf}
+  \begin{figure}[htbp]
+  \centering
+  \includegraphics{Thesis_files/figure-latex/denv1v5-1.pdf}
+  \caption{\label{fig:denv1v5}Density Graphs for V1 through V5}
+  \end{figure}
   
   ~~~~~ As can be seen above in Figure 1 the densities of \(V_1,...,V_5\)
   are all very similar due to the way they were generated.
   
-  \subsubsection{Figure 2:}\label{figure-2}
-  
-  \includegraphics{Thesis_files/figure-latex/fig2-1.pdf}
+  \begin{figure}[htbp]
+  \centering
+  \includegraphics{Thesis_files/figure-latex/yv4-1.pdf}
+  \caption{\label{fig:yv4}Plot of Y \textasciitilde{} V4, Correlation = .789}
+  \end{figure}
   
   ~~~~~ Figure 2 is an illustration of the relationship between
   \(Y\sim V_4\) with linear correlation of .789.
@@ -493,20 +494,28 @@ starts here.
   the correlation structure is more complicated. \(X_1\) and \(X_2\) are
   highly correlated with \(\rho = .7\).
   
-  \subsubsection{Figure 3:}\label{figure-3}
+  \begin{figure}[htbp]
+  \centering
+  \includegraphics{Thesis_files/figure-latex/x2x2-1.pdf}
+  \caption{\label{fig:x2x2}Plot of X2\textasciitilde{}X1, Correlation = .7}
+  \end{figure}
   
-  \includegraphics{Thesis_files/figure-latex/fig3-1.pdf}
-  
-  \subsubsection{Figure 4:}\label{figure-4}
-  
-  \includegraphics{Thesis_files/figure-latex/fig4-1.pdf}
+  \begin{figure}[htbp]
+  \centering
+  \includegraphics{Thesis_files/figure-latex/compsD2-1.pdf}
+  \caption{\label{fig:compsD2}Correlation Structure of the First Four
+  Variables in D2}
+  \end{figure}
   
   ~~~~~As seen in Figure 4, the pattern observed between \(X_1\) and
   \(X_2\) does not carry over to the other correlated predictors.
   
-  \subsubsection{Figure 5:}\label{figure-5}
-  
-  \includegraphics{Thesis_files/figure-latex/fig5-1.pdf}
+  \begin{figure}[htbp]
+  \centering
+  \includegraphics{Thesis_files/figure-latex/densityD2-1.pdf}
+  \caption{\label{fig:densityD2}Comparisons of the Density Graphs for X1
+  through X5}
+  \end{figure}
   
   ~~~~~Figure 5 demonstrate how the correlation between a few of the
   predictors and \(Y\) may be effected by slope. Scale is much more a
@@ -522,10 +531,6 @@ starts here.
   \[\omega_1 \sim N(1,0)\] \[\omega_2 = log(\omega_1) + E, E \sim N(1,0)\]
   \[\omega_3 = log(\omega_2) + E, E \sim N(1,0)\]
   \[\omega_4 = log(\omega_4) + E, E \sim N(1,0)\]
-  
-  \subsubsection{\texorpdfstring{Table 3:Correlation of
-  \(\omega_1,..., \omega_7\) and
-  \(Y\)}{Table 3:Correlation of \textbackslash{}omega\_1,..., \textbackslash{}omega\_7 and Y}}\label{table-3correlation-of-omega_1...-omega_7-and-y}
   
   \begin{tabular}{l|r|r|r|r|r|r|r|r|r}
   \hline
@@ -552,28 +557,37 @@ starts here.
   \(\omega_2\) and \(\omega_3\) with \(\rho = -.534\) and between \(Y\)
   and \(\omega_2\) with \(\rho = .700\).
   
-  \subsubsection{Figure 6:}\label{figure-6}
-  
-  \includegraphics{Thesis_files/figure-latex/fig6-1.pdf}
+  \begin{figure}[htbp]
+  \centering
+  \includegraphics{Thesis_files/figure-latex/corstructD3-1.pdf}
+  \caption{\label{fig:corstructD3}Correlation Structure of the First Four
+  Variables in D3}
+  \end{figure}
   
   ~~~~~Figure 6 provides another way of visualizing some of the
   information given in Table 3. Here we can see the densities as well as
   the paired correlations of the first four variables in \(D_3\).
   
-  \subsubsection{Figure 7:}\label{figure-7}
-  
-  \includegraphics{Thesis_files/figure-latex/fig7-1.pdf}
+  \begin{figure}[htbp]
+  \centering
+  \includegraphics{Thesis_files/figure-latex/compw1w5-1.pdf}
+  \caption{\label{fig:compw1w5}Comparisons of the Density Graphs for W1
+  through W5}
+  \end{figure}
   
   ~~~~~There is more variation between the densities of
   \(\omega_1,...,\omega_5\) then we have seen in the other data sets.
   \(\omega_2,\omega_3,\) and \(\omega_4\) have greater spread than their
   counterparts that are generated under the normal distribution.
   
-  \subsection{Figure 8:}\label{figure-8}
+  \begin{figure}[htbp]
+  \centering
+  \includegraphics{Thesis_files/figure-latex/yw2-1.pdf}
+  \caption{\label{fig:yw2}Plot of Y\textasciitilde{}W2, Correlation = .7}
+  \end{figure}
   
-  \includegraphics{Thesis_files/figure-latex/fig8-1.pdf} ~~~~~ As the
-  relationship between \(Y\) and \(\omega_2\) was so striking, it is nice
-  to see a scatter plot that represents it.
+  ~~~~~ As the relationship between \(Y\) and \(\omega_2\) was so
+  striking, it is nice to see a scatter plot that represents it.
   
   \section{Models and Comparisons}\label{models-and-comparisons}
   
@@ -591,12 +605,12 @@ starts here.
   greedy algorithm that functions by creating as large a tree as possible
   and then is pruned down to prevent over fitting.
   
-  \subsection{Figure 9:}\label{figure-9}
-  
-  \textbf{CART Representing Y\textasciitilde{}, from datasets D1, D2, and
-  D3}
-  
-  \includegraphics{Thesis_files/figure-latex/fig9-1.pdf}
+  \begin{figure}[htbp]
+  \centering
+  \includegraphics{Thesis_files/figure-latex/carts-1.pdf}
+  \caption{\label{fig:carts}CART for the Model Y\textasciitilde{}, from D1,D2,
+  and D3}
+  \end{figure}
   
   ~~~~~Trees can be quite variable, so to get a better idea of the
   differences between the methods let's run a simulation.
@@ -619,9 +633,12 @@ starts here.
   \(1 \leq j \leq n\) This produces two distributions of \(MSE_{test}\),
   one for CART and one for CTree, conditional inference trees.
   
-  \subsection{Figure 10:}\label{figure-10}
-  
-  \includegraphics{Thesis_files/figure-latex/fig10-1.pdf}
+  \begin{figure}[htbp]
+  \centering
+  \includegraphics{Thesis_files/figure-latex/cartmse-1.pdf}
+  \caption{\label{fig:cartmse}Comparison of the Simulated MSEtest
+  Distributions of CART}
+  \end{figure}
   
   ~~~~~The distribution of 1000 CART trees' \(MSE_{test}\) is roughly
   normal with a variance of \texttt{var(testmseC)}.
@@ -643,9 +660,12 @@ starts here.
   We'll build 100 forests of 100 trees each and compare the variability of
   the \(MSE\) distributions.
   
-  \subsection{Figure 11:}\label{figure-11}
-  
-  \includegraphics{Thesis_files/figure-latex/fig11-1.pdf}
+  \begin{figure}[htbp]
+  \centering
+  \includegraphics{Thesis_files/figure-latex/baggedvcart-1.pdf}
+  \caption{\label{fig:baggedvcart}the Simulated MSEtest Distributions of
+  Bagged Forests and CART}
+  \end{figure}
   
   ~~~~~As one can see, the values of \(MSE_{test}\) for the bagged forest
   were entirely below the \(MSE_test\) for the trees and the variance was
@@ -668,9 +688,12 @@ starts here.
   For an illustration, let's build a random forest on \(D3\) and compare
   the \(MSE\).
   
-  \subsection{Figure 12:}\label{figure-12}
-  
-  \includegraphics{Thesis_files/figure-latex/fig12-1.pdf}
+  \begin{figure}[htbp]
+  \centering
+  \includegraphics{Thesis_files/figure-latex/baggedvcartvforest-1.pdf}
+  \caption{\label{fig:baggedvcartvforest}Simulated MSEtest Distributions of
+  CART, Random, and Bagged Forests}
+  \end{figure}
   
   \chapter{Random Forest Variable
   Importance}\label{random-forest-variable-importance}
@@ -822,29 +845,29 @@ starts here.
   \(D_{3,lite}\) has dimensions \(n = 100\), \(p = 2\). A simple CART tree
   with 5 splits on the model \(Y\) \textasciitilde{}\(\omega_1, \omega_2\)
   
-  \includegraphics{Thesis_files/figure-latex/unnamed-chunk-2-1.pdf}
-  \includegraphics{Thesis_files/figure-latex/unnamed-chunk-2-2.pdf}
+  \includegraphics{Thesis_files/figure-latex/unnamed-chunk-5-1.pdf}
+  \includegraphics{Thesis_files/figure-latex/unnamed-chunk-5-2.pdf}
   
   \begin{tabular}{l|l|l|l|l|l}
   \hline
   Group & Predicted Value of Y & Min(W2) & Max(W2) & Min(W1) & Max(W1)\\
   \hline
-  A & -20.6371274522749 & -10.84 & -4.01 & -0.44 & 0.18\\
+  A & -22.5362734865312 & -10.43 & -4.35 & -0.12 & 0.27\\
   \hline
-  B & -9.42120832603296 & -3.75 & 1.1 & -2.06 & 0.61\\
+  B & -10.5421878802014 & -4.34 & 0.33 & -1.86 & 0.14\\
   \hline
-  C & 0.185428736865235 & -2.52 & 0.96 & 0.62 & 2.14\\
+  C & -2.98460142826064 & -3.96 & 0.28 & 0.17 & 1.93\\
   \hline
-  D & 2.41489200540137 & 1.12 & 4.79 & -3 & -1.02\\
+  D & 1.89361038304057 & 0.36 & 2.58 & -2.25 & 1.09\\
   \hline
-  E & 17.3087050358659 & 0.98 & 2.7 & 0.77 & 2.78\\
+  E & 17.661072262451 & 0.47 & 3.59 & 1.09 & 2.31\\
   \hline
   \end{tabular}
   
   If we permute the \(\omega_1\) values in group \(B\), this is what that
   plot looks like:
   
-  \includegraphics{Thesis_files/figure-latex/unnamed-chunk-3-1.pdf}
+  \includegraphics{Thesis_files/figure-latex/unnamed-chunk-6-1.pdf}
   
   \section{Inferential Variable
   Importance}\label{inferential-variable-importance}
@@ -856,10 +879,8 @@ starts here.
   notions of grouped predictors in the book \emph{Classification and
   Regression Trees}.
   
-  \textbf{TO DO}
-  
-  \chapter{INFTrees and INFforests Variable
-  Importance}\label{inftrees-and-infforests-variable-importance}
+  \chapter{INFTrees and INFFOREST Variable
+  Importance}\label{inftrees-and-infforest-variable-importance}
   
   \section{Theory}\label{theory}
   
@@ -877,58 +898,53 @@ starts here.
   and then infering the partitions on \(X_i\). As a visualizaiton of this,
   lets return to the \(D_{3}\) dataset discussed in chapter 2.
   
-  \subsubsection{\texorpdfstring{Figure \_\_: A Tree of the Model
-  \(Y \sim \omega_1,.. \omega_4\)}{Figure \_\_: A Tree of the Model Y \textbackslash{}sim \textbackslash{}omega\_1,.. \textbackslash{}omega\_4}}\label{figure-__-a-tree-of-the-model-y-sim-omega_1..-omega_4}
-  
-  \includegraphics{Thesis_files/figure-latex/unnamed-chunk-4-1.pdf}
+  \begin{figure}[htbp]
+  \centering
+  \includegraphics{Thesis_files/figure-latex/t1ch4-1.pdf}
+  \caption{\label{fig:t1ch4}A Tree of the Model Y\textasciitilde{}W1,W2}
+  \end{figure}
   
   Lets say we are interested in the variable importance of \(\omega_2\).
   Then using the conditional variable importance (Strobl et al)'s
   permutation scheme, we would first look at the partitions on
   \(\omega_2\) from this tree.
   
-  \subsubsection{Figure \_\_.}\label{figure-__.}
-  
-  \includegraphics{Thesis_files/figure-latex/unnamed-chunk-5-1.pdf}
-  
   Clearly, the values of \(\omega_2\) are less important to the
   patitioning structure than the interations of \(\omega_2\) and the other
   variables.
   
-  \begin{Shaded}
-  \begin{Highlighting}[]
-  \KeywordTok{ggplot}\NormalTok{(dp, }\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x=}\NormalTok{W2, }\DataTypeTok{y=}\NormalTok{W3, }\DataTypeTok{color =} \NormalTok{group)) +}
-  \StringTok{  }\KeywordTok{geom_point}\NormalTok{()+}
-  \StringTok{  }\KeywordTok{scale_color_manual}\NormalTok{(}\DataTypeTok{values =} \NormalTok{thesis)}
-  \end{Highlighting}
-  \end{Shaded}
-  
   \begin{figure}[htbp]
   \centering
-  \includegraphics{Thesis_files/figure-latex/blah-1.pdf}
-  \caption{\label{fig:blah}Partitions on the Predictor Space W2 from
+  \includegraphics{Thesis_files/figure-latex/p3ch4-1.pdf}
+  \caption{\label{fig:p3ch4}Partitions on the Predictor Space W2 from
   Y\textasciitilde{}W1,..,W4}
   \end{figure}
   
   As you can see in Figure \ref{fig:blah} above, \ldots{}
   
   Under the INFTrees method, before permuting, fit another tree to the
-  model \(\omega_2 \sim \omega_1, \omega_3, \omega_4\)
+  model \(\omega_2 \sim \omega_1\)
   
-  \subsubsection{\texorpdfstring{Figure \_\_\_: Tree of the model
-  \(\omega_2 \sim \omega_1, \omega_3, \omega_4\)}{Figure \_\_\_: Tree of the model \textbackslash{}omega\_2 \textbackslash{}sim \textbackslash{}omega\_1, \textbackslash{}omega\_3, \textbackslash{}omega\_4}}\label{figure-___-tree-of-the-model-omega_2-sim-omega_1-omega_3-omega_4}
-  
-  \includegraphics{Thesis_files/figure-latex/unnamed-chunk-7-1.pdf}
+  \begin{figure}[htbp]
+  \centering
+  \includegraphics{Thesis_files/figure-latex/t2ch4-1.pdf}
+  \caption{\label{fig:t2ch4}A Tree of the Model W2\textasciitilde{}W1}
+  \end{figure}
   
   The partitions on \(\omega_2\) implied by this model are:
   
-  \subsubsection{Figure \_\_.}\label{figure-__.-1}
+  \begin{figure}[htbp]
+  \centering
+  \includegraphics{Thesis_files/figure-latex/p4ch4-1.pdf}
+  \caption{\label{fig:p4ch4}Partitions on the Predictor Space W2 from
+  W2\textasciitilde{}W1}
+  \end{figure}
   
-  \includegraphics{Thesis_files/figure-latex/unnamed-chunk-8-1.pdf}
-  
-  \includegraphics{Thesis_files/figure-latex/unnamed-chunk-9-1.pdf}
-  
-  \textbf{Need a better way to viz this}
+  \begin{figure}[htbp]
+  \centering
+  \includegraphics{Thesis_files/figure-latex/p5ch4-1.pdf}
+  \caption{\label{fig:p5ch4}The Result of Permuting W2 WRT The Partitions}
+  \end{figure}
   
   \subsection{INFTrees}\label{inftrees}
   
@@ -979,101 +995,133 @@ starts here.
   \end{algorithmic}
   \end{algorithm}
   
-  \section{Comparisons and
-  Applications}\label{comparisons-and-applications}
+  \section{\texorpdfstring{Implementation In \texttt{INFTREES} and
+  Results}{Implementation In INFTREES and Results}}\label{implementation-in-inftrees-and-results}
   
-  \subsection{Trees}\label{trees-1}
+  \subsection{Notes on the
+  Implemetation}\label{notes-on-the-implemetation}
   
-  \begin{Shaded}
-  \begin{Highlighting}[]
-  \NormalTok{viW2 <-}\StringTok{ }\KeywordTok{as.data.frame}\NormalTok{(viW2)}
-  \KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =} \NormalTok{viW2), }\DataTypeTok{data =} \NormalTok{viW2) +}\StringTok{ }
-  \StringTok{  }\KeywordTok{geom_density}\NormalTok{(}\DataTypeTok{fill =} \NormalTok{thesis[}\DecValTok{1}\NormalTok{], }\DataTypeTok{alpha =} \NormalTok{.}\DecValTok{8}\NormalTok{) +}
-  \StringTok{  }\KeywordTok{ggtitle}\NormalTok{(}\StringTok{"Distribution of RSS when W2 is Conditionally Permuted"}\NormalTok{)+}
-  \StringTok{  }\KeywordTok{geom_vline}\NormalTok{(}\DataTypeTok{xintercept =} \NormalTok{inft[}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{])}
-  \end{Highlighting}
-  \end{Shaded}
+  Implementing the \texttt{INFFOREST} and therefor the \texttt{INFTREES}
+  algorithms, required creating a suite of functions to create trees and
+  random forests. The trees are fit following the standard two-part
+  CART-like algorithm.\footnote{A great deal of effort was undertaken by
+    the author to find the defenative, authentic CART algorithm. This
+    implementation follows the rough strokes set out in the 1984 text
+    \emph{Classification and Regression Trees} to the best of the author's
+    ability and may not be exactly the algorithm found in R packages like
+    `tree()'} The function chooses a variable to split on with linear
+  correlation with respect to \(Y\), but instead of looking for
+  correlations above a certain threshold which is common, it chooses the
+  variable with the highest correlation when compared to its peers. This
+  alleivates the situation where a variable with a non-linear relationship
+  would be passed over again and again. The splitting is done via
+  minimization of the following function with respect to \(i\):
   
-  \subsection{Random Forests}\label{random-forests-1}
+  \[RSS_{node} (i,X,Y) = RSS_{leaf}(Y|X <i) + RSS_{leaf}(Y|X \geq i) \]
+  \[RSS_{leaf} = \sum (y - \hat{y})^2 \]
+  \[\hat{Y}: \hat{y} \in \hat{Y}: \hat{y} = E(Y), \ where\  |\hat{Y}| = |Y|\]
+  
+  This function considers the regression case only, and only numeric
+  predictors. Leafs are created when the resultant split would be
+  unsatisfactory, i.e.~at least one daughter node would have five members
+  or less. This generates very large trees - a quality that is not an
+  issue in random forests but may be problematic in a stand-alone setting.
+  At this time, there is also no function to prune the trees.
+  
+  The INFTREE function follows the algorithm above \emph{reference}. The
+  partitions on \(X_j\) are generated by fitting a tree, \(T\), to the
+  model \(X_j \sim X_1,..., X_{j-1}, X_{j+1},..X_p\) and calculating the
+  predictions \(T(X_1,..., X_{j-1}, X_{j+1},..X_p)\). Then permuting
+  \(X_j\) with respect to the partitions on \(X_j\) given by those
+  predictions. For example, if \(x_j \in X_j\) and the value of
+  \(T(x_1,..., x_{j-1}, x_{j+1},..x_p)\) corresponding to \(x_j\) is
+  \(\alpha\), \(x_j\) is permuted along with the other values of \(X_j\)
+  that also have \(T(x_1,..., x_{j-1}, x_{j+1},..x_p)\) corresponding to
+  \(\alpha\).
+  
+  \subsection{Results}\label{results}
+  
+  \emph{NOTE} INFFOREST, like any random forest method involving tree-
+  level calculations is a computationally intensive function. The forests
+  are large, unpruned at any level, and INFFOREST takes time to compute.
+  Because of this reason the datasets discussed in CH2 have been altered
+  so that instead of 1000 x 13 dimensional datasets they are 400 x 13.
+  This decreases computation time immensely. (\textbf{see figure \_\_\_ in
+  appendix})
+  
+  \textbf{FIGURE OF INFFOREST DISTRIBUTION FOR EACH DATASET}
+  
+  There a little suprises in the distru
+  
+  In the situation where there is little correlation between the
+  predictors, the distribution of the INFFOREST output is a sharp peak
+  ending at one of the end points, zero or one. When there are, however,
+  strong correlations between the predictor variables, and \texttt{mtry}
+  is suitably large but smaller than \texttt{p}, the trees in the forest
+  must decide between them. In these situations, the INFFOREST
+  distribution is multimodal, with one peak at one end of the interval,
+  \(INFFOREST(X_i) = 1\) and another when \(INFFOREST(X_i) = 0\).
+  
+  To demonstrate this situation, take the dataset \(D2\), as described
+  above. In the random forest corresponding to this model, the variables
+  \(X2\) and \(X3\) are considered substitutes for each other. In the
+  trees where \(X2\) has \(INFFOREST = 1\), \(X3\) has \(INFFOREST <<\)
+  and visa versa.
+  
+  \textbf{FIGURE OF BOTH INFFOREST DISTRIBUTIONs OF X2 AND X3 TOGETHER
+  FOLLOWED BY THEIR DISTRIBUTIONS CORRESPONDING TO THE SAME TREES}
+  
+  (i.e.~the INFFOREST distributions of X2 and X3 in the trees where
+  X3\textless{} .5)
+  
+  Of course, one may be inclined to infer a p-value for the null
+  hypothesis that \(INFFOREST = 0\) for each of these variables. This
+  could be done straight-forwardly enough in situations where there is not
+  strong multicolinearity within the predictors as the distributions are
+  relaibly half of the familiar bell shaped curve centered around either
+  zero or one. It would be quite difficult, however, for INFFOREST alone
+  to test the significance of the INFFOREST distribution corresponding to
+  correlated, paired predictors and it may not makes sense to do so at
+  all. \emph{talk with Andrew about fixing this?}
   
   \chapter*{Conclusion}\label{conclusion}
   \addcontentsline{toc}{chapter}{Conclusion}
   
   \setcounter{chapter}{4} \setcounter{section}{0}
   
-  If we don't want Conclusion to have a chapter number next to it, we can
-  add the \texttt{\{.unnumbered\}} attribute. This has an unintended
-  consequence of the sections being labeled as 3.6 for example though
-  instead of 4.1. The \LaTeX~commands immediately following the Conclusion
-  declaration get things back on track.
+  \section{INFFOREST Comparisons With Other
+  Methods}\label{infforest-comparisons-with-other-methods}
   
-  \subsubsection{More info}\label{more-info}
+  INFFOREST holds its own amongst the other methods described in Chapter
+  4. The conditional permuted variable importance, when ran on the same
+  random forest, had more difficulty parsing out the situation with paired
+  variables than INFFOREST.
   
-  And here's some other random info: the first paragraph after a chapter
-  title or section head \emph{shouldn't be} indented, because indents are
-  to tell the reader that you're starting a new paragraph. Since that's
-  obvious after a chapter or section title, proper typesetting doesn't add
-  an indent there.
+  \textbf{PLOT OF INFFOREST OUTPUT FOR LIL D2 NEXT TO COND INF FOR LIL D2}
   
-  \appendix
+  \emph{Why does this make sense though?}
   
-  \chapter{The First Appendix}\label{the-first-appendix}
+  The permuted variable importance that operates without partitioned
+  permuatations ignored the forth variable completely while setting the
+  permuted variable importance for \(V2\) to the max value every time.
+  Perhaps this
   
-  This first appendix includes all of the R chunks of code that were
-  hidden throughout the document (using the \texttt{include\ =\ FALSE}
-  chunk tag) to help with readibility and/or setup.
+  \textbf{PLOT OF INFFOREST OUTPUT FOR LIL D2 NEXT TO PERM INF FOR LIL D2}
   
-  \subsubsection{In the main Rmd file:}\label{in-the-main-rmd-file}
+  In the simulations considered here, it is difficult to judge which
+  method perfomed the best. In each simulation, the predictors are related
+  to \(Y\) by a linear function where the first three, and the fifth
+  through seventh variable had non-zero coefficents. Then, the first four
+  are correlated (see @\ref{chap2}).
   
-  \begin{Shaded}
-  \begin{Highlighting}[]
-  \CommentTok{# This chunk ensures that the reedtemplates package is}
-  \CommentTok{# installed and loaded. This reedtemplates package includes}
-  \CommentTok{# the template files for the thesis and also two functions}
-  \CommentTok{# used for labeling and referencing}
-  \NormalTok{if(!}\KeywordTok{require}\NormalTok{(devtools))}
-    \KeywordTok{install.packages}\NormalTok{(}\StringTok{"devtools"}\NormalTok{, }\DataTypeTok{repos =} \StringTok{"http://cran.rstudio.com"}\NormalTok{)}
-  \NormalTok{if(!}\KeywordTok{require}\NormalTok{(reedtemplates))\{}
-    \KeywordTok{library}\NormalTok{(devtools)}
-    \NormalTok{devtools::}\KeywordTok{install_github}\NormalTok{(}\StringTok{"ismayc/reedtemplates"}\NormalTok{)}
-  \NormalTok{\}}
-  \KeywordTok{library}\NormalTok{(reedtemplates)}
-  \end{Highlighting}
-  \end{Shaded}
+  \section{Data Modeling as a Journey You Take With Some Data You
+  Love}\label{data-modeling-as-a-journey-you-take-with-some-data-you-love}
   
-  \subsubsection{\texorpdfstring{In
-  \protect\hyperlink{ref_labels}{}:}{In :}}\label{in}
-  
-  \begin{Shaded}
-  \begin{Highlighting}[]
-  \CommentTok{# This chunk ensures that the reedtemplates package is}
-  \CommentTok{# installed and loaded. This reedtemplates package includes}
-  \CommentTok{# the template files for the thesis and also two functions}
-  \CommentTok{# used for labeling and referencing}
-  \NormalTok{if(!}\KeywordTok{require}\NormalTok{(devtools))}
-    \KeywordTok{install.packages}\NormalTok{(}\StringTok{"devtools"}\NormalTok{, }\DataTypeTok{repos =} \StringTok{"http://cran.rstudio.com"}\NormalTok{)}
-  \NormalTok{if(!}\KeywordTok{require}\NormalTok{(dplyr))}
-      \KeywordTok{install.packages}\NormalTok{(}\StringTok{"dplyr"}\NormalTok{, }\DataTypeTok{repos =} \StringTok{"http://cran.rstudio.com"}\NormalTok{)}
-  \NormalTok{if(!}\KeywordTok{require}\NormalTok{(ggplot2))}
-      \KeywordTok{install.packages}\NormalTok{(}\StringTok{"ggplot2"}\NormalTok{, }\DataTypeTok{repos =} \StringTok{"http://cran.rstudio.com"}\NormalTok{)}
-  \NormalTok{if(!}\KeywordTok{require}\NormalTok{(reedtemplates))\{}
-    \KeywordTok{library}\NormalTok{(devtools)}
-    \NormalTok{devtools::}\KeywordTok{install_github}\NormalTok{(}\StringTok{"ismayc/reedtemplates"}\NormalTok{)}
-    \NormalTok{\}}
-  \KeywordTok{library}\NormalTok{(reedtemplates)}
-  \KeywordTok{library}\NormalTok{(tree)}
-  \KeywordTok{library}\NormalTok{(reedtemplates)}
-  \KeywordTok{library}\NormalTok{(MASS)}
-  \KeywordTok{library}\NormalTok{(ggplot2)}
-  \KeywordTok{library}\NormalTok{(randomForest)}
-  \KeywordTok{library}\NormalTok{(maptree)}
-  \KeywordTok{library}\NormalTok{(knitr)}
-  \KeywordTok{library}\NormalTok{(GGally)}
-  \KeywordTok{library}\NormalTok{(reshape)}
-  \CommentTok{#flights <- read.csv("data/flights.csv")}
-  \NormalTok{thesis <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"#245e67"}\NormalTok{, }\StringTok{"#90bd98"}\NormalTok{, }\StringTok{"#cfd0a0"}\NormalTok{, }\StringTok{"#c49e46"}\NormalTok{, }\StringTok{"#d28383"}\NormalTok{)}
-  \end{Highlighting}
-  \end{Shaded}
+  This whole story began with a single node. By itself, a node is nothing
+  but some of your data. It's an interval that could be the entire dataset
+  or a small sample, but may not be clear what the next move should be.
+  Trees are roadmaps through a dataset. Each node is a fork in the road,
+  and each split points out the correct direction.
   
   \chapter{The Second Appendix: CTree}\label{the-second-appendix-ctree}
   

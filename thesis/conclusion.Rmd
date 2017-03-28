@@ -5,32 +5,45 @@ output: pdf_document
 # Conclusion {.unnumbered}
   \setcounter{chapter}{4}
 	\setcounter{section}{0}
+	
+	
+##INFFOREST Comparisons With Other Methods
 
-If we don't want Conclusion to have a chapter number next to it, we can add the `{.unnumbered}` attribute.  This has an unintended consequence of the sections being labeled as 3.6 for example though instead of 4.1.  The \LaTeX\ commands immediately following the Conclusion declaration get things back on track.
+INFFOREST holds its own amongst the other methods described in Chapter 4. The conditional permuted variable importance, when ran on the same random forest, had more difficulty parsing out the situation with paired variables than INFFOREST. 
 
-#### More info
+**PLOT OF INFFOREST OUTPUT FOR LIL D2 NEXT TO COND INF FOR LIL D2**
 
-And here's some other random info: the first paragraph after a chapter title or section head _shouldn't be_ indented, because indents are to tell the reader that you're starting a new paragraph. Since that's obvious after a chapter or section title, proper typesetting doesn't add an indent there.
+*Why does this make sense though?*
 
-<!--
-If you feel it necessary to include an appendix, it goes here.
--->
+The permuted variable importance that operates without partitioned permuatations ignored the forth variable completely while setting the permuted variable importance for $V2$ to the max value every time. Perhaps this 
 
-\appendix
+**PLOT OF INFFOREST OUTPUT FOR LIL D2 NEXT TO PERM INF FOR LIL D2**
 
-# The First Appendix
+In the simulations considered here, it is difficult to judge which method perfomed the best. In each simulation, the predictors are related to $Y$ by a linear function where the first three, and the fifth through seventh variable had non-zero coefficents. Then, the first four are correlated (see @\ref{chap2}).   
 
-This first appendix includes all of the R chunks of code that were hidden throughout the document (using the `include = FALSE` chunk tag) to help with readibility and/or setup.
+##Data Modeling as a Journey You Take With Some Data You Love
 
-#### In the main Rmd file:
+This whole story began with a single node. By itself, a node is nothing but some of your data. It's an interval that could be the entire dataset or a small sample, but may not be clear what the next move should be. Trees are roadmaps through a dataset. Each node is a fork in the road, and each split points out the correct direction. 
 
-```{r ref.label = 'include_packages', results = 'hide', echo = TRUE}
-```
 
-#### In [](#ref_labels):
 
-```{r ref.label = 'include_packages_2', results = 'hide', echo = TRUE}
-```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # The Second Appendix: CTree
 
