@@ -1,0 +1,46 @@
+---
+header-includes:
+- \usepackage{graphicx,latexsym}
+- \usepackage{amssymb,amsthm,amsmath}
+- \usepackage{longtable,booktabs,setspace}
+- \usepackage{algorithm}
+- \usepackage{algpseudocode}
+- \usepackage{pifont}
+output: pdf_document
+---
+```{r include_reedtemplates_1a, include = FALSE}
+# This chunk ensures that the reedtemplates package is installed and loaded
+# This reedtemplates package includes the template files for the thesis and also
+# two functions used for labeling and referencing
+if(!require(devtools))
+  install.packages("devtools", repos = "http://cran.rstudio.com")
+
+if(!require(reedtemplates)){
+  library(devtools)
+  devtools::install_github("ismayc/reedtemplates")
+  }
+library(reedtemplates)
+
+library(tree)
+library(reedtemplates)
+library(MASS)
+library(ggplot2)
+library(randomForest)
+library(maptree)
+library(knitr)
+library(GGally)
+library(reshape)
+library(ggplot2)
+library(plotly)
+
+#read_chunk('~/Desktop/Thesis/Thesis/infrf.script.v2.R')
+
+#flights <- read.csv("data/flights.csv")
+thesis <- c("#245e67", "#90bd98", "#cfd0a0", "#c49e46", "#d28383")
+```
+
+#Random Forests: a description
+
+A random forest $R_f$ is the set of functions $T_1,...,T_N$ where each $T_j$ is a piece-wise function from the sample space $\Omega$ to the response space $\Phi$. In general, $\Omega$ is defined by an n x p matrix where each column is a random variable and $\Phi$ is defined by an n x 1 vector $Y$. 
+
+Each tree $T_j$ is generated on a subset of both $\Omega$ and $\Phi$ called the training set. It is then tested on a disjoint subset of $\Omega$ called the test set and the values of $T_j$ on this test set are called the predictions. 

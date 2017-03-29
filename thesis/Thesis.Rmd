@@ -79,6 +79,8 @@ This is for including Chapter 1.  Notice that it's also good practice to name yo
 <!--
 Immediately below is the chunk for Chapter 2.
 --> 
+```{r chapter1a, child = 'chap1a.Rmd'}
+```
 
 ```{r chapter2, child = 'chap2.Rmd'}
 ```

@@ -363,6 +363,20 @@ starts here.
   are made from the random forest corresponding to the formula of
   \(Y~X_1,...,X_n\) instead of a model of \(X_j~X_1,...,X_n\).
   
+  \chapter{Random Forests: a
+  description}\label{random-forests-a-description}
+  
+  A random forest \(R_f\) is the set of functions \(T_1,...,T_N\) where
+  each \(T_j\) is a piece-wise function from the sample space \(\Omega\)
+  to the response space \(\Phi\). In general, \(\Omega\) is defined by an
+  n x p matrix where each column is a random variable and \(\Phi\) is
+  defined by an n x 1 vector \(Y\).
+  
+  Each tree \(T_j\) is generated on a subset of both \(\Omega\) and
+  \(\Phi\) called the training set. It is then tested on a disjoint subset
+  of \(\Omega\) called the test set and the values of \(T_j\) on this test
+  set are called the predictions.
+  
   \emph{T as a piece-wise constant function from the predictors to Y}
   
   \chapter{Simulations and Comparisons}\label{simulations-and-comparisons}
@@ -421,7 +435,7 @@ starts here.
   insures that it still shows a strong linear correlation with \(Y\). A
   linear model would likely \emph{overstate} the effect of \(V_4\) on
   \(Y\).\footnote{A great deal of effort was undertaken by the author to
-    find the defenative, authentic CART algorithm. This implementation
+    find the definitive, authentic CART algorithm. This implementation
     follows the rough strokes set out in the 1984 text
     \emph{Classification and Regression Trees} to the best of the author's
     ability and may not be exactly the algorithm found in R packages like
@@ -892,59 +906,12 @@ starts here.
   \(X_i \sim X_1,...X_{i-1},X_{i+1},...X_p\). This is not the most
   straightforward process, as trees partition the sample space, however,
   in INFTrees these partitions on the variables
-  \(X_1,...X_{i-1},X_{i+1},...X_p\) are treated as psuedo partitions on
+  \(X_1,...X_{i-1},X_{i+1},...X_p\) are treated as pseudo partitions on
   the variable of interest, \(X_i\). This is accomplished by first
   partitioning on the sample predictors \(X_1,...X_{i-1},X_{i+1},...X_p\)
-  and then infering the partitions on \(X_i\). As a visualizaiton of this,
-  lets return to the \(D_{3}\) dataset discussed in chapter 2.
+  and then inferring the partitions on \(X_i\).
   
-  \begin{figure}[htbp]
-  \centering
-  \includegraphics{Thesis_files/figure-latex/t1ch4-1.pdf}
-  \caption{\label{fig:t1ch4}A Tree of the Model Y\textasciitilde{}W1,W2}
-  \end{figure}
-  
-  Lets say we are interested in the variable importance of \(\omega_2\).
-  Then using the conditional variable importance (Strobl et al)'s
-  permutation scheme, we would first look at the partitions on
-  \(\omega_2\) from this tree.
-  
-  Clearly, the values of \(\omega_2\) are less important to the
-  patitioning structure than the interations of \(\omega_2\) and the other
-  variables.
-  
-  \begin{figure}[htbp]
-  \centering
-  \includegraphics{Thesis_files/figure-latex/p3ch4-1.pdf}
-  \caption{\label{fig:p3ch4}Partitions on the Predictor Space W2 from
-  Y\textasciitilde{}W1,..,W4}
-  \end{figure}
-  
-  As you can see in Figure \ref{fig:blah} above, \ldots{}
-  
-  Under the INFTrees method, before permuting, fit another tree to the
-  model \(\omega_2 \sim \omega_1\)
-  
-  \begin{figure}[htbp]
-  \centering
-  \includegraphics{Thesis_files/figure-latex/t2ch4-1.pdf}
-  \caption{\label{fig:t2ch4}A Tree of the Model W2\textasciitilde{}W1}
-  \end{figure}
-  
-  The partitions on \(\omega_2\) implied by this model are:
-  
-  \begin{figure}[htbp]
-  \centering
-  \includegraphics{Thesis_files/figure-latex/p4ch4-1.pdf}
-  \caption{\label{fig:p4ch4}Partitions on the Predictor Space W2 from
-  W2\textasciitilde{}W1}
-  \end{figure}
-  
-  \begin{figure}[htbp]
-  \centering
-  \includegraphics{Thesis_files/figure-latex/p5ch4-1.pdf}
-  \caption{\label{fig:p5ch4}The Result of Permuting W2 WRT The Partitions}
-  \end{figure}
+  *\textbf{ADD BETTER PLOT FOR EXAMPLE}
   
   \subsection{INFTrees}\label{inftrees}
   
@@ -986,7 +953,7 @@ starts here.
   \For{each $t \in R$}
   \State Calculate: $\Xi_o =  \frac 1 {\nu_t} RSS(t,\bar{B}^t)$
   \State Calculate a tree $T_i$ that predicts $X_i \sim X_1,...,X_{i-1}, X_{i+1},...X_p$ using the subset of the observations used to fit $t$  
-  \State Permute the subset of $X_i$ contained in $\bar{B}_t$ with respect to the set of partions $P_{xi}$ from $T_i$.
+  \State Permute the subset of $X_i$ contained in $\bar{B}_t$ with respect to the set of partitions $P_{xi}$ from $T_i$.
   \State Now find $\Xi^* =  \frac 1 {\nu_t} RSS(t,\bar{B}_t^*)$
   \State The difference between these values, $\Xi^* - \Xi_o$,  is the variable importance for $X_i$ on $t$
   \EndFor
@@ -1005,7 +972,7 @@ starts here.
   algorithms, required creating a suite of functions to create trees and
   random forests. The trees are fit following the standard two-part
   CART-like algorithm.\footnote{A great deal of effort was undertaken by
-    the author to find the defenative, authentic CART algorithm. This
+    the author to find the definitive, authentic CART algorithm. This
     implementation follows the rough strokes set out in the 1984 text
     \emph{Classification and Regression Trees} to the best of the author's
     ability and may not be exactly the algorithm found in R packages like
@@ -1013,7 +980,7 @@ starts here.
   correlation with respect to \(Y\), but instead of looking for
   correlations above a certain threshold which is common, it chooses the
   variable with the highest correlation when compared to its peers. This
-  alleivates the situation where a variable with a non-linear relationship
+  alleviates the situation where a variable with a non-linear relationship
   would be passed over again and again. The splitting is done via
   minimization of the following function with respect to \(i\):
   
@@ -1028,6 +995,45 @@ starts here.
   issue in random forests but may be problematic in a stand-alone setting.
   At this time, there is also no function to prune the trees.
   
+  \subsubsection{\texorpdfstring{Table \_\_: A Home-Grown Tree on
+  \(Y~X_1+X_2+X_3+X_4\)}{Table \_\_: A Home-Grown Tree on Y\textasciitilde{}X\_1+X\_2+X\_3+X\_4}}\label{table-__-a-home-grown-tree-on-yx_1x_2x_3x_4}
+  
+  \begin{tabular}{l|l|l|l|l}
+  \hline
+  var & n & dev & ypred & split.cutleft\\
+  \hline
+  X2 & 100 & 14555.7572003193 & -3.0976184477862 & 0.725094920809497\\
+  \hline
+  X2 & 59 & 5609.64655621111 & 6.01005019872487 & 3.28899699394128\\
+  \hline
+  <leaf> & 8 & 375.896813195261 & 26.6561770276355 & 0\\
+  \hline
+  X2 & 51 & 3049.31027720886 & 2.77144206869967 & 1.62893665728107\\
+  \hline
+  X1 & 26 & 1156.80610732382 & 9.18897712062308 & 1.04172636035769\\
+  \hline
+  <leaf> & 6 & 124.301193003857 & 15.4053521498218 & 0\\
+  \hline
+  <leaf> & 20 & 1032.50491431997 & 7.32406461186345 & 0\\
+  \hline
+  X1 & 25 & 1115.45728514695 & -3.90279438530068 & -0.382523775604218\\
+  \hline
+  <leaf> & 18 & 731.748867342283 & -1.18274413949534 & 0\\
+  \hline
+  <leaf> & 7 & 383.708417804669 & -10.8972093030858 & 0\\
+  \hline
+  X2 & 41 & 2207.5570882574 & -16.2037757683753 & -0.554560357455375\\
+  \hline
+  X1 & 26 & 749.886162768674 & -9.93411391726191 & -0.252980429197639\\
+  \hline
+  <leaf> & 10 & 131.02611270747 & -4.17919192000313 & 0\\
+  \hline
+  <leaf> & 16 & 618.860050061205 & -13.5309401655486 & 0\\
+  \hline
+  <leaf> & 15 & 919.485108577565 & -27.0711896436385 & 0\\
+  \hline
+  \end{tabular}
+  
   The INFTREE function follows the algorithm above \emph{reference}. The
   partitions on \(X_j\) are generated by fitting a tree, \(T\), to the
   model \(X_j \sim X_1,..., X_{j-1}, X_{j+1},..X_p\) and calculating the
@@ -1039,6 +1045,13 @@ starts here.
   that also have \(T(x_1,..., x_{j-1}, x_{j+1},..x_p)\) corresponding to
   \(\alpha\).
   
+  The values of \(INFFOREST(X_j)\) are scaled in the following way: since
+  the INFFOREST function computes the INFFTREES, (or the difference in
+  post and pre permutation RSS), values in a tree-wise manner, each tree's
+  values are divided by the maximum value. This ensures that the values
+  are between zero and one, and that in each tree one variable is clearly
+  deemed the \emph{most important}.
+  
   \subsection{Results}\label{results}
   
   \emph{NOTE} INFFOREST, like any random forest method involving tree-
@@ -1049,9 +1062,9 @@ starts here.
   This decreases computation time immensely. (\textbf{see figure \_\_\_ in
   appendix})
   
-  \textbf{FIGURE OF INFFOREST DISTRIBUTION FOR EACH DATASET}
-  
-  There a little suprises in the distru
+  \includegraphics{Thesis_files/figure-latex/figinfdists-1.pdf}
+  \includegraphics{Thesis_files/figure-latex/figinfdists-2.pdf}
+  \includegraphics{Thesis_files/figure-latex/figinfdists-3.pdf}
   
   In the situation where there is little correlation between the
   predictors, the distribution of the INFFOREST output is a sharp peak
@@ -1068,8 +1081,13 @@ starts here.
   trees where \(X2\) has \(INFFOREST = 1\), \(X3\) has \(INFFOREST <<\)
   and visa versa.
   
-  \textbf{FIGURE OF BOTH INFFOREST DISTRIBUTIONs OF X2 AND X3 TOGETHER
-  FOLLOWED BY THEIR DISTRIBUTIONS CORRESPONDING TO THE SAME TREES}
+  \begin{verbatim}
+  Using  as id variables
+  Using  as id variables
+  \end{verbatim}
+  
+  \includegraphics{Thesis_files/figure-latex/figx2x1inf-1.pdf}
+  \includegraphics{Thesis_files/figure-latex/figx2x1inf-2.pdf}
   
   (i.e.~the INFFOREST distributions of X2 and X3 in the trees where
   X3\textless{} .5)
@@ -1078,7 +1096,7 @@ starts here.
   hypothesis that \(INFFOREST = 0\) for each of these variables. This
   could be done straight-forwardly enough in situations where there is not
   strong multicolinearity within the predictors as the distributions are
-  relaibly half of the familiar bell shaped curve centered around either
+  reliably half of the familiar bell shaped curve centered around either
   zero or one. It would be quite difficult, however, for INFFOREST alone
   to test the significance of the INFFOREST distribution corresponding to
   correlated, paired predictors and it may not makes sense to do so at

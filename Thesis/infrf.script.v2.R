@@ -6,39 +6,39 @@
 
 ########################################TESTING#############################################
 
-data("iris")
-d <- iris[1:4]
-y <- iris$Sepal.Length
-xs <- iris[2:4]
-mtry <- 2
-form <- as.formula("Sepal.Length ~.")
-
-######from chap2.Rmd
-##d1
-
-d <- d2[1:100,]
-xs <- d2[1:100, 1:12]
-y <- d2$y[1:100]
-mtry = 6
-form <- as.formula("y~.")
-
-t1 <- tree.rf(y,xs,mtry)
-
-start <- sys.time()
-r <- rforest(y,xs, mtry, ntree = 100)
-print(start - Sys.time())
-
-p <- predict.tree.rf(r[[1]], y[-r[[1]][[1]]], xs[-r[[1]][[1]],])
-
-vi <- inftrees(r[[2]], y[-r[[2]][[1]]], xs[-r[[2]][[1]],])
-
-virf <- infforest(r,y,xs)
-virfStrobl <- conditional.inf(r,y,xs)
-virf_permuted <- permuted.inf(r,y,xs)
-
-
-
-strobltrees(r[[3]],y[-r[[3]][[1]]],xs[-r[[3]][[1]],])
+# data("iris")
+# d <- iris[1:4]
+# y <- iris$Sepal.Length
+# xs <- iris[2:4]
+# mtry <- 2
+# form <- as.formula("Sepal.Length ~.")
+# 
+# ######from chap2.Rmd
+# ##d1
+# 
+# d <- d2[1:100,]
+# xs <- d2[1:100, 1:12]
+# y <- d2$y[1:100]
+# mtry = 6
+# form <- as.formula("y~.")
+# 
+# t1 <- tree.rf(y,xs,mtry)
+# 
+# start <- sys.time()
+# r <- rforest(y,xs, mtry, ntree = 100)
+# print(start - Sys.time())
+# 
+# p <- predict.tree.rf(r[[1]], y[-r[[1]][[1]]], xs[-r[[1]][[1]],])
+# 
+# vi <- inftrees(r[[2]], y[-r[[2]][[1]]], xs[-r[[2]][[1]],])
+# 
+# virf <- infforest(r,y,xs)
+# virfStrobl <- conditional.inf(r,y,xs)
+# virf_permuted <- permuted.inf(r,y,xs)
+# 
+# 
+# 
+# strobltrees(r[[3]],y[-r[[3]][[1]]],xs[-r[[3]][[1]],])
 
 
 ###################################GROWING A TREE#########################################
@@ -237,7 +237,7 @@ predict.tree.rf <- function(t,y,xs) {
     } else {
       
       right.daughter <- t[1:(ldname[length(ldname)]),]
-      left.daughter <- t[ldname[length(ldname)]:nrow(t),]
+      left.daughter <- t[ldname:nrow(t),]
     }
   
 

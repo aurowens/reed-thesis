@@ -32,91 +32,553 @@ library(GGally)
 library(reshape)
 library(ggplot2)
 library(plotly)
+
+#read_chunk('~/Desktop/Thesis/Thesis/infrf.script.v2.R')
+
 #flights <- read.csv("data/flights.csv")
 thesis <- c("#245e67", "#90bd98", "#cfd0a0", "#c49e46", "#d28383")
 ```
 
-```{r inftree,echo = FALSE, warning=FALSE, message=FALSE}
-################INFTREES############
-intervalReturn <- function(split.cutleft){ 
-  intervals <- data.frame(split.cutleft)
-  intervals <- filter(intervals, split.cutleft != "")
-  intervals <- dplyr::select(intervals, split.cutleft)
-  intervals$split.cutleft <- gsub("<", "", intervals$split.cutleft)
-  intervals$split.cutleft <- as.numeric(intervals$split.cutleft)
-  return(arrange(intervals, (split.cutleft)))
+```{r infforestcode, echo=FALSE}
+
+############################################################################################
+#####################################INFFORESTS#############################################
+############################################################################################
+############################################################################################
+
+########################################TESTING#############################################
+
+# data("iris")
+# d <- iris[1:4]
+# y <- iris$Sepal.Length
+# xs <- iris[2:4]
+# mtry <- 2
+# form <- as.formula("Sepal.Length ~.")
+# 
+# ######from chap2.Rmd
+# ##d1
+# 
+# d <- d2[1:100,]
+# xs <- d2[1:100, 1:12]
+# y <- d2$y[1:100]
+# mtry = 6
+# form <- as.formula("y~.")
+# 
+# t1 <- tree.rf(y,xs,mtry)
+# 
+# start <- sys.time()
+# r <- rforest(y,xs, mtry, ntree = 100)
+# print(start - Sys.time())
+# 
+# p <- predict.tree.rf(r[[1]], y[-r[[1]][[1]]], xs[-r[[1]][[1]],])
+# 
+# vi <- inftrees(r[[2]], y[-r[[2]][[1]]], xs[-r[[2]][[1]],])
+# 
+# virf <- infforest(r,y,xs)
+# virfStrobl <- conditional.inf(r,y,xs)
+# virf_permuted <- permuted.inf(r,y,xs)
+# 
+# 
+# 
+# strobltrees(r[[3]],y[-r[[3]][[1]]],xs[-r[[3]][[1]],])
+
+
+###################################GROWING A TREE#########################################
+
+rss.node <- function(i,y,x) { 
+  yleftpred <- mean(y[x< i])
+  yrightpred <- mean(y[x >= i])
+  rssl <- sum((y[x< i]-yleftpred)^2)
+  rssr <- sum((y[x >= i] - yrightpred)^2)
+  return(rssl + rssr)
 }
 
-partitionCreator <- function(i, x, data) {
-  p <- c(1:(1+nrow(i)))
-  bins <- data.frame (bin = rep(1, nrow(data)), v = data[,x])
-  for(j in 1:nrow(i)){
-    bins[bins$v > i[j,1],1] <- p[j+ 1]
+rss.leaf <- function(a){
+  a1 <- rep(mean(a), length(a))
+  sum((a-a1)^2)
+}
+
+max.cor <- function(yy,sxs){
+ 
+  max <- list()
+  cors <- cbind(rep(0,ncol(sxs)),seq(1,ncol(sxs)))
+  for(i in 1:ncol(sxs)){
+    cors[i,1] <- ifelse(sd(sxs[,i]) == 0,0, suppressWarnings(cor(yy, sxs[,i])))
   }
-  return(bins$bin)
-}
 
-condPermuter <- function(d2, x) {
-  for(i in 1:length(unique(d2$p))){
-    #set.seed(1)
-    ifelse(length(d2[d2$p== i,x]) == 1, d2[d2$p == i, x], 
-           d2[d2$p == i, x] <- sample(d2[d2$p== i,x]))
-  }
-  return(d2[,x])
-}
+  cors[is.na(cors[,1]), 1] <- 0
 
-VIdevBagged<- function(b, x){
-  return(as.numeric(as.data.frame(b$mtrees[[1]]$btree$frame)[,c(1,4)] %>% filter(var == x) %>% dplyr::summarise(sum = sum(dev))))
-}
+  if (sum(cors[,1] == max(abs(cors[,1]), na.rm = TRUE), na.rm = TRUE) > 1) {
 
-VIdev<- function(t2, x){
-  fr <- as.data.frame(t2$frame)[,c(1,3)]
-  if ( x %in% fr$var){
-    return(fr %>% dplyr::filter(var == x) %>% dplyr::summarise(sum = sum(dev)))
-  } 
-  return(0)
-}
+    if(sum(abs(cors[,1])) == 0){
 
-variable.importance.dev <- function(t1, x, d){
-  if(length(t1$frame$splits[,1]) == 1) {
-    return(VIdev(t1, x))
+      return(NULL)
+    }
+    max1 <- sample(as.numeric(cors[,1] == max(abs(cors[,1]), na.rm = TRUE)), 1)  
+
   } else {
-    interval <- intervalReturn(t1$frame$splits[,1])
-    d$p <- partitionCreator(interval, x, d)
-    d[,x] <- condPermuter(d, x)
-    t2 <- tree(y ~ ., data = d, y = TRUE)
-    v1 <- VIdev(t2, x)
-    #rm(t1, t2)
-    return(v1)
+
+    max1 <- cors[abs(cors[,1]) == max(abs(cors[,1]), na.rm = TRUE),2]
+  }
+
+  
+  max[[length(max)+1]] <- sxs[,max1]
+  max[[length(max)+1]] <- names(sxs)[max1]
+  return(max)
+  
+}
+
+split.rf <- function(y,x, min) {
+
+  sp <- list()
+  if(length(x) <= min) {
+
+    return(NULL)
+  } else {
+    
+    #gives a warning if it cannot find an optimal solution and instead gives the max point
+    op.partition <- suppressWarnings(optimise(rss.node, interval = range(x), 
+                                              upper = max(x), y=y,x=x, maximum = FALSE))
+    
+    
+    if (length(x[x < op.partition[[1]]]) < min | length(x[x >= op.partition[[1]]]) < min){
+
+      return(NULL)
+    }
+    sp[[length(sp)+1]] <- op.partition[[1]] #partition on x
+    sp[[length(sp)+1]]<-  mean(y[x< op.partition[[1]]]) #ypred left daughter
+    sp[[length(sp)+1]]<- mean(y[x >= op.partition[[1]]]) #ypred right daughter
+    sp[[length(sp)+1]]<- x[x < op.partition[[1]]] #xsleftdaughter
+    sp[[length(sp)+1]]<- x[x >= op.partition[[1]]] #xsrightdaughter
+    sp[[length(sp)+1]] <- rss.leaf( y[x < op.partition[[1]]]) #ldrss
+
+    return(sp)
   }
 }
 
-inftrees <- function(xs, data, n) {
-  x <- names(xs)
-  vi <- rep(0,length(x))
-  vo <- rep(0, length(x))
+tree.rf <- function(y,xs, mtry){
+  tree <- list()
+  tree.frame <- list()
+  leaf.partitions <- list()
   
-  t0 <- tree(y~., data)
-  
-  set.seed(1)
-  for(i in 1:length(x)){
-    vo[i] <- VIdev(t0, x[i])
-  }
-     set.seed(1)
-      for(i in 1:length(x)){
-        form <- as.formula(paste(x[i], "~."))
-        ti <- tree(form, xs)
-        vi[i] <- variable.importance.dev(ti, x[i], data)
+  noder <- function(y,xs,mtry, min){
+    
+    ##what i want this function to do:
+    ###given y,xs (like an interval of them):
+    ####1. find the split between them 
+
+    frame <- node1(y,xs, mtry, min)
+    #df <-  rbind(df,frame)
+    ####2. call itself on each side of the split
+    split <- as.numeric(frame[5])
+    spliton <- frame[1]
+    
+    if(frame[1] == "<leaf>"){
+      return(frame)
+    } else {
+
+        yhatl <- y[xs[,spliton[[1]]] < split]
+        xsl <- xs[xs[,spliton[[1]]] < split,]
+        yhatr <- y[xs[,spliton[[1]]] >= split]
+        xsr <- xs[xs[,spliton[[1]]] >= split, ]
+    
+#    if(length(yhatl) < min & length(yhatr) < min){
+#      print(df)
+#      return(df)
+#    } else {
+      #y = yhatr
+      #xs = xsr
+        noder(y = yhatr,xs = xsr,mtry, min)
+        noder(y = yhatl,xs = xsl,mtry, min)
       }
+  #  }
+  }
+  node1 <- function(y, xs, mtry, min){
+
+    xssrd <- xs[,sample(ncol(xs),mtry)]
+    frame <- data.frame("", 0,0,0,0)
+    frame[,1] <- as.character(frame[,1])
+    leaf.p <- data.frame(rep(0,2), rep(0,2), rep(0,2))
+    
+    
+    if(length(y) < min) {
+      frame[1,] <- c("<leaf>",nrow(xssrd), rss.leaf(y), mean(y), 0)
+ 
+      tree.frame <<- rbind(tree.frame, frame)
+      leaf.p <- sapply(xs, range)
+      leaf.partitions[[length(leaf.partitions)+1]] <<- leaf.p
+      return(frame)
+      
+    } else {
+      
+      maxxr <- max.cor(yy = y,sxs= xssrd)
+      sprd <- split.rf(y, maxxr[[1]], min)
+      if(is.null(sprd)) {
+        frame[1,] <- c("<leaf>",nrow(xssrd),rss.leaf(y),  mean(y), 0)
+
+        tree.frame <<- rbind(tree.frame, frame)
+        leaf.p <- sapply(xs, range)
+        leaf.partitions[[length(leaf.partitions)+1]] <<- leaf.p
+        return(frame)
+      
+        } else if(length(maxxr[[1]] < sprd[[1]]) < min |length(maxxr[[1]] >= sprd[[1]]) < min  ) {
+        
+        frame[1,] <- c("<leaf>",nrow(xssrd),rss.leaf(y), mean(y), 0)
+
+        tree.frame <<- rbind(tree.frame, frame)
+        leaf.p <- sapply(xs, range)
+        leaf.partitions[[length(leaf.partitions)+1]] <<- leaf.p
+        return(frame)
+        }
+      
+      frame[1,] <- c(maxxr[[2]],
+                     nrow(xssrd),
+                     rss.node(sprd[[1]], y, maxxr[[1]]),
+                     mean(y),
+                     sprd[[1]])
+      # frame[2:4] <- as.numeric(frame[2:4])
+    }
+
+    tree.frame <<- rbind(tree.frame, frame)
+    return(frame)
+  }
+
+  bootsample <- sample(length(y), length(y), replace = TRUE)
+  xs <- xs[bootsample,]
+  y <- y[bootsample]
+  min <- 5
   
-  v <- data.frame("variable" = x, "inftree.variable.importance" = as.numeric(vi), "base.variable.importance" = as.numeric(vo))
+  noder(y, xs, mtry,min)
+  names(tree.frame) <- c("var", "n", "dev", "ypred","split.cutleft")
+  tree[[1]] <- bootsample
+  tree[[2]] <- tree.frame
+  return(tree)
+}
+
+###################################AUX TREE FUNCTIONS#######################################
+
+predict.tree.rf <- function(t,y,xs) {
+  t <- t[[2]] 
+  first.split <- t[1,]
+  
+  if(first.split$var == "<leaf>") {
+    return(first.split$ypred)
+  }
+  
+  t$n <- as.numeric(t$n)
+  t$split.cutleft <- as.numeric(t$split.cutleft)
+  rdn <- t$n[2]
+  ldn <- t$n[1] - rdn 
+  ldname <- as.numeric(row.names(t[t$n == ldn,]))
+  
+  if(length(ldname) > 1) {
+    
+    right.daughter <- t[1:(ldname[length(ldname)]-1),]
+    left.daughter <- t[ldname[length(ldname)]:nrow(t),]
+  
+    } else {
+      
+      right.daughter <- t[1:(ldname[length(ldname)]),]
+      left.daughter <- t[ldname[length(ldname)]:nrow(t),]
+    }
+  
+
+  j <- 0
+  predictions <- c(rep(100000, length(y)))
+###SKIPPING CONDITION
+    #there's no need to map out the whole tree and have it on file, each y just needs the tree to 
+    #a. check the split condition, i.e. xs[,var] < split.cutleft 
+    #b. if yes, go two ahead
+    #b.2. if no, go one ahead
+    #c. stop at leaf, pred[i] <- ypred
+    
+  for(i in 1:(length(y))){
+    yh <- y[i]
+    xsh <- xs[i,]
+    
+    if(xsh[,first.split$var] < first.split$split.cutleft){
+      #left daughter
+      ld <- left.daughter[1,]
+      j <- 1
+      while (ld$var != "<leaf>"){
+        if (xsh[,ld$var] < ld$split.cutleft) {
+          j <- j+2
+        } else {
+          j <- j+1
+        }
+        ld <- left.daughter[j,]
+      }
+      predictions[i] <- ld$ypred
+    } else {
+      #right daughter
+      rd <- right.daughter[2,]
+      j <- 2
+      while (rd$var != "<leaf>"){
+        if (xsh[,rd$var] < rd$split.cutleft) {
+          j <- j+2
+        } else {
+          j <- j+1
+        }
+        rd <- right.daughter[j,]
+      }
+      predictions[i] <- rd$ypred
+    }
+  }
+  return(predictions)
+}
+
+###################################GROWING A FOREST#########################################
+
+rforest <- function(y, xs,  mtry, ntree) { 
+  #imputs: formula to be tested and the dset to test on. outputs: list,
+  #contains: total oob error, trees, and bootsample for the tree  
+  rforest <- list() #define empty list for the rf. length = ntree*2+1
+  #where each tree is a list, bootsample + frame  
+  xsi <- c()
+  di <- data.frame()
+ # form <- as.character(form)
+ # yn <- form[2]
+ # yi <- as.numeric(names(d) == yn)
+ # y <- d[,yi]
+ # xs <- d[,(yi + 1 - 2)*-1]
+  
+  while (length(rforest) < ntree) {
+    rforest[[length(rforest)+1]] <- tree.rf(y,xs,mtry)
+  }
+  return(rforest)
+}
+
+
+###################################INFFOREST#################################################
+
+infforest <- function(rf,y,xs) {
+  v <- inftrees(rf[[1]],y[-rf[[1]][[1]]],xs[-rf[[1]][[1]],])
+  vi.frame <- v
+  for(i in 2:(length(rf))){ ##random forest is a list, pairs of trees + bootsamples
+    t <- rf[[i]]
+    vi.frame <- rbind(vi.frame,inftrees(t, y[-t[[1]]], xs[-t[[1]],]))
+    
+    ##send tree off to inftrees with the -bootsampled data
+    ##get back frame
+  }
+  
+    ##generate distribution of vi's from frames - pval
+  return(vi.frame)
+}
+
+##############################CONDITIONAL VARIABLE IMPORTANCE################################
+
+conditional.inf <- function(rf, y, xs) {
+  v <- strobltrees(rf[[1]],y[-rf[[1]][[1]]],xs[-rf[[1]][[1]],])
+  v1 <- v
+  for (i in 2:length(rf)){
+    v1 <-  strobltrees(rf[[i]],y[-rf[[1]][[1]]],xs[-rf[[1]][[1]],])
+    v <- rbind(v,v1)
+  }
+  
   return(v)
 }
 
+###############################PERMUTED VARIABLE IMPORTANCE################################
+
+permuted.inf <- function(rf, y, xs) {
+  v <- briemantrees(rf[[1]],y[-rf[[1]][[1]]],xs[-rf[[1]][[1]],])
+  
+  for (i in 2:length(rf)){
+    v <- rbind(v, briemantrees(rf[[1]],y[-rf[[1]][[1]]],xs[-rf[[1]][[1]],]))
+  }
+  
+  return(v)
+
+}
+
+###################################INFTREES SUPPORT###########################################
+
+VIdev<- function(t2, x){
+  return(sum(as.numeric(t2[t2$var == x, 3])))
+}
+
+inftrees <- function(t, y, xs) {
+
+  rss.post <- rep(0, ncol(xs))
+  vi <- rep(0, ncol(xs))
+  rss.pre <- rep(0, ncol(xs))
+  
+  ta <- t
+  t <- t[[2]]
+  
+ # set.seed(1)
+  #for(i in 1:ncol(xs)){
+  #  rss.pre[i] <- VIdev(t, names(xs)[i])
+  #}
+  
+  rss.pre <- sum((y - as.numeric(predict.tree.rf(ta, y, xs)))^2)/length(y)
+  
+  set.seed(1)
+  for(i in 1:ncol(xs)){
+    xs.for.permuting.i <- xs
+    ti <- tree.rf(xs[,i], xs[,-i], mtry = ncol(xs[,-i])) 
+    xi.partitions <- predict.tree.rf(ti, xs[,i],  xs[,-i])
+    xs.for.permuting.i$groups <- as.factor(xi.partitions)
+    for (j in 1:length(levels(xs.for.permuting.i$groups))) {
+      xs.for.permuting.i[xs.for.permuting.i$group == levels(xs.for.permuting.i$groups)[j],i] <-
+        sample(xs.for.permuting.i[xs.for.permuting.i$group == levels(xs.for.permuting.i$groups)[j],i], 
+               length(xs.for.permuting.i[xs.for.permuting.i$group == levels(xs.for.permuting.i$groups)[j],i]),
+               replace = TRUE)
+    }
+    
+    predictions.for.y.xi.perm <- predict.tree.rf(ta,y,xs.for.permuting.i)
+    rss.post[i] <- abs(sum((y - as.numeric(predictions.for.y.xi.perm))^2)/length(y) - rss.pre)
+  }
+  rss.post <- rss.post/max(abs(rss.post))
+  names(rss.post) <- names(xs)
+  return(rss.post)
+}
+
+strobltrees <- function(t,y,xs) {
+  rss.post <- rep(0, ncol(xs))
+  
+  ta <- t
+  t <- t[[2]]
+   
+  predictions <- as.numeric(predict.tree.rf(ta, y, xs))
+  rss.pre <- sum((y - predictions)^2)/length(y)
+  
+  xs.for.permuting.i <- xs
+  #    ti <- tree.rf(xs[,i], xs[,-i], mtry = ncol(xs[,-i])) 
+  xi.partitions <- as.factor(predictions)
+  
+  for(i in 1:ncol(xs)){
+    for (j in 1:length(levels(xi.partitions))) {
+      print(paste("j = ", levels(xi.partitions)[j]))  
+      xs.for.permuting.i[(xi.partitions == levels(xi.partitions)[j]),i] <-sample(xs.for.permuting.i[(xi.partitions == levels(xi.partitions)[j]),i], 
+                                                                                 length(xs.for.permuting.i[(xi.partitions == levels(xi.partitions)[j]),i]),
+                                                                                  replace = TRUE)
+    }
+    
+    predictions.for.y.xi.perm <- predict.tree.rf(ta,y,xs.for.permuting.i)
+    rss.post[i] <- abs(sum((y - as.numeric(predictions.for.y.xi.perm))^2)/length(y) - rss.pre)
+    xs.for.permuting.i <- xs
+  }
+  if(sum(abs(rss.post)) == 0) {
+    return(rss.post)  
+  } else{
+    rss.post <- rss.post/max(abs(rss.post))
+    # names(rss.post) <- names(xs)
+    return(rss.post)
+  }
+
+}
+
+briemantrees <- function (t,y,xs){
+  ta <- t
+  t <- t[[2]]
+  
+  rss.pre <- sum((y - as.numeric(predict.tree.rf(ta, y, xs)))^2)
+  
+  rss.post <- rep(0, ncol(xs))
+  xs.for.permuting <- xs
+  for (i in 1:ncol(xs)){
+    xs.for.permuting[,i] <- sample(xs.for.permuting[,i], replace = TRUE)
+    predictions.for.y.xi.perm <- predict.tree.rf(ta,y,xs.for.permuting)
+    rss.post[i] <- abs(sum((y - as.numeric(predictions.for.y.xi.perm))^2) - rss.pre)
+    xs.for.permuting <- xs
+  }
+  rss.post <- rss.post/max(abs(rss.post))
+  names(rss.post) <- names(xs)
+  return(rss.post)
+}
 
 ```
+```{r loaddatad2, echo=FALSE}
+rep(0, 12) -> mu #mean of each variable
 
-```{r d3ch4, echo = FALSE}
+diag(12) -> sigma #creates a 12 by 12 diagonal matrix with 1's down the diagonal
+
+sigma -> sigma1
+.9 -> sigma1[1,2]
+.9 -> sigma1[2,1] #adding the block correlation between the first four variables
+.9 -> sigma1[1,3]
+.9 -> sigma1[3,1]
+.9 -> sigma1[3,2]
+.9 -> sigma1[2,3]
+.9 -> sigma1[1,4]
+.9 -> sigma1[4,1]
+.9 -> sigma1[2,4]
+.9 -> sigma1[4,2]
+.9 -> sigma1[4,3]
+.9 -> sigma1[3,4]
+
+1000 -> n #number of observations
+set.seed(1)
+mvrnorm(n =n, mu = mu, Sigma = sigma1) -> sim1000 #sampling from the multivariate normal 
+c(5,5,2,0,-5,-5,-2,0,0,0,0,0) -> bts #these are the betas 
+
+rnorm(1000, mean = 0, sd = .5) -> e #error terms
+
+rep(0, 1000) -> ys #init a vector of zeros
+
+for( i in 1:1000){ #go row by row and create the ys based on the function of e, bts, and sim1000
+ys[i] <- sim1000[i,1]*bts[1]+
+    sim1000[i,2]*bts[2]+ 
+    sim1000[i,3]*bts[3]+ 
+    sim1000[i,4]*bts[4]+ 
+    sim1000[i,5]*bts[5]+ 
+    sim1000[i,6]*bts[6]+
+    sim1000[i,7]*bts[7]+ 
+    sim1000[i,8]*bts[8]+ 
+    sim1000[i,9]*bts[9]+ 
+    sim1000[i,10]*bts[10]+ 
+    sim1000[i,11]*bts[11]+ 
+    sim1000[i,12]*bts[12] +
+    e[i]
+}
+
+d1 <- as.data.frame(sim1000)
+d1$y <- ys
+n <- 10000
+c(5,5,2,0,-5,-5,-2,0,0,0,0,0) -> bts #these are the betas 
+rnorm(1000, mean = 0, sd = .5) -> e #error terms
+
+library(MASS)
+x1 <- rnorm(1000)
+
+x2 <- x1 + rexp(1000)
+
+x3 <- x2 + rexp(1000)
+
+x4 <- x3 + rexp(1000)
+
+diag(8) -> sigma
+
+rep(1, 8)-> mu
+
+mvrnorm(n =n, mu = mu, Sigma = sigma) -> simv5v12
+
+data.frame(x1,x2,x3,x4,simv5v12) -> d2
+              
+c("X1","X2","X3","X4","X5","X6", "X7","X8","X9","X10","X11","X12") -> names(d2)
+
+rep(0, 1000) -> ys #init a vector of zeros
+
+for( i in 1:1000){ #go row by row and create the ys based on the function of e, bts, and d2
+ys[i] <- d2[i,1]*bts[1]+
+    d2[i,2]*bts[2]+ 
+    d2[i,3]*bts[3]+ 
+    d2[i,4]*bts[4]+ 
+    d2[i,5]*bts[5]+ 
+    d2[i,6]*bts[6]+
+    d2[i,7]*bts[7]+ 
+    d2[i,8]*bts[8]+ 
+    d2[i,9]*bts[9]+ 
+    d2[i,10]*bts[10]+ 
+    d2[i,11]*bts[11]+ 
+    d2[i,12]*bts[12] +
+    e[i]
+}
+
+d2$y <- ys
+
 w1 <- rnorm(1000)
 
 w2 <- 2*log(abs(w1)) + rnorm(1000)
@@ -125,12 +587,6 @@ w3 <- 2*log(abs(w2)) + rnorm(1000)
 
 w4 <- 2*log(abs(w3)) + rnorm(1000)
 
-n <- 1000
-
-rep(0, 8) -> mu #mean of each variable
-
-diag(8) -> sigma #creates a 12 by 12 diagonal matrix with 1's down the diagonal
-
 mvrnorm(n =n, mu = mu, Sigma = sigma) -> simw5w12
 
 data.frame(w1,w2,w3,w4,simw5w12) -> d3
@@ -138,9 +594,6 @@ data.frame(w1,w2,w3,w4,simw5w12) -> d3
 c("W1","W2","W3","W4","W5","W6", "W7","W8","W9","W10","W11","W12") -> names(d3)
 
 rep(0, 1000) -> ys #init a vector of zeros
-c(5,5,2,0,-5,-5,-2,0,0,0,0,0) -> bts 
-
-rnorm(1000, mean = 0, sd = .5) -> e 
 
 for( i in 1:1000){ #go row by row and create the ys based on the function of e, bts, and d3
 ys[i] <- d3[i,1]*bts[1]+
@@ -162,126 +615,17 @@ d3$y <- ys
 
 ```
 
+
 #INFTrees and INFFOREST Variable Importance
 ##Theory
 
-While conditional variable importance (Strobl et al) conditionally permutes each variable given the structure signified by the model that predicts the response, $Y \sim X_1,...,X_i,...,X_p$, our method conditionally permutes each variable given the structure outlined in a new model with the variable of interest as the response, $X_i \sim X_1,...X_{i-1},X_{i+1},...X_p$. This is not the most straightforward process, as trees partition the sample space, however, in INFTrees these partitions on the variables $X_1,...X_{i-1},X_{i+1},...X_p$ are treated as psuedo partitions on the variable of interest, $X_i$. This is accomplished by first partitioning on the sample predictors $X_1,...X_{i-1},X_{i+1},...X_p$  and then infering the partitions on $X_i$. As a visualizaiton of this, lets return to the $D_{3}$ dataset discussed in chapter 2. 
+While conditional variable importance (Strobl et al) conditionally permutes each variable given the structure signified by the model that predicts the response, $Y \sim X_1,...,X_i,...,X_p$, our method conditionally permutes each variable given the structure outlined in a new model with the variable of interest as the response, $X_i \sim X_1,...X_{i-1},X_{i+1},...X_p$. This is not the most straightforward process, as trees partition the sample space, however, in INFTrees these partitions on the variables $X_1,...X_{i-1},X_{i+1},...X_p$ are treated as pseudo partitions on the variable of interest, $X_i$. This is accomplished by first partitioning on the sample predictors $X_1,...X_{i-1},X_{i+1},...X_p$  and then inferring the partitions on $X_i$. 
 
-
-```{r,echo = FALSE, warning=FALSE, message=FALSE}
-test <- sample(1000, 200)
-
-d3lite <- round(d3,2)
-
-d3lite <- dplyr::select(d3lite, W1, W2, y)
-
-t1 <- tree(y~ W1+ W2, data = d3lite[-test,])
-t1$frame$yval <- round(t1$frame$yval,2)
-t1 <- prune.tree(t1, best = 5)
-```
-
-```{r t1ch4, echo = FALSE, fig.cap="A Tree of the Model Y~W1,W2", results="asis"}
-plot(t1)
-text(t1)
-```
-
-Lets say we are interested in the variable importance of $\omega_2$. Then using the conditional variable importance (Strobl et al)'s permutation scheme, we would first look at the partitions on $\omega_2$ from this tree. 
-
-
-```{r,echo = FALSE, warning=FALSE, message=FALSE}
-yhats <- predict(t1, d3lite[test,-5])
-d3lite$group <- as.factor(yhats)
-d3lite$group <- ifelse(d3lite$group == levels(d3lite$group)[1], "A",
-                ifelse(d3lite$group == levels(d3lite$group)[2], "B",
-                ifelse(d3lite$group == levels(d3lite$group)[3], "C",
-                ifelse(d3lite$group == levels(d3lite$group)[4], "D", "E"))))
-d3lite$ys <- yhats
-
-library(ggplot2)
-library(plotly)
-
-
-```
-
-
-
-Clearly, the values of $\omega_2$ are less important to the patitioning structure than the interations of $\omega_2$ and the other variables. 
-
-
-
-```{r,echo = FALSE, warning=FALSE, message=FALSE}
-dp <- d3lite
-
-as <- filter(dp, group == "A")
-as$W2 <- sample(as$W2)
-
-dp[dp$group == "A",] <- as
-```
-
-```{r p3ch4, echo = FALSE, fig.cap="Partitions on the Predictor Space W2 from Y~W1,..,W4", results="asis"}
-ggplot(dp, aes(x=W2, y=W1, color = group)) +
-  geom_point()+
-  scale_color_manual(values = thesis)
-```
-
-As you can see in Figure \@ref(fig:blah) above, ...
-
-Under the INFTrees method, before permuting, fit another tree to the model $\omega_2 \sim \omega_1$ 
-
-```{r,echo = FALSE, warning=FALSE, message=FALSE}
-t2 <- tree(W2 ~ W1, data = d3lite[-test,])
-t2$frame$yval <- round(t2$frame$yval,2)
-t2 <- prune.tree(t2, best = 5)
-```
-
-```{r t2ch4, echo = FALSE, fig.cap="A Tree of the Model W2~W1", results="asis"}
-
-plot(t2)
-text(t2)
-```
-
-
-The partitions on $\omega_2$ implied by this model are:
-
-```{r,echo = FALSE, warning=FALSE, message=FALSE}
-yhats <- predict(t2, d3lite[test,-5])
-d3lite$group <- as.factor(yhats)
-d3lite$group <- ifelse(d3lite$group == levels(d3lite$group)[1], "A",
-                ifelse(d3lite$group == levels(d3lite$group)[2], "B",
-                ifelse(d3lite$group == levels(d3lite$group)[3], "C",
-                ifelse(d3lite$group == levels(d3lite$group)[4], "D", "E"))))
-d3lite$ys <- yhats
-```
-
-
-```{r p4ch4, echo = FALSE, fig.cap="Partitions on the Predictor Space W2 from W2~W1", results="asis"}
-ggplot(d3lite, aes(x=W2, y = W1, color = group)) +
-  geom_point()+
-  scale_color_manual(values = thesis)
-```
-
-
-```{r,echo = FALSE, warning=FALSE, message=FALSE}
-dp <- d3lite
-
-as <- filter(dp, group == "A")
-as$W2 <- sample(as$W2)
-
-dp[dp$group == "A",] <- as
-```
-
-```{r p5ch4, echo = FALSE, fig.cap="The Result of Permuting W2 WRT The Partitions", results="asis"}
-ggplot(dp, aes(x=W2, y=W1, color = group)) +
-  geom_point()+
-  scale_color_manual(values = thesis)
-```
-
-
+***ADD BETTER PLOT FOR EXAMPLE**
 
 ###INFTrees
 
 For a CART, $T$, representing the model $Y~X_1,...,X_p$ where $Y,X_1,...,X_p$ are vectors of length n, the INFTrees algorithm proceeds as follows:
-
 
 \begin{algorithm}
 \caption{INFTree, $VI_{inf}(T)$}
@@ -314,7 +658,7 @@ The algorithm for determining $VI_{inf}(R)$ follows similarly.
 \For{each $t \in R$}
 \State Calculate: $\Xi_o =  \frac 1 {\nu_t} RSS(t,\bar{B}^t)$
 \State Calculate a tree $T_i$ that predicts $X_i \sim X_1,...,X_{i-1}, X_{i+1},...X_p$ using the subset of the observations used to fit $t$  
-\State Permute the subset of $X_i$ contained in $\bar{B}_t$ with respect to the set of partions $P_{xi}$ from $T_i$.
+\State Permute the subset of $X_i$ contained in $\bar{B}_t$ with respect to the set of partitions $P_{xi}$ from $T_i$.
 \State Now find $\Xi^* =  \frac 1 {\nu_t} RSS(t,\bar{B}_t^*)$
 \State The difference between these values, $\Xi^* - \Xi_o$,  is the variable importance for $X_i$ on $t$
 \EndFor
@@ -327,7 +671,7 @@ The algorithm for determining $VI_{inf}(R)$ follows similarly.
 
 ###Notes on the Implemetation
 
-Implementing the `INFFOREST` and therefor the `INFTREES` algorithms, required creating a suite of functions to create trees and random forests. The trees are fit following the standard two-part CART-like algorithm. [^1] The function chooses a variable to split on with linear correlation with respect to $Y$, but instead of looking for correlations above a certain threshold which is common, it chooses the variable with the highest correlation when compared to its peers. This alleivates the situation where a variable with a non-linear relationship would be passed over again and again. The splitting is done via minimization of the following function with respect to $i$:
+Implementing the `INFFOREST` and therefor the `INFTREES` algorithms, required creating a suite of functions to create trees and random forests. The trees are fit following the standard two-part CART-like algorithm. [^1] The function chooses a variable to split on with linear correlation with respect to $Y$, but instead of looking for correlations above a certain threshold which is common, it chooses the variable with the highest correlation when compared to its peers. This alleviates the situation where a variable with a non-linear relationship would be passed over again and again. The splitting is done via minimization of the following function with respect to $i$:
 
 $$RSS_{node} (i,X,Y) = RSS_{leaf}(Y|X <i) + RSS_{leaf}(Y|X \geq i) $$
 $$RSS_{leaf} = \sum (y - \hat{y})^2 $$
@@ -335,31 +679,89 @@ $$\hat{Y}: \hat{y} \in \hat{Y}: \hat{y} = E(Y), \ where\  |\hat{Y}| = |Y|$$
 
 This function considers the regression case only, and only numeric predictors. Leafs are created when the resultant split would be unsatisfactory, i.e. at least one daughter node would have five members or less. This generates very large trees - a quality that is not an issue in random forests but may be problematic in a stand-alone setting. At this time, there is also no function to prune the trees. 
 
+####Table __: A Home-Grown Tree on $Y~X_1+X_2+X_3+X_4$
+
+```{r, echo=FALSE, warning=FALSE, cache=TRUE}
+ t1 <- tree.rf(d2$y[1:100],d2[1:100, 1:4],mtry = 4)
+kable(t1[[2]])
+```
+
+
 The INFTREE function follows the algorithm above *reference*. The partitions on $X_j$ are generated by fitting a tree, $T$, to the model $X_j \sim X_1,..., X_{j-1}, X_{j+1},..X_p$ and calculating the predictions $T(X_1,..., X_{j-1}, X_{j+1},..X_p)$. Then permuting $X_j$ with respect to the partitions on $X_j$ given by those predictions. For example, if $x_j \in X_j$ and the value of $T(x_1,..., x_{j-1}, x_{j+1},..x_p)$ corresponding to $x_j$ is $\alpha$, $x_j$ is permuted along with the other values of $X_j$ that also have $T(x_1,..., x_{j-1}, x_{j+1},..x_p)$ corresponding to $\alpha$.
 
+The values of $INFFOREST(X_j)$ are scaled in the following way: since the INFFOREST function computes the INFFTREES, (or the difference in post and pre permutation RSS), values in a tree-wise manner, each tree's values are divided by the maximum value. This ensures that the values are between zero and one, and that in each tree one variable is clearly deemed the *most important*. 
 
 
-[^1]: A great deal of effort was undertaken by the author to find the defenative, authentic CART algorithm. This implementation follows the rough strokes set out in the 1984 text *Classification and Regression Trees* to the best of the author's ability and may not be exactly the algorithm found in R packages like 'tree()'
+[^1]: A great deal of effort was undertaken by the author to find the definitive, authentic CART algorithm. This implementation follows the rough strokes set out in the 1984 text *Classification and Regression Trees* to the best of the author's ability and may not be exactly the algorithm found in R packages like 'tree()'
 
 
 ###Results 
 
+```{r forest,echo=FALSE, message=FALSE, cache=TRUE}
+rf1 <- rforest(d1$y[1:400],d1[1:400, 1:4],mtry = 2, ntree = 100)
+rf2 <- rforest(d2$y[1:400],d2[1:400, 1:4],mtry = 2, ntree = 100)
+rf3 <- rforest(d3$y[1:400],d3[1:400, 1:4],mtry = 2, ntree = 100)
+```
+
+```{r infforest,echo=FALSE, message=FALSE, cache=TRUE}
+inf1 <- infforest(rf1, d1$y[1:400],d1[1:400, 1:4])
+inf2 <- infforest(rf2, d2$y[1:400],d2[1:400, 1:4])
+inf3 <- infforest(rf3, d3$y[1:400],d3[1:400, 1:4])
+```
+
+```{r infforestDist, echo=FALSE, message=FALSE, cache=TRUE, warning=FALSE}
+inff1 <- melt(as.data.frame(inf1))
+inff2 <- melt(as.data.frame(inf2))
+inff3 <- melt(as.data.frame(inf3))
+```
+
+
 
 *NOTE* INFFOREST, like any random forest method involving tree- level calculations is a computationally intensive function. The forests are large, unpruned at any level, and INFFOREST takes time to compute. Because of this reason the datasets discussed in CH2 have been altered so that instead of 1000 x 13 dimensional datasets they are 400 x 13. This decreases computation time immensely. (**see figure ___ in appendix**)
 
-**FIGURE OF INFFOREST DISTRIBUTION FOR EACH DATASET**
 
-There a little suprises in the distru
+```{r figinfdists, echo = FALSE, message = FALSE, warning = FALSE, fig.cap="INFFOREST Distributions for Datasets D1, D2, and D3", results="asis"}
+
+par(mfrow=c(1,3))
+ggplot(data = inff2,aes(x = inff1$value, fill = inff1$var)) + 
+  geom_density(alpha = .7) + 
+  scale_fill_manual(values = thesis)+
+  ggtitle("D1")
+ggplot(data = inff2,aes(x = inff2$value, fill = inff2$var)) + 
+  geom_density(alpha = .7)+ scale_fill_manual(values = thesis)+
+  ggtitle("D2")
+ggplot(data = inff2,aes(x = inff3$value, fill = inff3$var)) + 
+  geom_density(alpha = .7)+ scale_fill_manual(values = thesis)+
+  ggtitle("D3")
+
+```
+
 
 In the situation where there is little correlation between the predictors, the distribution of the INFFOREST output is a sharp peak ending at one of the end points, zero or one. When there are, however, strong correlations between the predictor variables, and `mtry` is suitably large but smaller than `p`, the trees in the forest must decide between them. In these situations, the INFFOREST distribution is multimodal, with one peak at one end of the interval, $INFFOREST(X_i) = 1$ and another when $INFFOREST(X_i) = 0$. 
 
 To demonstrate this situation, take the dataset $D2$, as described above. In the random forest corresponding to this model, the variables $X2$ and $X3$ are considered substitutes for each other. In the trees where $X2$ has $INFFOREST = 1$, $X3$ has $INFFOREST <<$ and visa versa. 
 
-**FIGURE OF BOTH INFFOREST DISTRIBUTIONs OF X2 AND X3 TOGETHER FOLLOWED BY THEIR DISTRIBUTIONS CORRESPONDING TO THE SAME TREES**
+```{r x1x2infcomp, echo=FALSE, warning=FALSE, error=FALSE}
+x21 <- inf3[inf3[,2] >= .5, c(1,2,3)]
+x31 <- inf3[inf3[,2] < .5, c(1,2,3)]
+
+x21melt <- melt(as.data.frame(x21[,-2]))
+x31melt <- melt(as.data.frame(x31[,-2]))
+```
+
+
+```{r figx2x1inf, echo = FALSE, message = FALSE, warning = FALSE, fig.cap="INFFOREST Distributions for W2 and W3 when the INFFOREST value for X2 is >= .5 or Not ", results="asis"}
+layout(matrix(c(1,2), 2, 2, byrow = TRUE))
+ggplot(data = x21melt,aes(x = x21melt$value, fill = x21melt$var)) + 
+  geom_density(alpha = .7)+ scale_fill_manual(values = thesis)
+ggplot(data = x31melt,aes(x = x31melt$value, fill = x31melt$var)) + 
+  geom_density(alpha = .7)+ scale_fill_manual(values = thesis)
+```
+
 
 (i.e. the INFFOREST distributions of X2 and X3 in the trees where X3< .5)
 
-Of course, one may be inclined to infer a p-value for the null hypothesis that $INFFOREST = 0$ for each of these variables. This could be done straight-forwardly enough in situations where there is not strong multicolinearity within the predictors as the distributions are relaibly half of the familiar bell shaped curve centered around either zero or one. It would be quite difficult, however, for INFFOREST alone to test the significance of the INFFOREST distribution corresponding to correlated, paired predictors and it may not makes sense to do so at all. *talk with Andrew about fixing this?* 
+Of course, one may be inclined to infer a p-value for the null hypothesis that $INFFOREST = 0$ for each of these variables. This could be done straight-forwardly enough in situations where there is not strong multicolinearity within the predictors as the distributions are reliably half of the familiar bell shaped curve centered around either zero or one. It would be quite difficult, however, for INFFOREST alone to test the significance of the INFFOREST distribution corresponding to correlated, paired predictors and it may not makes sense to do so at all. *talk with Andrew about fixing this?* 
 
  
 
