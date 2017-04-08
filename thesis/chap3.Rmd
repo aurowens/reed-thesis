@@ -41,6 +41,55 @@ library(reshape)
 thesis <- c("#245e67", "#90bd98", "#cfd0a0", "#c49e46", "#d28383")
 ```
 
+```{r stroblSim2, warning=FALSE, message=FALSE, echo=FALSE}
+rep(0, 12) -> mu #mean of each variable
+
+diag(12) -> sigma #creates a 12 by 12 diagonal matrix with 1's down the diagonal
+
+sigma -> sigma1
+.9 -> sigma1[1,2]
+.9 -> sigma1[2,1] #adding the block correlation between the first four variables
+.9 -> sigma1[1,3]
+.9 -> sigma1[3,1]
+.9 -> sigma1[3,2]
+.9 -> sigma1[2,3]
+.9 -> sigma1[1,4]
+.9 -> sigma1[4,1]
+.9 -> sigma1[2,4]
+.9 -> sigma1[4,2]
+.9 -> sigma1[4,3]
+.9 -> sigma1[3,4]
+
+1000 -> n #number of observations
+set.seed(1)
+mvrnorm(n =n, mu = mu, Sigma = sigma1) -> sim1000 #sampling from the multivariate normal 
+c(5,5,2,0,-5,-5,-2,0,0,0,0,0) -> bts #these are the betas 
+
+rnorm(1000, mean = 0, sd = .5) -> e #error terms
+
+rep(0, 1000) -> ys #init a vector of zeros
+
+for( i in 1:1000){ #go row by row and create the ys based on the function of e, bts, and sim1000
+ys[i] <- sim1000[i,1]*bts[1]+
+    sim1000[i,2]*bts[2]+ 
+    sim1000[i,3]*bts[3]+ 
+    sim1000[i,4]*bts[4]+ 
+    sim1000[i,5]*bts[5]+ 
+    sim1000[i,6]*bts[6]+
+    sim1000[i,7]*bts[7]+ 
+    sim1000[i,8]*bts[8]+ 
+    sim1000[i,9]*bts[9]+ 
+    sim1000[i,10]*bts[10]+ 
+    sim1000[i,11]*bts[11]+ 
+    sim1000[i,12]*bts[12] +
+    e[i]
+}
+
+d1 <- as.data.frame(sim1000)
+d1$y <- ys
+
+names(d1) <- c("X1" ,"X2" ,"X3","X4","X5","X6","X7","X8","X9","X10","X11","X12", "y")
+```
 ```{r, echo = FALSE}
 w1 <- rnorm(1000)
 
@@ -92,33 +141,32 @@ d3$y <- ys
 
 ###Variable Importance on a Single Tree
 
-Breiman et al in *Classification and Regression Trees* (1984) propose a method for variable importance for individual trees that stems from their definition of $\tilde{s}$, a surrogate split. Surrogate splits help Brieman et al deal with several common problems one may have: modeling with missing data, diagnosing masking, and variable importance. They are defined using logic that resembles that behind random forests. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Breiman et al in *Classification and Regression Trees* (1984) propose a method for variable importance for individual trees that stems from their definition of $\tilde{s}$, a surrogate split. Surrogate splits help Brieman et al deal with several common problems: missing data, masking, and variable importance. They are defined using logic that resembles that behind random forests. 
 
 Definitions
 
-Assume the standard structure for tree models. Let $D$ be the dataset composed of $D = {Y, X_1,...X_p}$, where the model we would like to estimate is of the form $T: Y \sim X_1,...X_p$. For any node $t \in T(D)$, $s*$ is the best split of the node into daughters $t_r$ and $t_l$. Take $X_i \in D$ and let $S_i$ be the set of all of the splits on $X_i$ in $T$. Then set $\bar{S_i}$ equal to the complement of $S_i$, $\bar{S_i} = S_i^c$. For any possible split $s_i \in S_i \cup \bar{S_i}$, $s_i$ will split the node $t$ into two daughters, $t_{i,l}$ and $t_{i,r}$. Count the number of times that $s*$ and $s_i$, while splitting differently, generate the same left daughter $t_{l}$ as $N_{LL}$ and the number of times they generate the same right daughter as $N_{RR}$. Then the probability that a case falls within $t_L \cap t'_L$ is $P(t_L \cap t'_L) = \sum_j \frac{\pi(j) N_j(LL)}{N_j}$ and the probability that a case falls within $t_R \cap t'_R$ is $P(t_R \cap t'_R) = \sum_j \frac{\pi(j) N_j(RR)}{N_j}$. Where $\pi(j)$ is the prior assumed for the the jth variable.Finally, the probability that a surrogate split predicts $s*$ is $P(s*, s_M) = (t_R \cap t'_R) + P(t_L \cap t'_L)$. Then the surrogate split is the value of $s*$ that maximizes this probability. It is denoted $\tilde{s}$
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Assume the standard structure for tree models. Let $D$ be the dataset composed of $D = {Y, X_1,...X_p}$, where the model we would like to estimate is of the form $T: Y \sim X_1,...X_p$. For any node $t \in T(D)$, $s*$ is the best split of the node into daughters $t_r$ and $t_l$. Take $X_i \in D$ and let $S_i$ be the set of all of the splits on $X_i$ in $T$. Then set $\bar{S_i}$ equal to the complement of $S_i$, $\bar{S_i} = S_i^c$. For any possible split $s_i \in S_i \cup \bar{S_i}$, $s_i$ will split the node $t$ into two daughters, $t_{i,l}$ and $t_{i,r}$. Count the number of times that $s*$ and $s_i$, while splitting differently, generate the same left daughter $t_{l}$ as $N_{LL}$ and the number of times they generate the same right daughter as $N_{RR}$. Then the probability that a case falls within $t_L \cap t'_L$ is $P(t_L \cap t'_L) = \sum_j \frac{\pi(j) N_j(LL)}{N_j}$ and the probability that a case falls within $t_R \cap t'_R$ is $P(t_R \cap t'_R) = \sum_j \frac{\pi(j) N_j(RR)}{N_j}$. Where $\pi(j)$ is the prior assumed for the the jth variable.Finally, the probability that a surrogate split predicts $s*$ is $P(s*, s_M) = (t_R \cap t'_R) + P(t_L \cap t'_L)$. Then the surrogate split is the value of $s*$ that maximizes this probability. It is denoted $\tilde{s}$
 
-A surrogate split $\tilde{s}$,is one that estimates the best possible univariate split $s*$ on node $t$.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;A surrogate split $\tilde{s}$,is one that estimates the best possible univariate split $s*$ on node $t$.
 
 **Defintion: Variable Importance, Single Tree**
 
 
 $$VI_{tree}(X_i, T) = \sum_{t \in T} \Delta RSS(\tilde{s_i}, t)$$
-Or the decrease of RSS attributable to $X_i$ across the tree $T$. In *Classification and Regression Trees*,
-Brieman et al, outline several potential problems with this method that the do not attempt to solve. First, that this is only one of a number of reasonable ways to define variable importance. Second, the variable importances for variables $X_1,..,X_p$ can be effected by outliers or random fluctuations within the data. (Ch 5.3)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Or the decrease of RSS attributable to $X_i$ across the tree $T$. In *Classification and Regression Trees*,Brieman et al, outline several potential problems with this method that the do not attempt to solve. First, that this is only one of a number of reasonable ways to define variable importance. Second, the variable importances for variables $X_1,..,X_p$ can be effected by outliers or random fluctuations within the data. (Ch 5.3)
 
 ###Variable Importance for a Random Forest
 
-One way to define variable importance for a random forest follows directly from Breiman et al's definition for a single tree. Recall that each tree in a random forest is fit to a bootstrapped sample of the original observations. To estimate the test error, therefor, no cross validation is needed - each tree is simply tested against the test set of observations that were not in that tree's initial training set. To determine variable importance for a predictor $X_j$, we look at the RSS of the each tree's prediction that did not split on $X_j$. These values are then averaged over the subset forest that did not include $X_j$. A large value would imply that in trees that included $X_j$, the predictive capabilities were increased.  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;One way to define variable importance for a random forest follows directly from Breiman et al's definition for a single tree. Recall that each tree in a random forest is fit to a bootstrapped sample of the original observations. To estimate the test error, therefor, no cross validation is needed - each tree is simply tested against the test set of observations that were not in that tree's initial training set. To determine variable importance for a predictor $X_j$, we look at the RSS of the each tree's prediction that did not split on $X_j$. These values are then averaged over the subset forest that did not include $X_j$. A large value would imply that in trees that included $X_j$, the predictive capabilities were increased.  
 
-To formalize that idea, let's refer to the set of trees that did not consider $X_j$, $T_{x_j}^c$. Now, $T_{x_j}^c \subset R$, the random forest. The subset of the original data that will be tested on each tree, $t$, is $\bar{B}^t$. The dimensions of $\bar{B}^t$ are $\nu_t$ x $p$, where $p$ is the number of predictors and $\nu \leq n$. The number of trees in $T_{x_j}^c$ is $\mu$ where $\mu \leq ntree$
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;To formalize that idea, let's refer to the set of trees that did not consider $X_j$, $T_{x_j}^c$. Now, $T_{x_j}^c \subset R$, the random forest. The subset of the original data that will be tested on each tree, $t$, is $\bar{B}^t$. The dimensions of $\bar{B}^t$ are $\nu_t$ x $p$, where $p$ is the number of predictors and $\nu \leq n$. The number of trees in $T_{x_j}^c$ is $\mu$ where $\mu \leq ntree$
 
-Now, base variable importance is:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Now, base variable importance is:
 
 $$VI_{\alpha}(X_j, R) =  \sum_{t \in T_{x_j}^c} \frac 1 {\nu_t} RSS(t,\bar{B}_t)$$
 
 
-However, this method poses some problems. Namely, while variable importance for random forests is more stable than for the variable importance values for CART, (this is because the model is less variable in general), it is lacking the traditional inferential capabilities of other regression models. In an effort to derive a p-value for variable importance values, Breiman 2001b, describes a *permuted variable importance* or $VI_{\beta}$ that does not utilize $T_{x_j}^c$.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;However, this method poses some problems. Namely, while variable importance for random forests is more stable than for the variable importance values for CART, (this is because the model is less variable in general), it is lacking the traditional inferential capabilities of other regression models. In an effort to derive a p-value for variable importance values, Breiman 2001b, describes a *permuted variable importance* or $VI_{\beta}$ that does not utilize $T_{x_j}^c$.
 
 \begin{algorithm}
 \caption{Permuted Variable Importance for Random Forests, $VI_{\beta}$}
@@ -138,25 +186,27 @@ However, this method poses some problems. Namely, while variable importance for 
 \end{algorithmic}
 \end{algorithm}
 
-Again, a large variable importance value suggests that $X_j$ is a valuable predictor for the model.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Again, a large variable importance value suggests that $X_j$ is a valuable predictor for the model.
  
 
 ##Strobl et al Respond (2008)
 
-Strobl et al (2008) respond to Breiman's method with one main argument: the null hypothesis implied by the permutation distribution utilized in permuted variable importance is that $X_i$ is independent of $Y$ **and** ${X_j \notin X_1,...,X_p}$ so the null hypothesis will be rejected in the case where $X_j$ is independent of $Y$ but not some subset of the other predictors. As correlation among the predictors is very common in data sets that are used for random forests, this is a large problem for Breiman's method. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Strobl et al (2008) respond to Breiman's method with one main argument: the null hypothesis implied by the permutation distribution utilized in permuted variable importance is that $X_i$ is independent of $Y$ **and** ${X_j \notin X_1,...,X_p}$ so the null hypothesis will be rejected in the case where $X_j$ is independent of $Y$ but not some subset of the other predictors. As correlation among the predictors is very common in data sets that are used for random forests, this is a large problem for Breiman's method. 
 
-To alleviate this difficulty, Strobl et al propose a permutation scheme under the null hypothesis that $X_j$ given it's relationship with the other predictors is independent of $Y$.  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;To alleviate this difficulty, Strobl et al propose a permutation scheme under the null hypothesis that $X_j$ given it's relationship with the other predictors is independent of $Y$.  
 
 \begin{algorithm}
 \caption{Conditional Variable Importance for Random Forests, $VI_{\gamma}$}
 \label{strobl}
 \begin{algorithmic}[1]
 \State Fit a random forest, $R$ on the dataset $D$ fitting the model $Y \sim X_1,...,X_p$.
-\For{each $X_i \in {{X_1,...,X_p}}$}
 \For{each $t \in R$}
 \State Calculate: $\Psi_o =  \frac 1 {\nu_t} RSS(t,\bar{B}^t)$
-\State Permute $X_i$ according to the partitions on $X_j$ from $t$ (see notes below on this step)
-Now find $\Psi^* =  \frac 1 {\nu_t} RSS(t,\bar{B}_t^*)$
+\For{each $X_i \in {{X_1,...,X_p}}$}
+\State Select $Z \in X_1,...,X_{i-1}, X_{i+1},...,X_p$ to condition on when permuting $X_j$
+\State Use the cutpoints on each variable in $Z$ to create a grid on $X_j$
+\State Permute $X_j$ with respect to this grid
+\State Now find $\Psi^* =  \frac 1 {\nu_t} RSS(t,\bar{B}_t^*)$
 \State The difference between these values, $\Psi^* - \Psi_o$,  is the variable importance for $X_j$ on $t$,  
 \EndFor
 \State Average over all $t \in R$ 
@@ -166,80 +216,7 @@ Now find $\Psi^* =  \frac 1 {\nu_t} RSS(t,\bar{B}_t^*)$
 \end{algorithmic}
 \end{algorithm}
 
-As an example for $5$ in the algorithm above, consider the dataset $D_{3,lite}$, where $D_{3,lite} = {\omega_1, \omega_2, y}$ where $D_{3,lite}$ has dimensions $n = 100$, $p = 2$. A simple CART tree with 5 splits on the model $Y$ ~$\omega_1, \omega_2$
 
-```{r, echo = FALSE, warning=FALSE, message=FALSE}
-
-s <- sample(1000, 200)
-
-  
-d3lite <- d3[s,c(1,2,13)]
-
-
-t <- tree(y ~., data = d3lite)
-t <- prune.tree(t, best = 5)
-
-plot(t)
-text(t)
-
-yhats <- predict(t, d3lite[, -13])
-d3lite$group <- as.factor(yhats)
-d3lite$group <- ifelse(d3lite$group == levels(d3lite$group)[1], "A",
-                ifelse(d3lite$group == levels(d3lite$group)[2], "B",
-                ifelse(d3lite$group == levels(d3lite$group)[3], "C",
-                ifelse(d3lite$group == levels(d3lite$group)[4], "D", "E"))))
-d3lite$ys <- yhats
-
-library(ggplot2)
-library(plotly)
-
-ggplot(d3lite, aes(x=W1, y=W2, color = group)) +
-  geom_point()+
-  ggtitle("Partitions on the Predictor Space W1,W2 from T1")+
-  scale_color_manual(values = thesis)
-
-group <- levels(as.factor(d3lite$group))
-predictions <- levels(as.factor(yhats))
-rangeW1 <- range(d3lite$W1[d3lite$group == "A"])
-rangeW1 <- rbind(rangeW1, range(d3lite$W1[d3lite$group == "B"]))
-rangeW1 <- rbind(rangeW1, range(d3lite$W1[d3lite$group == "C"]))
-rangeW1 <- rbind(rangeW1, range(d3lite$W1[d3lite$group == "D"]))
-rangeW1 <- rbind(rangeW1, range(d3lite$W1[d3lite$group == "E"]))
-
-rangeW2 <- range(d3lite$W2[d3lite$group == "A"])
-rangeW2 <- rbind(rangeW2, range(d3lite$W2[d3lite$group == "B"]))
-rangeW2 <- rbind(rangeW2, range(d3lite$W2[d3lite$group == "C"]))
-rangeW2 <- rbind(rangeW2, range(d3lite$W2[d3lite$group == "D"]))
-rangeW2 <- rbind(rangeW2, range(d3lite$W2[d3lite$group == "E"]))
-
-t1 <- cbind("Group"= group,"Predicted Value of Y" = predictions,
-            "Min(W2)" = round(rangeW2[,1],2), "Max(W2)" = round(rangeW2[,2],2), 
-            "Min(W1)" = round(rangeW1[,1],2),"Max(W1)" = round(rangeW1[,2],2))
-
-row.names(t1) <- c()
-kable(t1)
-```
-
-
-If we permute the $\omega_1$ values in group $B$, this is what that plot looks like:
-
-```{r,echo = FALSE, warning=FALSE, message=FALSE}
-dp <- d3lite
-
-bs <- filter(dp, group == "B")
-bs$W1 <- sample(bs$W1)
-
-dp[dp$group == "B",] <- bs
-ggplot(dp, aes(x=W1, y=W2, color = group)) +
-  geom_point()+
-  ggtitle("Partitions on the Predictor Space W1,W2 from T1")+
-  scale_color_manual(values = thesis)
-
-```
-
-
-##Inferential Variable Importance
-
-This thesis hopes to be a response to conditional variable importance as outlined by Strobl et al 2008. First is that the practice of permuting given the partitions from the model $Y \sim X_1,...,X_p$ instead of $X_j \sim X_1,..,X_p$. This procedure is reminisent of Breiman et al's notions of grouped predictors in the book *Classification and Regression Trees*.  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;There are several ways mentioned in ref:@strobl2008 to choose the set of predictors $Z$ to condition $X_j$ upon. $Z$ might be chosen due to outside theory about the problem or $Z$ might include every $p-1$ predictor possible. In that paper's simulations section as well as in this one's, $Z$ is chosen as the set of predictors with empirical correlation $\geq .2$
 
 

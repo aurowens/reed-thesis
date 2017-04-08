@@ -215,7 +215,7 @@ tree.rf <- function(y,xs, mtry){
 
 ###################################AUX TREE FUNCTIONS#######################################
 
-predict.tree.rf <- function(t,y,xs) {
+predict.tree.rf <- function(t,xs) {
   t <- t[[2]] 
   first.split <- t[1,]
   
@@ -242,7 +242,7 @@ predict.tree.rf <- function(t,y,xs) {
   
 
   j <- 0
-  predictions <- c(rep(100000, length(y)))
+  predictions <- c(rep(100000, nrow(xs)))
 ###SKIPPING CONDITION
     #there's no need to map out the whole tree and have it on file, each y just needs the tree to 
     #a. check the split condition, i.e. xs[,var] < split.cutleft 
@@ -250,8 +250,8 @@ predict.tree.rf <- function(t,y,xs) {
     #b.2. if no, go one ahead
     #c. stop at leaf, pred[i] <- ypred
     
-  for(i in 1:(length(y))){
-    yh <- y[i]
+  for(i in 1:(nrow(xs))){
+
     xsh <- xs[i,]
     
     if(xsh[,first.split$var] < first.split$split.cutleft){
@@ -300,7 +300,7 @@ rforest <- function(y, xs,  mtry, ntree) {
  # y <- d[,yi]
  # xs <- d[,(yi + 1 - 2)*-1]
   
-  while (length(rforest) < ntree) {
+  while (length(rforest) <= ntree) {
     rforest[[length(rforest)+1]] <- tree.rf(y,xs,mtry)
   }
   return(rforest)
@@ -322,6 +322,18 @@ infforest <- function(rf,y,xs) {
   
     ##generate distribution of vi's from frames - pval
   return(vi.frame)
+}
+
+infforest.test <- function(inf){
+  p <- rep(10000, ncol(inf))
+  mu <- c()
+  sd <- c()
+  for(i in 1:ncol(inf)){
+    mu[i] <- mean(inf[,i])
+    sd[i] <- sd(inf[,i])
+    p[i] <- pnorm(0,mean = mu[i], sd = sd[i])
+    }
+  return(data.frame("var" =  names(as.data.frame(inf)), "P(var > 0)"= p, "mean" = mu, "sd" = sd))
 }
 
 ##############################CONDITIONAL VARIABLE IMPORTANCE################################
@@ -352,15 +364,10 @@ permuted.inf <- function(rf, y, xs) {
 
 ###################################INFTREES SUPPORT###########################################
 
-VIdev<- function(t2, x){
-  return(sum(as.numeric(t2[t2$var == x, 3])))
-}
-
 inftrees <- function(t, y, xs) {
 
   rss.post <- rep(0, ncol(xs))
   vi <- rep(0, ncol(xs))
-  rss.pre <- rep(0, ncol(xs))
   
   ta <- t
   t <- t[[2]]
@@ -388,7 +395,7 @@ inftrees <- function(t, y, xs) {
     predictions.for.y.xi.perm <- predict.tree.rf(ta,y,xs.for.permuting.i)
     rss.post[i] <- abs(sum((y - as.numeric(predictions.for.y.xi.perm))^2)/length(y) - rss.pre)
   }
-  rss.post <- rss.post/max(abs(rss.post))
+  rss.post <- rss.post/mean((rss.post))
   names(rss.post) <- names(xs)
   return(rss.post)
 }
@@ -421,7 +428,7 @@ strobltrees <- function(t,y,xs) {
   if(sum(abs(rss.post)) == 0) {
     return(rss.post)  
   } else{
-    rss.post <- rss.post/max(abs(rss.post))
+    rss.post <- rss.post/mean(rss.post)
     # names(rss.post) <- names(xs)
     return(rss.post)
   }
@@ -432,7 +439,7 @@ briemantrees <- function (t,y,xs){
   ta <- t
   t <- t[[2]]
   
-  rss.pre <- sum((y - as.numeric(predict.tree.rf(ta, y, xs)))^2)
+  rss.pre <- sum((y - as.numeric(predict.tree.rf(ta, xs)))^2)
   
   rss.post <- rep(0, ncol(xs))
   xs.for.permuting <- xs

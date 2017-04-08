@@ -1,4 +1,4 @@
----
+--- 
 author: 'Aurora Owens'
 date: 'May 2017'
 division: 'Mathematics and Natural Sciences'
@@ -6,10 +6,10 @@ advisor: 'Andrew Bray'
 #altadvisor: 'Your Other Advisor'
 # Delete line 6 if you only have one advisor
 department: 'Mathematics'
-title: 'Statistical Inference on Random Forests'
+title: 'INFFOREST Variable Importance on Random Forests'
 abstract: >
   `r paste(readLines('abstract.Rmd'), collapse = ' ')`
-# If you'd rather include the preliminary content in files instead of inline
+# If you'd rather include the preliminary content infiles instead of inline
 # like below, use a command like that for the abstract above.  Note that a tab is 
 # needed on the line after the >.
 acknowledgements: >
@@ -18,7 +18,7 @@ dedication: >
   You can have a dedication here if you wish. 
 preface: >
   This is an example of a thesis setup to use the reed thesis document class.
-bibliography: bib/thesis.bib
+#bibliography: bib/thesis.bib
 # Download your specific bibliography database file and refer to it in the line above.
 csl: csl/apa.csl
 # Download your specific csl file and refer to it in the line above.
@@ -37,7 +37,7 @@ lof: true
 header-includes:
 - \usepackage{algorithm}
 - \usepackage{algpseudocode}
-
+- \usepackage{float}
 ---
 
 <!--
@@ -79,8 +79,6 @@ This is for including Chapter 1.  Notice that it's also good practice to name yo
 <!--
 Immediately below is the chunk for Chapter 2.
 --> 
-```{r chapter1a, child = 'chap1a.Rmd'}
-```
 
 ```{r chapter2, child = 'chap2.Rmd'}
 ```
@@ -102,7 +100,4 @@ Add other chunks here for other chapters in your thesis.  Note that if you use t
 <!--
 The bib chunk below must go last in this document according to how R Markdown renders.  More info is at http://rmarkdown.rstudio.com/authoring_bibliographies_and_citations.html
 -->
-
-```{r bib, child = 'bibliography.Rmd'}
-```
 

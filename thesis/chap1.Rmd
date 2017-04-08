@@ -21,24 +21,17 @@ library(party)
 
 ###Trees
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Decision trees may be familiar to many with a background in the social or medical sciences as convenient ways to represent data and can assist in decision making. Morgan and Sonquist (1963) derived a way for constructing trees motivated by the specific feature space of data collected from interviews and surveys. Unlike, say agricultural data which involves mostly numerical variables like rainfall, the data collected from interviews is mostly categorical. On top of this issue, the datasets Morgan and Sonquist dealt with had few participants, *n*, and much data collected on them, *p*. To continue with their list of difficulties, there was reason to believe that there were lurking errors in the variables that would be hard identify and quantify. Lastly, many of the predictors were correlated and Morgan and Sonquist doubted that the additive assumptions of many models would be appropriate for this data. Morgan and Sonquist noted that while many statistical methods would have difficulty accurately parsing this data, a clever researcher with quite a lot of time could create a suitable model simply by grouping values in the feature space and predicting that the response corresponding to these values would be the mean of the observed responses given the grouped conditions. Their formalization of this procedure in terms of "decision rules" laid the ground work for future research on decision trees. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Decision trees may be familiar to many with a background in social science as a convenient way to represent data and assist in decision making. Morgan and Sonquist (1963) derived a way for constructing trees motivated by the specific feature space of data collected from interviews and surveys. Unlike, agricultural data which involves mostly numeric variables, the data collected from interviews is mostly categorical. On top of this, the datasets Morgan and Sonquist dealt with had few participants, and a lot of data collected on each one. To add to their difficulties, there was reason to believe that there were lurking errors in the data that would be hard identify and quantify. Lastly, many of the predictors were correlated. Morgan and Sonquist doubted that the additive assumptions of many models would be appropriate for this data. They noted that while many statistical methods would have difficulty accurately parsing this data, a clever researcher with quite a lot of time could create a suitable model simply by grouping values in the feature space and predicting that the response corresponding to these values would be an average of the observed responses given the grouped conditions. Their formalization of this procedure in terms of "decision rules" laid the ground work for future research on decision trees. 
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Later researchers proposed new methods for creating trees that improved upon the Morgan and Sonquist model. Leo Breiman et al 1984 proposed an algorithm called CART, *classification and regression trees*, that would allow trees to be fit on various types of data. An alternative to this method is conditional inference trees. Torsten Hothorn, Kurt Hornik, Achim Zeileis argue in their 2006 paper *Unbiased Recursive Partitioning: A Conditional Inference Framework*, CART has a selection bias toward variables with either missing values or a great number of possible splits. This bias can effect the interpretability of all tree models fit using this method. As an alternative to CART and other algorithms, Hothorn et al propose a new method, conditional inference trees.   
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Later researchers proposed new methods for creating trees that improved upon the Morgan and Sonquist model. Leo Breiman et al (1984) proposed an algorithm called CART, *classification and regression trees*, that would allow trees to be fit on various types of data. An alternative to this method is conditional inference trees. Torsten Hothorn, Kurt Hornik, Achim Zeileis argue in their 2006 paper *Unbiased Recursive Partitioning: A Conditional Inference Framework*, CART has a selection bias toward variables with either missing values or a great number of possible splits. This bias can effect the interpretability of all tree models fit using this method. As an alternative to CART and other algorithms, Hothorn et al propose a new method, conditional inference trees.   
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; There is a limit to the predictive capabilities of a single tree as they suffer from high variance. To alleviate this, random forests are often used instead. They function by enlisting the help of many trees, and then by aggregating the responses over all of them but with a subtle trick that ensures the trees will be independent of each other. At each split only *m* variables are considered as possible candidates. Random forests and their algorithms will be discussed at length in Chapter 2.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; There is a limit to the predictive capabilities of a single tree as they suffer from high variance. To alleviate this, aggregate methods called forests are often used instead. They function by enlisting the help of many trees, and then by aggregating the responses over all of them. The two most common types of forests are bagged and random forests. 
 
 ## What We Mean When We Talk About Inference
 
 ###Inferential vs Descriptive Statistics
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; A note should be made of the difference between inferential and descriptive statistics. This paper's aim is to describe a process of making inferential claims using random forests, not descriptive ones. Descriptive statistics describe the data at hand without making any reference to a larger data generating system that they come from. It follows that inferential statistics then make claims about the data generating system given the data at hand. 
-
----Frequentist vs Bayesian---
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ---There is some debate about interpreting inferential statistics. On one hand, we have the Bayesian model---
-
-*Need a better way to discuss inference than Bayes/frequentist*
-
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; A note should be made of the difference between inferential and descriptive statistics. This paper's aim is to describe a process of making inferential claims using random forests, not descriptive ones. Descriptive statistics describe the data at hand without making any reference to a larger data generating system that they come from. It follows that inferential statistics then make claims about the data generating system given the data. 
 
 ##Permutations and Populations
 
@@ -47,46 +40,39 @@ library(party)
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The permutation family of methods, on the other hand, only assumes that the observed result was caused by experimental variability. The test statistics is first calculated for the observed data, then the data is permuted a number of times. The statistic is calculated after each permutation to dervive a distribution of possible values. Then the original test statistic is tested against this distribution. If it is exceptionally rare, then there is evidence that our observation was not simply experimental variability.  
 
 
+##A Step Back 
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;A random forest $R_f$ is the set of functions $T_1,...,T_N$ where each $T_j$ is a piece-wise function from the sample space $\Omega$ to the response space $\Phi$. In general, $\Omega$ is defined by an n x p matrix where each column is a random variable and $\Phi$ is defined by an n x 1 vector $Y$. 
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Each tree in a random forest, $T_j \in R_f$, is generated on a subset of both $\Omega$ and $\Phi$ called the training set. This training set is a bootstrapped sample of the original dataset and is noted as ${B}^t$. It is then tested on a disjoint subset of $\Omega$ called the test set, $\bar{B}^t$, where $\bar{B}^t = \Omega \backslash B^t$. The image of $T_j$ in $\Phi$ is called the predictions of $T_j$
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As outlined in the 1984 textbook, *Classification and Regression Trees*, Brieman, Friedman, Olshen, and Stone described their method for creating, pruning, and testing regression trees. There are essentially three steps: one, decide on a variable to split over, two, partition that variable space in two distinct partitions, and three, set our initial predictions for each partition to be mean value of the response according to the observed responses corresponding to the values in the partitions. Recursively, this process is repeated for each new partition until some stopping condition is reached.This is a top down, greedy algorithm that functions by creating as large a tree as possible and then is pruned down to prevent over fitting. 
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Random Forests are generated by fitting a large number of trees, each on a boosted sample of the data. The crutial difference, however, between the trees in CART and the trees in a random forest, is that at each node in a random forest, only a subset of the predictors are considered as candidates for possible splits. This decorrelates each tree from its neighbors, and decreases bias of the whole model while slightly increasing variance of each tree.  
+
 ##Inference on Random Forests
 
 ### The Problem   
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Random forests create models with great predictive-, but poor inferential capabilities. After Morgan and Sonquist initial development of decision trees, they quickly moved to the domain of machine learning and away from statistics, thus, researchers focused on bettering predictions and improving run times and less on the statistics behind them. Inferential statistics with random forests is usually treated as a variable selection problem, and generally falls behind the predictions in importance. This has limited the applications of random forests in certain fields, as to many the question of "why" the data is the way it is, is just, if not more,  important as the predictions. There are several means of performing descriptive statistics with random forests that could be interpreted incorrectly as attempting to answer this, namely base variable importance, but without a statistically backed method for performing variable importance, the use of random forest is limited to prediction-only settings.  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Random forests create models with great predictive-, but poor inferential capabilities. After Morgan and Sonquist's initial development of decision trees, trees quickly moved to the domain of machine learning and away from statistics. Researchers focused on bettering predictions and improving run times and less on the statistics behind them. Inferential statistics with random forests is usually treated as a variable selection problem, and generally falls behind the predictions in importance. This has limited the applications of random forests in certain fields, as to many the question of "why" the data is the way it is, is just, if not more, important as the predictions. There are several means of performing descriptive statistics with random forests that could be interpreted incorrectly as attempting to answer this but without a statistically backed method for performing variable importance, the use of random forest is limited to prediction-only settings.  
 
 ### Proposed solutions to this problem
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Statisticians Breiman and Cutler proposed a method of permuted variable importance to answer this problem. Their method compares the variable importance for each variable in a tree-wise manner. For each tree, the permuted variable importance of the variable $X_j$ is:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Breiman and Cutler proposed a method of permuted variable importance in their paper (cite) to answer this problem. Their method compares the variable importance for each variable in a tree-wise manner. For each tree, the permuted variable importance of the variable $X_j$ is:
 
-$$PV^t(x_j) = \frac{\sum_{i \in |B|} {y} - \hat{y}^t}{|B|} - \frac{\sum_{i \in |*B|} {y} - \hat{*y}^t}{|*B|} $$
+$$VI^t(x_j) = \frac{\sum_{i \in |\bar{B}^t|} ({y} - \hat{y})^2}{|\bar{B}^t|} - \frac{\sum_{i \in |\bar{B}^t_p|} ({y} - \hat{y_p})^2}{|\bar{B_p}^t|} $$
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Where $B$ is the matrix representing the feature space, $|B|$ is the number of observations, $*B$ is the matrix of predictors but with $X_j$ permuted, $\hat{y}$ is the predicted outcome, and $\hat{*y}^t$ is the predicted outcomes after variable $X_j$ has been permuted. This value is averaged over all the trees. It's important to note that if the variable $X_j$ is not split on in the tree $t$, the tree-wise variable importance will be 0. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Where $\bar{B}^t$ is the out of bag sample for tree t, $|B|$ is the number of observations in that sample, $\bar{B}_p^t$ is with $X_j$ permuted, $\hat{y}$ is the predicted outcome, and $\hat{*y}^t$ is the predicted outcomes after variable $X_j$ has been permuted. This value is averaged over all the trees. It's important to note that if the variable $X_j$ is not split on in the tree $t$, the tree-wise variable importance will be 0. 
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Creating a permutation-based method is certainly an attractive solution to our problem. One, it allows us to estimate the distribution of variable importance and generate a Z score under the null hypothesis that $PV = 0$.
 
-$$PV(x_j) = \frac{\sum_1^ntree PV^t(x_j)}{\frac{\hat{\sigma}}{\sqrt{ntree}}}$$
+$$VI_{\alpha}(x_j) = \frac{\sum_1^ntree PV^t(x_j)}{\frac{\hat{\sigma}}{\sqrt{ntree}}}$$
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Strobl et al from the University of Munich criticize this method in their 2008 technical report, **Danger: High Power! – Exploring the Statistical Properties of a Test for Random Forest Variable Importance**. One, this method has the downside of increasing power with increasing numbers of trees in the forest. This is a more or less arbitrary parameter which we would hope would not affect our importance estimates. Secondly, the null hypothesis under Breiman and Cutler's strategy is that the variable importance $V$ for any variable $X_j$ is not equal to zero given $Y$, the response. Because random forests are most often used in situations with multicolinearity that would make other methods like the linear model difficult, Strobl argues that any variable importance measure worth its salt should not be mislead by correlation within the predictors. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Strobl et al from the University of Munich criticize this method in their 2008 technical report, *Danger: High Power! – Exploring the Statistical Properties of a Test for Random Forest Variable Importance*. One, this method has the downside of increasing power with increasing numbers of trees in the forest. This is a more or less arbitrary parameter which we would hope would not affect our importance estimates. Secondly, the null hypothesis under Breiman and Cutler's strategy is that the variable importance $V$ for any variable $X_j$ is not equal to zero given $Y$, the response. Because random forests are most often used in situations with multicolinearity that would make other methods like the linear model difficult, Strobl argues that any variable importance measure worth its salt should not be mislead by correlation within the predictors. 
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; The researchers at the University of Munich published a fully fleshed response to the Breiman and Cutler method in 2008, titled *Conditional Variable Importance for Random Forests* that address these issues. Strobl et al propose restructuring the Breiman and Cutler algorithm to account for conditional dependence among the predictors. Their algorithm looks like this:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; The researchers at the University of Munich published a fully fleshed response to the Breiman and Cutler method in 2008, titled *Conditional Variable Importance for Random Forests* that address these issues. Strobl et al propose restructuring the Breiman and Cutler algorithm to account for conditional dependence among the predictors.The null hypothesis is that $VI_{\beta}(X_j) = 0$ given the predictor $Y$ *and all other predictors* $X_1,..X_n$.This accounts for interactions between $X_j$ and the other predictors.
 
-\begin{algorithm}
-\caption{Conditional Variable Importance for Random Forests}
-\label{cviRF}
-\begin{algorithmic}[1]
-\State Fit a random forest to the model, $R_0$, and calculate base variable importance for each variable $V$ 
-\For{every predictor $X_j \in X_1,...,X_n$}
-\State Conditionally permute $X_j$ given the splits found in $R_0$
-\State Fit a new random forest $R_j$ with the permuted data
-\State Calculate a new variable importance $\hat{V}_j$
-\EndFor
-\State For every variable $X_1,..., X_n$, $$CV(X_j) = \hat{V}_j - V_j$$
-\end{algorithmic}
-\end{algorithm}
-
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; The null hypothesis is that $CV(X_j) = 0$ given the predictor $Y$ *and all other predictors* $X_1,..X_n$.This accounts for interactions between $X_j$ and the other predictors. Using the simulated data from the previous example, here's an implementation of the algorithm outlined here as it is in the `party` package. 
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;This paper aims to provide a response to this method. One the conditional permutation algorithm is notoriously slow with any dataset of a size that is appropriate for a random forest. Two, the partitions are made from the random forest corresponding to the formula of $Y~X_1,...,X_n$ instead of a model of $X_j~X_1,...,X_n$. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;This paper aims to provide a response to this method. The partitions are made from the random forest corresponding to the formula of $Y~X_1,...,X_n$ instead of a model of $X_j~X_1,...,X_n$. This ignores the common situation where the predictors are correlated enough, they act as stand ins for each other, so that if one variable is heavily influential in a certain tree at predicting $Y$, the other variable will be forgotten all together.  
 
 
 

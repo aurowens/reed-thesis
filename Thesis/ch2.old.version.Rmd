@@ -1,0 +1,460 @@
+---
+title: "ch2.dump"
+output: pdf_document
+---
+---
+header-includes:
+- \usepackage{amssymb,amsthm,amsmath}
+- \usepackage{chemarr}
+- \usepackage{algorithm}
+- \usepackage{algpseudocode}
+- \usepackage{pifont}
+
+
+output: pdf_document
+---
+
+<!--
+You can delete the header-includes (lines 3-5 above) if you like and also the chunk below since it is loaded in the skeleton.Rmd file.  They are included so that chap2.Rmd will compile by itself when you hit Knit PDF.
+-->
+
+```{r include_reedtemplates_2, include = FALSE}
+# This chunk ensures that the reedtemplates package is installed and loaded
+# This reedtemplates package includes the template files for the thesis and also
+# two functions used for labeling and referencing
+if(!require(devtools))
+  install.packages("devtools", repos = "http://cran.rstudio.com")
+
+if(!require(reedtemplates)){
+  library(devtools)
+  devtools::install_github("ismayc/reedtemplates")
+  }
+library(reedtemplates)
+library(MASS)
+library(ggplot2)
+library(randomForest)
+library(maptree)
+library(knitr)
+library(GGally)
+library(reshape)
+
+thesis <- c("#245e67", "#90bd98", "#cfd0a0", "#c49e46", "#d28383")
+```
+
+
+
+#Simulations and Comparisons
+
+##Simulated Data
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Tree-based methods shine in situations with correlated predictors, although these situations can pose problems for inference. In a situation with correlated predictors $X_1$ and $X_2$, and the model we are considering is $Y \sim X_1 + X_2$, it is difficult to say how much of the modeled effect on $Y$ is due to $X_1$ or $X_2$. To illustrate this idea, compare a few existing methods, and explore methods of inference on tree based models three datasets will be simulated with different correlation structures. We will be focused more on the correlation structure between the predictors than on their relationships with the response and this will be reflected in the simulations.  
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;To aid in comparisons between the methods, one of the simulated datasets considered in this paper will be generated from the same method as used in (Strobl et al, 2008???). Under this method, the 13 x 1000 data set, $D_1$, has 12 predictors, $V_1,..,V_{12}$, where $V_j \sim N(0,1)$. The first four are, however, block correlated to each other with $\rho = .9$. They are related to $Y$ by the linear equation: $$Y = 5 \cdot V_1 + 5 \cdot V_2 + 2 \cdot V_3 + 0 \cdot V_4 + -5 \cdot V_5 + -5\cdot V_6 + 0\cdot V_7 + 0 \cdot ..... + E, E \sim N(0,\frac 1 2 )$$ Note that the coefficients for $V_7,...,V_{12}$ are all zero. 
+
+####Table 1: Correlation of $V_1,..., V_7$ and $Y$ 
+```{r stroblSim, warning=FALSE, message=FALSE, echo=FALSE}
+rep(0, 12) -> mu #mean of each variable
+
+diag(12) -> sigma #creates a 12 by 12 diagonal matrix with 1's down the diagonal
+
+sigma -> sigma1
+.9 -> sigma1[1,2]
+.9 -> sigma1[2,1] #adding the block correlation between the first four variables
+.9 -> sigma1[1,3]
+.9 -> sigma1[3,1]
+.9 -> sigma1[3,2]
+.9 -> sigma1[2,3]
+.9 -> sigma1[1,4]
+.9 -> sigma1[4,1]
+.9 -> sigma1[2,4]
+.9 -> sigma1[4,2]
+.9 -> sigma1[4,3]
+.9 -> sigma1[3,4]
+
+1000 -> n #number of observations
+set.seed(1)
+mvrnorm(n =n, mu = mu, Sigma = sigma1) -> sim1000 #sampling from the multivariate normal 
+c(5,5,2,0,-5,-5,-2,0,0,0,0,0) -> bts #these are the betas 
+
+rnorm(1000, mean = 0, sd = .5) -> e #error terms
+
+rep(0, 1000) -> ys #init a vector of zeros
+
+for( i in 1:1000){ #go row by row and create the ys based on the function of e, bts, and sim1000
+ys[i] <- sim1000[i,1]*bts[1]+
+    sim1000[i,2]*bts[2]+ 
+    sim1000[i,3]*bts[3]+ 
+    sim1000[i,4]*bts[4]+ 
+    sim1000[i,5]*bts[5]+ 
+    sim1000[i,6]*bts[6]+
+    sim1000[i,7]*bts[7]+ 
+    sim1000[i,8]*bts[8]+ 
+    sim1000[i,9]*bts[9]+ 
+    sim1000[i,10]*bts[10]+ 
+    sim1000[i,11]*bts[11]+ 
+    sim1000[i,12]*bts[12] +
+    e[i]
+}
+
+d1 <- as.data.frame(sim1000)
+d1$y <- ys
+
+cord1 <- round(cor(d1)[c(1:7),c(1:7,13)], digits = 3)
+cord1 <- cbind(cord1, "beta"= bts[1:7])
+
+kable(cord1)
+```
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As can be seen from the last column in the table, "beta", although $V4$ was not included in the model $Y \sim V1,..V_{12}$, its' strong correlation with more influential predictors $V_1,...,V_3$ insures that it still shows a strong linear correlation with $Y$. A linear model would likely *overstate* the effect of $V_4$ on $Y$. [^1] [^2]
+
+[^1]: A brief note on uncertainty is needed here. It's true that in this setting we can say that $V_4$ is actually unimportant to understanding $Y$, but in situations with real data this is profoundly more difficult to parse. Often like in the social science situations that Morgan and Sonquist encountered, the real relationship between correlated predictors is complicated and often there is some theoretical backing or other insight that is gained to include variables that may not be important to the model. 
+
+[^2]: Another point that could be said is that, no $V_4$ is not unimportant, $V_1, V_2,$ and $V_3$ are just stand ins for the real star, $V_4$, as they are nearly the same ($\rho \sim 1$). Then the real relationship represented here is $Y \sim (5 + 5 + 2) \cdot V_4 + -5 \cdot V_5 + -5 \cdot V_6 + -2 \cdot V_7$. This model is not unsuccessful in capturing the structure of the data, and this is typically the practice used to model data with highly correlated predictors. If this seems philosophically satisfying to you, the rest of this thesis may seem a bit inconsequential.
+
+
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+t <-  melt(d1[,1:5])
+#levels(t$variable) <- rev(levels(t$variable))
+```
+
+
+```{r denv1v5, echo = FALSE, fig.cap="Density Graphs for V1 through V5", results="asis"}
+ggplot(data = t, aes(x = value, fill = variable)) + 
+  geom_density(alpha = .8)+
+  scale_fill_manual(values = thesis)
+```
+
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; As can be seen above in Figure 1 the densities of $V_1,...,V_5$ are all very similar due to the way they were generated. 
+
+
+```{r yv4, echo = FALSE, fig.cap="Plot of Y ~ V4, Correlation = .789", results="asis"}
+ggplot(data = d1, aes(x = V4, y = y)) + 
+  geom_point(color = thesis[4], alpha = .8) 
+```
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Figure 2 is an illustration of the relationship between $Y\sim V_4$ with linear correlation of .789.
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;While $D_1$ represents a situation with linear correlation between the predictors, $D_2$ does not. Here, the model is the same, $Y~X_1,...,X_12$ where $Y$ is generated according to the equation: $$Y = 5 \cdot X_1 + 5 \cdot X_2 + 2 \cdot X_3 + 0 \cdot X_4 + -5 \cdot X_5 + -5\cdot X_6 + 0\cdot X_7 + 0 \cdot ..... + E, E \sim N(0,\frac 1 2 )$$
+
+However, instead of block correlation with $\rho = .9$, four variables are related to each other by the equations below. Note that $X_1, X_5,...,X_{12} ~ N(0,1)$ 
+$$X_2 = X_1 + E, E \sim Exponential(1)$$
+$$X_3 = X_2 + E, E \sim Exponential(1)$$
+$$X_4 = X_3 + E, E \sim Exponential(1)$$
+
+####Table 2: Correlation of $X_1,..., X_7$ and $Y$ 
+
+```{r nonLinErrors,echo=FALSE, message=FALSE}
+x1 <- rnorm(1000)
+
+x2 <- x1 + rexp(1000)
+
+x3 <- x2 + rexp(1000)
+
+x4 <- x3 + rexp(1000)
+
+diag(8) -> sigma
+
+rep(1, 8)-> mu
+
+mvrnorm(n =n, mu = mu, Sigma = sigma) -> simv5v12
+
+data.frame(x1,x2,x3,x4,simv5v12) -> d2
+              
+c("X1","X2","X3","X4","X5","X6", "X7","X8","X9","X10","X11","X12") -> names(d2)
+
+rep(0, 1000) -> ys #init a vector of zeros
+
+for( i in 1:1000){ #go row by row and create the ys based on the function of e, bts, and d2
+ys[i] <- d2[i,1]*bts[1]+
+    d2[i,2]*bts[2]+ 
+    d2[i,3]*bts[3]+ 
+    d2[i,4]*bts[4]+ 
+    d2[i,5]*bts[5]+ 
+    d2[i,6]*bts[6]+
+    d2[i,7]*bts[7]+ 
+    d2[i,8]*bts[8]+ 
+    d2[i,9]*bts[9]+ 
+    d2[i,10]*bts[10]+ 
+    d2[i,11]*bts[11]+ 
+    d2[i,12]*bts[12] +
+    e[i]
+}
+
+d2$y <- ys
+
+cord2 <- round(cor(d2)[c(1:7),c(1:7,13)], digits = 3)
+cord2 <- cbind(cord2, "beta"= bts[1:7])
+
+kable(cord2)
+```
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As one can see, Table 2 mirrors Table 1. For this dataset, however, the correlation structure is more complicated. $X_1$ and $X_2$ are highly correlated with $\rho = .7$. 
+
+```{r x2x2, echo = FALSE, fig.cap="Plot of X2~X1, Correlation = .7", results="asis"}
+ggplot(data = d2, aes(x = X1, y = X2)) + 
+  geom_point(color = thesis[1])
+```
+
+
+```{r compsD2, echo = FALSE, fig.cap="Correlation Structure of the First Four Variables in D2", results="asis"}
+ggpairs(
+  data =d2,
+  columns = c(1:4)
+)
+```
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As seen in Figure 4, the pattern observed between $X_1$ and $X_2$ does not carry over to the other correlated predictors. 
+
+
+```{r, echo=FALSE, message=FALSE}
+t <-  melt(d2[,1:5])
+```
+
+
+
+```{r densityD2, echo = FALSE, fig.cap="Comparisons of the Density Graphs for X1 through X5", results="asis"}
+ggplot(data = t, aes(x = value, fill = variable)) + 
+  geom_density(alpha = .8)+
+  scale_fill_manual(values = thesis)
+```
+
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Figure 5 demonstrate how the correlation between a few of the predictors and $Y$ may be effected by slope. Scale is much more a factor in this dataset, with some variables like $X_3$ having a larger range than the variables $X_1 \sim N(0,1)$ or $X_5,...,X_{12} \sim MVN()$. 
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The last dataset we'll consider is $D_3$, a data set with even more non-linear relationships between the first four variables. Otherwise it is very similar to both $D_1$ and $D_2$. The first four variables are generated as follows:
+
+$$\omega_1 \sim N(1,0)$$
+$$\omega_2 = log(\omega_1) + E, E \sim N(1,0)$$
+$$\omega_3 = log(\omega_2) + E, E \sim N(1,0)$$
+$$\omega_4 = log(\omega_4) + E, E \sim N(1,0)$$
+
+```{r logAbs,echo=FALSE, message=FALSE}
+w1 <- rnorm(1000)
+
+w2 <- 2*log(abs(w1)) + rnorm(1000)
+
+w3 <- 2*log(abs(w2)) + rnorm(1000)
+
+w4 <- 2*log(abs(w3)) + rnorm(1000)
+
+mvrnorm(n =n, mu = mu, Sigma = sigma) -> simw5w12
+
+data.frame(w1,w2,w3,w4,simw5w12) -> d3
+              
+c("W1","W2","W3","W4","W5","W6", "W7","W8","W9","W10","W11","W12") -> names(d3)
+
+rep(0, 1000) -> ys #init a vector of zeros
+
+for( i in 1:1000){ #go row by row and create the ys based on the function of e, bts, and d3
+ys[i] <- d3[i,1]*bts[1]+
+    d3[i,2]*bts[2]+ 
+    d3[i,3]*bts[3]+ 
+    d3[i,4]*bts[4]+ 
+    d3[i,5]*bts[5]+ 
+    d3[i,6]*bts[6]+
+    d3[i,7]*bts[7]+ 
+    d3[i,8]*bts[8]+ 
+    d3[i,9]*bts[9]+ 
+    d3[i,10]*bts[10]+ 
+    d3[i,11]*bts[11]+ 
+    d3[i,12]*bts[12] +
+    e[i]
+}
+
+d3$y <- ys
+
+cord3 <- round(cor(d3)[c(1:7),c(1:7,13)], digits = 3)
+cord3 <- cbind(cord3, "beta"= bts[1:7])
+
+
+```
+
+
+```{r cortableD3, echo = FALSE, fig.cap="Table 3:Correlation of omega_1,..., omega_7 and Y ", results="asis"}
+kable(cord3)
+```
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The linear correlation structure in $D_3$ is not as striking as in $D_1$. The two strongest linear relationships are between $\omega_2$ and $\omega_3$ with $\rho = -.534$ and between $Y$ and $\omega_2$ with $\rho = .700$. 
+
+
+```{r corstructD3, echo = FALSE, fig.cap="Correlation Structure of the First Four Variables in D3", results="asis"}
+ggpairs(
+  data =d3,
+  columns = c(1:4)
+)
+```
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Figure 6 provides another way of visualizing some of the information given in Table 3. Here we can see the densities as well as the paired correlations of the first four variables in $D_3$.
+
+
+```{r, echo=FALSE, message=FALSE}
+t <-  melt(d3[,1:5])
+```
+
+
+```{r compw1w5, echo = FALSE, fig.cap="Comparisons of the Density Graphs for W1 through W5", results="asis"}
+
+ggplot(data = t, aes(x = value, fill = variable)) + 
+  geom_density(alpha = .8)+
+  scale_fill_manual(values = thesis)
+```
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;There is more variation between the densities of $\omega_1,...,\omega_5$ then we have seen in the other data sets. $\omega_2,\omega_3,$ and $\omega_4$ have greater spread than their counterparts that are generated under the normal distribution.
+
+
+
+```{r yw2, echo = FALSE, fig.cap="Plot of Y~W2, Correlation = .7", results="asis"}
+ggplot(data = d3, aes(x = W2, y = y)) + 
+  geom_point(color = thesis[2])
+```
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; As the relationship between $Y$ and $\omega_2$ was so striking, it is nice to see a scatter plot that represents it. 
+
+##Models and Comparisons
+
+####CART: Regression Trees
+
+```{r fig9,echo=FALSE, message=FALSE,cache=TRUE}
+library(tree)
+t1 <- tree(y~., round(d1))
+#t1 <- prune.tree(t1, k = 2)
+t2 <- tree(y~., round(d2))
+#plot(cv.tree(t2))
+t2 <- prune.tree(t2, k = 4)
+t3 <- tree(y~., round(d3))
+#plot(cv.tree(t3))
+t3 <- prune.tree(t3, k = 6)
+
+t1$frame$yval <- round(t1$frame$yval)
+t2$frame$yval <- round(t2$frame$yval)
+t3$frame$yval <- round(t3$frame$yval)
+```
+
+```{r carts, echo = FALSE, fig.cap="CART for the Model Y~, from D1,D2, and D3", results="asis"}
+par(mfrow=c(1,3))
+draw.tree(t1, digits = 2, col = c(thesis, rep(thesis, 3)))
+draw.tree(t2, digits = 2, col = c(thesis, rep(thesis, 3)))
+draw.tree(t3, digits = 2, col = c(thesis, rep(thesis, 3)))
+```
+
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Trees can be quite variable, so to get a better idea of the differences between the methods let's run a simulation.
+
+\begin{algorithm}
+\caption{Simulation Scheme 2.1}
+\label{sim2.1}
+\begin{algorithmic}[1]
+\For{$i \leq 1000$ }
+\State Randomly sample $\frac 2 3$  of the observations in  $D_2$  to a training set,  $D_{2, train}^i$. The other observations,  $x \in D_2, x \notin D_{2, train}^i$ form the testing set $D_{2, test}^i$
+\State Fit a tree, $T^i$, to the data under the model $Y \sim X_1,...,X_2$ using the observations in      $D_{2}^i$
+\State Calculate the $MSE_{test}$ of the model using the equation:
+    $MSE_{test} = \frac 1 n \sum (y_j - \hat{y_j})^2$
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Where  $n$  is the number of observations in  $D_{2, test}^i$, $y_j \in D_{2, test}^i, \hat{y_j} \in  T^i(D_{2, test}^i)$ for $1 \leq j \leq n$ This produces one  distribution of $MSE_{test}$ for CART. 
+
+
+```{r fig10,echo=FALSE, message=FALSE,cache=TRUE}
+testmseC <- rep(0,1000)
+#testmseCt <- rep(0,1000)
+
+for(i in 1:1000){
+  train <- sample(1000, 666)
+ #tCt <- ctree(y~., d3[train,])
+  tC <- tree(y~., d3[train,])
+  testmseC[i] <- mean((d3[-train,]$y - predict(tC, d3[-train,]))^2)
+#  testmseCt[i] <- mean((d3[-train,]$y - predict(tCt, d3[-train,]))^2)
+}
+
+testmse <- data.frame( CART= testmseC)
+
+testm <- melt(testmse)
+
+
+
+```
+
+
+```{r cartmse, echo = FALSE, fig.cap="Comparison of the Simulated MSEtest Distributions of CART", results="asis"}
+ggplot(data = testm, aes(fill = variable, x = value)) + 
+  geom_density(alpha = .5)+
+  scale_fill_manual(values = thesis)+
+  guides(fill=guide_legend(title=NULL))
+```
+
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The distribution of 1000 CART trees' $MSE_{test}$ is roughly normal with a variance of `var(testmseC)`. 
+
+##Bagged Forests
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As one can see in the Figure 10, there is a fair amount of variability in a single tree, they are heavily dependent on fluctuations in the starting data set. As mention briefly in the introduction, bagged forests present one solution to this problem. To create a bagged forest, as outlined in *An Introduction to Statistical Learning* by James, Witten, Hastie and Tibshirani, 2013, many bootstrapped samples are taken from the initial dataset and trees are fitted to them. The final predictions are, then, averaged over all of the trees. This ensures that while each tree has high variance, when they are aggregated the variance will decrease. 
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Let's put that to the test here using our dataset $D3$ again. We'll build 100 forests of 100 trees each and compare the variability of the $MSE$ distributions. 
+
+```{r fig11, echo=FALSE, message=FALSE,cache=TRUE}
+library(bagRboostR)
+
+mse <- rep(0,1000)
+
+time <- Sys.time()
+for (i in 1:1000){
+  train = sample(1000,666)
+  b <- randomForest(y~., data = d3, subset = train, mtry = 5, ntree = 100)
+  mse[i] <- mean((d3$y[-train] - predict(b, d3[-train,]))^2)
+}
+
+time <- Sys.time()-time
+
+msebag <- data.frame(BaggedForest = mse, CART = sample(testmseC,100))
+
+msebag <- melt(msebag)
+
+
+
+```
+
+```{r baggedvcart, echo = FALSE, fig.cap="the Simulated MSEtest Distributions of Bagged Forests and CART", results="asis"}
+ggplot(aes(x = value, fill = variable), data = msebag) + 
+  geom_density(alpha = .5)+
+  scale_fill_manual(values = thesis)+
+  guides(fill=guide_legend(title=NULL))
+```
+
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As one can see, the values of $MSE_{test}$ for the bagged forest were entirely below the $MSE_test$ for the trees and the variance was much smaller. 
+
+##Random Forests
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As random forests are unbiased, they can be much smaller than their bagged forest cousins without sacrificing accuracy. 
+
+
+```{r fig12, echo=FALSE, message=FALSE,cache=TRUE}
+
+mseRF <- 0
+
+start <- Sys.time()
+while ((Sys.time() - start) <= time){
+  train = sample(1000,666)
+  rf <- randomForest(x = d3[,1:12], y= d3[,13], subset = train, ntree = 100)
+  mseRF <- c(mseRF, mean((d3$y[-train] - predict(rf, d3[-train,]))^2))
+}
+
+mserf <- data.frame(BaggedForest = sample(mse, length(mseRF)), CART = sample(testmseC, length(mseRF)), RandomForest = mseRF)
+
+mserf<- melt(mserf)
+
+
+```
+
+```{r baggedvcartvforest, echo = FALSE, fig.cap="Simulated MSEtest Distributions of CART, Random, and Bagged Forests", results="asis"}
+ggplot(aes(x = value, fill = variable), data = mserf) + 
+  geom_density(alpha = .5)+
+  scale_fill_manual(values = thesis)+
+  guides(fill=guide_legend(title=NULL))
+```
+
