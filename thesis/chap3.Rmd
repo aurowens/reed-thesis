@@ -137,6 +137,12 @@ d3$y <- ys
 
 #Random Forest Variable Importance
 
+##Populations and Permutations
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; As stated in the introduction of the *Chronicle of Permutations Statistical Methods* by KJ Berry et al, 2014, there are two models of statistical inference. One is the population model, where we assume that the data was randomly sampled from one (or more) populations. Under this model, we assume that the data generated follows some known distribution. "Under the population model, the level of statistical significance that results from applying a statistical test to the results of an experiment or a survey corresponds to the frequency with which the null hypothesis would be rejected in repeated random samplings from the same specified population(s)", (Berry et al, 2014). 
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The permutation family of methods, on the other hand, only assumes that the observed result was caused by experimental variability. The test statistics is first calculated for the observed data, then the data is permuted a number of times. The statistic is calculated after each permutation to derive a distribution of possible values. Then the original test statistic is tested against this distribution. If it is exceptionally rare, then there is evidence that our observation was not simply experimental variability. 
+
 ##Breiman et al Introduce Permuted Variable Importance (1984)
 
 ###Variable Importance on a Single Tree

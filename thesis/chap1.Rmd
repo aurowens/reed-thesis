@@ -1,11 +1,17 @@
 ---
+header-includes:
+- \usepackage{amssymb,amsthm,amsmath}
+- \usepackage{chemarr}
+- \usepackage{algorithm}
+- \usepackage{algpseudocode}
+- \usepackage{pifont}
+- \usepackage{float}
 output: pdf_document
 ---
 <!--
+
 The {#rmd-basics} text after the chapter declaration will allow us to link throughout the document back to the beginning of Chapter 1.  These labels will automatically be generated (if not specified) by changing the spaces to hyphens and capital letters to lowercase.  Look for the reference to this label at the beginning of Chapter 2.
 -->
-
-
 
 ```{r loadlib, message=FALSE, echo = FALSE, warning=FALSE}
 library(MASS)
@@ -13,42 +19,154 @@ library(tree)
 library(ggplot2)
 library(randomForest)
 library(party)
+library(reedtemplates)
+library(MASS)
+library(ggplot2)
+library(randomForest)
+library(maptree)
+library(knitr)
+library(GGally)
+library(reshape)
+library(gridExtra)
+
+thesis <- c("#245e67", "#90bd98", "#cfd0a0", "#c49e46", "#d28383")
 ```
 
 #Introduction
 
 ##Trees and Random Forests
 
-###Trees
+###Trees: An Example
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Decision trees may be familiar to many with a background in social science as a convenient way to represent data and assist in decision making. Morgan and Sonquist (1963) derived a way for constructing trees motivated by the specific feature space of data collected from interviews and surveys. Unlike, agricultural data which involves mostly numeric variables, the data collected from interviews is mostly categorical. On top of this, the datasets Morgan and Sonquist dealt with had few participants, and a lot of data collected on each one. To add to their difficulties, there was reason to believe that there were lurking errors in the data that would be hard identify and quantify. Lastly, many of the predictors were correlated. Morgan and Sonquist doubted that the additive assumptions of many models would be appropriate for this data. They noted that while many statistical methods would have difficulty accurately parsing this data, a clever researcher with quite a lot of time could create a suitable model simply by grouping values in the feature space and predicting that the response corresponding to these values would be an average of the observed responses given the grouped conditions. Their formalization of this procedure in terms of "decision rules" laid the ground work for future research on decision trees. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;To begin our discussion of trees and random forests, we will first consider the following example using data from a dendrologic study of five orange trees. This study measured two things for each tree: the age of the tree, recorded in days, and the circumference of the trunk, in cm. These are called, in general terms, the variables recorded by the study. In the dataset, each column represents a variable and each time each tree's measurements were taken is one row. There are 2 columns, age and circumference, and 35 rows. In table \ref{tab:taborange}, the first six rows are displayed. 
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Later researchers proposed new methods for creating trees that improved upon the Morgan and Sonquist model. Leo Breiman et al (1984) proposed an algorithm called CART, *classification and regression trees*, that would allow trees to be fit on various types of data. An alternative to this method is conditional inference trees. Torsten Hothorn, Kurt Hornik, Achim Zeileis argue in their 2006 paper *Unbiased Recursive Partitioning: A Conditional Inference Framework*, CART has a selection bias toward variables with either missing values or a great number of possible splits. This bias can effect the interpretability of all tree models fit using this method. As an alternative to CART and other algorithms, Hothorn et al propose a new method, conditional inference trees.   
+```{r loadorange, echo=FALSE, message=FALSE}
+data("Orange")
+```
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; There is a limit to the predictive capabilities of a single tree as they suffer from high variance. To alleviate this, aggregate methods called forests are often used instead. They function by enlisting the help of many trees, and then by aggregating the responses over all of them. The two most common types of forests are bagged and random forests. 
+```{r, echo=FALSE}
+kable(head(Orange[,2:3]), caption="\\label{tab:taborange}The first six rows of the Orange data set")
+```
 
-## What We Mean When We Talk About Inference
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Let's pretend we are interested in the following question: knowing only the circumference of the orange tree, can we predict the age of the tree? This question is called a formula, or a guess at how the relation between the two variables functions. We often refer to formulas using the following notation:
+
+$$Age \sim Circumference $$
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;In this formula, circumference is the predictor and age is the response. Suppose we expanded the study to include the height of the orange trees at various stages of development. Now we can consider both the circumference and the height of the tree when we make our predictions of the age. When we have multiple predictors, we add them to the notation in the following way:[^1]
+$$Age \sim Circumference, Height$$
+
+[^1]: Often the notation for multiple predictors is written $Y \sim X+W$ but this assumes an additive, linear relationship between the predictors and the response. This assumption is unnecessary for tree-based models so the notation, $Y\sim X,W$ is used. 
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Returning to the original orange tree data set, we can begin our investigation into the validity of the formula by plotting the data and observing the relationship between the variables in figure \ref{fig:figOrangeTree1}.
+
+```{r figOrangeTree1, fig.align='center',fig.pos='H', fig.height= 3,echo=FALSE, message=FALSE, fig.cap="The relationship between age and circumference of the trunk of orange trees."}
+ggplot(aes(y = age, x = circumference), data = Orange) + 
+  geom_point(pch = 17)+
+  xlab("Circumference of Trunk (in cm)")+
+  ylab("Age of Tree (in days")
+```
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As can be seen in figure \ref{fig:figOrangeTree1}, generally older trees have thicker trunks, and it seems like we are not wrong to suspect that circumference is a good predictor of age. As the data could be reasonably represented by a straight line, we can say that the relationship between trunk circumference and tree age is roughly linear. To create our predictions of circumference, we fit the formula: $Age \sim Circumference$, to a model. A predictive model is, put simply, a systematic way to make our predictions. The most common type of model is the linear model, which predicts based on a specific line through the data. (See figure 2). 
+
+
+```{r figOrangeLM, echo=FALSE, fig.pos='H',message=FALSE,fig.align='center', fig.height= 3, fig.cap = "A linear model representing age ~ trunk circumference in orange trees"}
+ggplot(aes(y = age, x = circumference), data = Orange) + 
+  geom_point(pch = 17) +
+  stat_smooth(method = "lm", color = thesis[1])+
+  xlab("Circumference of Trunk (in cm)")+
+  ylab("Age of Tree (in days")
+```
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As can be guessed from figure \ref{fig:figOrangeLM}, the linear model works better on certain data than others. Indeed, there are several assumptions that required by the linear model that may not always be present. We'll return to a brief discussion of the assumptions of the linear model later in this chapter. 
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;This paper discusses at length tree- based models. A tree for the formula $age \sim circumference$ is similar to the linear model in that it presents a systematic way to make predictions but, they differ in that the tree is not linear in any fashion. In fact, we can compare the differences between the two models by comparing figures 2 and 3. 
+
+```{r, echo=FALSE, message=FALSE, cache=TRUE}
+set.seed(1)
+tO <- tree(age ~ circumference, data = Orange)
+p <- predict(tO)
+
+
+fr <- tO$frame$splits
+m <- rep(0,5)
+
+m[1] <- mean(Orange$age[Orange$circumference < 41])
+m[2] <- mean(Orange$age[Orange$circumference > 41 & Orange$circumference < 72])
+m[3] <- mean(Orange$age[Orange$circumference > 72 & Orange$circumference < 113.5])
+m[4] <- mean(Orange$age[Orange$circumference > 113.5 & Orange$circumference < 173])
+m[5] <- mean(Orange$age[Orange$circumference > 173])
+
+```
+
+```{r, echo=FALSE, message=FALSE}
+p <- ggplot(aes(y = age, x = circumference), data = Orange) + 
+  geom_point(pch = 17) +
+  xlab("Circumference of Trunk (in cm)")+
+  ylab("Age of Tree (in days")+
+  geom_vline(xintercept = 113.5, alpha = .5)+
+  geom_vline(xintercept = 41,alpha = .5)+
+  geom_vline(xintercept = 72,alpha = .5)+
+  geom_vline(xintercept = 173,alpha = .5)
+  
+p <- p + annotate("text", x = 31, y = 300, label = "Age = 118", size = 2, color = thesis[1])
+p <- p + annotate("text", x = 55, y = 600, label = "Age = 484", size = 2, color = thesis[1])
+p <- p + annotate("text", x = 90, y = 800, label = "Age = 720", size = 2, color = thesis[1])
+p <- p + annotate("text", x = 135, y = 1000, label = "Age = 1237", size = 2, color = thesis[1])
+p <- p + annotate("text", x = 200, y = 1200, label = "Age = 1441", size = 2, color = thesis[1])
+
+```
+
+```{r orangeTreePartition, echo=FALSE, message=FALSE,fig.pos='H', warning=FALSE,fig.align='center', fig.height= 3, fig.cap= "A tree on age ~ trunk circumference first creates partitions on the predictor, seen as vertical lines, and then predicts the value of the response within that partition, seen as text."}
+p
+```
+
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;When using the linear model, we make predictions in the following way: given a value of X (circumference) the coresponding value of Y (age) on the line is our prediction. The predictions from the tree are gathered similarly: given a value of X (circumference), our prediction is the average value of Y (age) with in the partition that X falls in to.[^2]
+
+[^2]: **ANDREW**: can we look at tree models as more general cases for the linear model? specifically, it seems to me that as the number of partitions approaches $\infty$ our tree approaches the linear model. 
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Tree methods get their name from a common way of of representing them in higher dimensions, when there is more than one predictor. Figure \ref{fig:figorangeTree} shows this method. In this case, given a new value for circumference, one would start their predicitions at the top of the tree and, depending on the value of circumference and the instructions at each intersection or split, one would fall down branch by brach before landing on a prediction for age. 
+
+```{r figorangeTree, echo=FALSE, message=FALSE, warning=FALSE,fig.align='center', fig.pos = 'H',fig.height= 4, fig.cap= "A tree representing age ~ trunk circumference in orange trees."}
+plot(tO)
+text(tO)
+```
+
+###Trees: Background
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Decision trees are a convenient way to represent data and assist in decision making. Morgan and Sonquist (1963) derived a way for constructing trees motivated by the specific characteristics of data collected from interviews and surveys. The first difficulty in analyzing this data was that data collected from surveys is mostly categorical, where the observation is that the participant is a member of some discrete group. Some common categorical variables are gender, ethnicity, and education level. Numeric variables, like age, height, and weight are, in general, much easier to work with. On top of this, the datasets Morgan and Sonquist dealt with had few participants, and a lot of data collected on each one. To add to their difficulties, there was reason to believe that there were lurking errors in the data that would be hard identify and quantify. Lastly, many of the predictors were correlated. Morgan and Sonquist doubted that the additive assumptions of many models would be appropriate for this data. They noted that while many statistical methods would have difficulty accurately parsing this data, a clever researcher with quite a lot of time could create a suitable model simply by grouping values of the predictors and predicting that the response corresponding to these values would be an average of the observed responses given the grouped conditions. Their formalization of this procedure in terms of "decision rules" laid the ground work for future research on decision trees. See figure \ref{fig:orangeTreePartition} for a visualization of this process.
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Later researchers proposed new methods for creating trees that improved upon the Morgan and Sonquist model. Leo Breiman et al (1984) proposed an algorithm called CART, *classification and regression trees*, that would allow trees to be fit on various types of data. Torsten Hothorn, Kurt Hornik, Achim Zeileis argue in their 2006 paper *Unbiased Recursive Partitioning: A Conditional Inference Framework*, CART has a selection bias toward variables with either missing values or a great number of possible splits. This bias can effect the interpretability of all tree models fit using this method. As an alternative to CART and other algorithms, Hothorn et al propose a new method, conditional inference trees.   
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; There is a limit to the predictive capabilities of a single tree as they suffer from high variance. To alleviate this, aggregate methods called forests are often used instead. They function by enlisting the help of many trees, and then by aggregating the responses over all of them. The two most common types of forests are bagged and random forests. This is futher explored in Chapter 2.
 
 ###Inferential vs Descriptive Statistics
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; A note should be made of the difference between inferential and descriptive statistics. This paper's aim is to describe a process of making inferential claims using random forests, not descriptive ones. Descriptive statistics describe the data at hand without making any reference to a larger data generating system that they come from. It follows that inferential statistics then make claims about the data generating system given the data. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; In the earlier sections, we focused on building predictive models, but this paper hopes to use tree-based methods beyond this context. The linear model is a mainstay in social science because it allows for easy, and intepretable statistical inference. Return, for a moment, to the orange tree example from section 1.1 figure \ref{fig:figOrangeLM}.The linear model gives us a line with which we can make predictions, but it also gives estimated coefficients and conducts hypothesis tests on the values of the coefficients. 
 
-##Permutations and Populations
+```{r, echo = FALSE, message=FALSE}
+lm1 <- lm(age ~ circumference, data = Orange)
+```
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; As stated in the introduction of the *Chronical of Permutations Statistical Methods* by KJ Berry et al, 2014, there are two models of statistical inference. One is the population model, where we assume that the data was randomly sampled from one (or more) populations. Under this model, we assume that the data generated follows some known distribution. "Under the population model, the level of statistical significance that results from applying a statistical test to the results of an experiment or a survey corresponds to the frequency with which the null hypothesis would be rejected in repeated random samplings from the same specified population(s)", (Berry et al, 2014). 
+```{r, echo = FALSE, message=FALSE}
+kable(summary(lm1)[[4]], caption="\\label{tab:tablmcoef}Estimated linear coefficients, error, and p-values from the model fit in section 1.1 on the orange tree dataset")
+```
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The permutation family of methods, on the other hand, only assumes that the observed result was caused by experimental variability. The test statistics is first calculated for the observed data, then the data is permuted a number of times. The statistic is calculated after each permutation to dervive a distribution of possible values. Then the original test statistic is tested against this distribution. If it is exceptionally rare, then there is evidence that our observation was not simply experimental variability.  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;This table gives evidence that not only is trunk circumfernce a good predictor of age, the relationship between them is the equation of the line, or:
+
+$$Age = 7.81 \cdot Circumference + 16.6$$
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;So, roughly, for every 1 cm of trunk growth, we would expect the tree to be 7.81 days older. A note should be made of the difference between inferential and descriptive statistics. One might be tempted to say that the tree in figure  \ref{fig:figorangeTree} provides a model that could lend to this type of claim. However, these claims would be descriptive not inferenctial. This paper's aim is to describe a process of making inferential claims using random forests, not descriptive ones. Descriptive statistics describe the data at hand without making any reference to a larger data generating system that they come from. It follows that inferential statistics then make claims about the data generating system given the data. 
 
 
 ##A Step Back 
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;A random forest $R_f$ is the set of functions $T_1,...,T_N$ where each $T_j$ is a piece-wise function from the sample space $\Omega$ to the response space $\Phi$. In general, $\Omega$ is defined by an n x p matrix where each column is a random variable and $\Phi$ is defined by an n x 1 vector $Y$. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;A random forest $R_f$ is the set of functions $T_1,...,T_N$ where each $T_j$ is a piece-wise function from the sample space $\Omega$ into itself. In general, $\Omega$ is defined by an n x p +1 matrix where each column is a random variable. 
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Each tree in a random forest, $T_j \in R_f$, is generated on a subset of both $\Omega$ and $\Phi$ called the training set. This training set is a bootstrapped sample of the original dataset and is noted as ${B}^t$. It is then tested on a disjoint subset of $\Omega$ called the test set, $\bar{B}^t$, where $\bar{B}^t = \Omega \backslash B^t$. The image of $T_j$ in $\Phi$ is called the predictions of $T_j$
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As outlined in the 1984 textbook, *Classification and Regression Trees*, Brieman, Friedman, Olshen, and Stone described their method for creating, pruning, and testing regression trees. There are essentially three steps: one, decide on a variable to split over, two, partition that variable space in two distinct partitions, and three, set our initial predictions for each partition to be mean value of the response according to the observed responses corresponding to the values in the partitions. Recursively, this process is repeated for each new partition until some stopping condition is reached.This is a top down, greedy algorithm that functions by creating as large a tree as possible and then is pruned down to prevent over fitting. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As outlined in the 1984 textbook, *Classification and Regression Trees*, Brieman, Friedman, Olshen, and Stone described their method for creating, pruning, and testing regression trees. There are essentially three steps: one, decide on a variable to split over, two, partition that variable space in two distinct partitions, and three, set our initial predictions for each partition to be mean value of the response according to the observed responses corresponding to the values in the partitions. Recursively, this process is repeated for each new partition until some stopping condition is reached.This is a top down, greedy algorithm that functions by creating as large a tree as possible. 
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Random Forests are generated by fitting a large number of trees, each on a boosted sample of the data. The crutial difference, however, between the trees in CART and the trees in a random forest, is that at each node in a random forest, only a subset of the predictors are considered as candidates for possible splits. This decorrelates each tree from its neighbors, and decreases bias of the whole model while slightly increasing variance of each tree.  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Random Forests are generated by fitting a large number of trees, each on a boosted sample of the data. The crucial difference, however, between the trees in CART and the trees in a random forest, is that at each node in a random forest, only a subset of the predictors are considered as candidates for possible splits. This decorrelates each tree from its neighbors, and decreases bias of the whole model while slightly increasing variance of each tree.  
 
 ##Inference on Random Forests
 
@@ -64,7 +182,7 @@ $$VI^t(x_j) = \frac{\sum_{i \in |\bar{B}^t|} ({y} - \hat{y})^2}{|\bar{B}^t|} - \
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Where $\bar{B}^t$ is the out of bag sample for tree t, $|B|$ is the number of observations in that sample, $\bar{B}_p^t$ is with $X_j$ permuted, $\hat{y}$ is the predicted outcome, and $\hat{*y}^t$ is the predicted outcomes after variable $X_j$ has been permuted. This value is averaged over all the trees. It's important to note that if the variable $X_j$ is not split on in the tree $t$, the tree-wise variable importance will be 0. 
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Creating a permutation-based method is certainly an attractive solution to our problem. One, it allows us to estimate the distribution of variable importance and generate a Z score under the null hypothesis that $PV = 0$.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Creating a permutation-based method is certainly an attractive solution to our problem. One, it allows us to estimate the distribution of variable importance and generate a Z score under the null hypothesis that $VI_{\alpha} = 0$.
 
 $$VI_{\alpha}(x_j) = \frac{\sum_1^ntree PV^t(x_j)}{\frac{\hat{\sigma}}{\sqrt{ntree}}}$$
 
@@ -73,6 +191,7 @@ $$VI_{\alpha}(x_j) = \frac{\sum_1^ntree PV^t(x_j)}{\frac{\hat{\sigma}}{\sqrt{ntr
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; The researchers at the University of Munich published a fully fleshed response to the Breiman and Cutler method in 2008, titled *Conditional Variable Importance for Random Forests* that address these issues. Strobl et al propose restructuring the Breiman and Cutler algorithm to account for conditional dependence among the predictors.The null hypothesis is that $VI_{\beta}(X_j) = 0$ given the predictor $Y$ *and all other predictors* $X_1,..X_n$.This accounts for interactions between $X_j$ and the other predictors.
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;This paper aims to provide a response to this method. The partitions are made from the random forest corresponding to the formula of $Y~X_1,...,X_n$ instead of a model of $X_j~X_1,...,X_n$. This ignores the common situation where the predictors are correlated enough, they act as stand ins for each other, so that if one variable is heavily influential in a certain tree at predicting $Y$, the other variable will be forgotten all together.  
+
 
 
 

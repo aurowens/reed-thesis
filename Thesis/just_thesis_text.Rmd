@@ -45,8 +45,6 @@ output: pdf_document
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Statisticians Breiman and Cutler proposed a method of permuted variable importance to answer this problem. Their method compares the variable importance for each variable in a tree-wise manner. For each tree, the permuted variable importance of the variable $X_j$ is:
 
-$$PV^t(x_j) = \frac{\sum_{i \in |B|} {y} - \hat{y}^t}{|B|} - \frac{\sum_{i \in |*B|} {y} - \hat{*y}^t}{|*B|} $$
-
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Where $B$ is the matrix representing the feature space, $|B|$ is the number of observations, $*B$ is the matrix of predictors but with $X_j$ permuted, $\hat{y}$ is the predicted outcome, and $\hat{*y}^t$ is the predicted outcomes after variable $X_j$ has been permuted. This value is averaged over all the trees. It's important to note that if the variable $X_j$ is not split on in the tree $t$, the tree-wise variable importance will be 0. 
 
@@ -166,7 +164,6 @@ The algorithm for determining $VI_{inf}(R)$ follows similarly.
 
 Implementing the `INFFOREST` and therefor the `INFTREES` algorithms, required creating a suite of functions to create trees and random forests. The trees are fit following the standard two-part CART-like algorithm. [^1] The function chooses a variable to split on with linear correlation with respect to $Y$, but instead of looking for correlations above a certain threshold which is common, it chooses the variable with the highest correlation when compared to its peers. This alleviates the situation where a variable with a non-linear relationship would be passed over again and again. The splitting is done via minimization of the following function with respect to $i$:
 
-$$RSS_{node} (i,X,Y) = RSS_{leaf}(Y|X <i) + RSS_{leaf}(Y|X \geq i) $$
 
 
 This function considers the regression case only, and only numeric predictors. Leafs are created when the resultant split would be unsatisfactory, i.e. at least one daughter node would have five members or less. This generates very large trees - a quality that is not an issue in random forests but may be problematic in a stand-alone setting. At this time, there is also no function to prune the trees. 
