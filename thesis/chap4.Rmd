@@ -797,7 +797,7 @@ kable(t)
 ```{r forest,echo=FALSE, message=FALSE, warning=FALSE, cache=TRUE}
 set.seed(1)
  
-rf1 <- rforest(d1$y,d1[, 1:12],mtry = 4,ntree = 100)
+rf1 <- rforest(d1$y,d1[, 1:12],mtry = 4,ntree = 50)
 
 rf2 <- rforest(d2$y,d2[, 1:12],mtry = 4,ntree = 100)
 # rf3 <- rforest(d3$y[1:200],d3[1:200, 1:12],mtry = 4,ntree = 200)

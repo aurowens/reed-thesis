@@ -69,7 +69,7 @@ ggplot(aes(y = age, x = circumference), data = Orange) +
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As can be seen in figure \ref{fig:figOrangeTree1}, generally older trees have thicker trunks, and it seems like we are not wrong to suspect that circumference is a good predictor of age. As the data could be reasonably represented by a straight line, we can say that the relationship between trunk circumference and tree age is roughly linear. To create our predictions of circumference, we fit the formula: $Age \sim Circumference$, to a model. A predictive model is, put simply, a systematic way to make our predictions. The most common type of model is the linear model, which predicts based on a specific line through the data. (See figure 2). 
 
 
-```{r figOrangeLM, echo=FALSE, fig.pos='H',message=FALSE,fig.align='center', fig.height= 3, fig.cap = "A linear model representing age ~ trunk circumference in orange trees"}
+```{r figOrangeLM, echo=FALSE, fig.pos='H',message=FALSE, fig.height= 3, fig.cap = "A linear model representing age ~ trunk circumference in orange trees. Shaded area represents a 95% confidence interval around this line."}
 ggplot(aes(y = age, x = circumference), data = Orange) + 
   geom_point(pch = 17) +
   stat_smooth(method = "lm", color = thesis[1])+
@@ -79,7 +79,7 @@ ggplot(aes(y = age, x = circumference), data = Orange) +
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As can be guessed from figure \ref{fig:figOrangeLM}, the linear model works better on certain data than others. Indeed, there are several assumptions that required by the linear model that may not always be present. We'll return to a brief discussion of the assumptions of the linear model later in this chapter. 
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;This paper discusses at length tree- based models. A tree for the formula $age \sim circumference$ is similar to the linear model in that it presents a systematic way to make predictions but, they differ in that the tree is not linear in any fashion. In fact, we can compare the differences between the two models by comparing figures 2 and 3. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;This paper discusses at length tree- based models. A tree for the formula $age \sim circumference$ is similar to the linear model in that it presents a systematic way to make predictions but, they differ in that the tree is not linear in any fashion. In fact, we can compare the differences between the two models by comparing figures \ref{fig:figOrangeLM} and \ref{fig:figorangeTree}. 
 
 ```{r, echo=FALSE, message=FALSE, cache=TRUE}
 set.seed(1)
@@ -103,16 +103,21 @@ p <- ggplot(aes(y = age, x = circumference), data = Orange) +
   geom_point(pch = 17) +
   xlab("Circumference of Trunk (in cm)")+
   ylab("Age of Tree (in days")+
-  geom_vline(xintercept = 113.5, alpha = .5)+
-  geom_vline(xintercept = 41,alpha = .5)+
-  geom_vline(xintercept = 72,alpha = .5)+
-  geom_vline(xintercept = 173,alpha = .5)
+  geom_vline(xintercept = 113.5, alpha = .5, linetype = "dotted")+
+  geom_vline(xintercept = 41,alpha = .5, linetype = "dotted")+
+  geom_vline(xintercept = 72,alpha = .5, linetype = "dotted")+
+  geom_vline(xintercept = 173,alpha = .5, linetype = "dotted")+
+  geom_segment(x = 10, y = 118, xend = 41, yend = 118, color = thesis[1])+
+  geom_segment(x = 42, y = 484, xend = 72, yend = 484, color = thesis[1])+  
+  geom_segment(x = 73, y = 720, xend = 113, yend = 720, color = thesis[1])+
+  geom_segment(x = 114, y = 1237, xend = 173, yend = 1237, color = thesis[1])+
+  geom_segment(x = 174, y = 1441, xend = 250, yend = 1441, color = thesis[1])
   
-p <- p + annotate("text", x = 31, y = 300, label = "Age = 118", size = 2, color = thesis[1])
-p <- p + annotate("text", x = 55, y = 600, label = "Age = 484", size = 2, color = thesis[1])
-p <- p + annotate("text", x = 90, y = 800, label = "Age = 720", size = 2, color = thesis[1])
-p <- p + annotate("text", x = 135, y = 1000, label = "Age = 1237", size = 2, color = thesis[1])
-p <- p + annotate("text", x = 200, y = 1200, label = "Age = 1441", size = 2, color = thesis[1])
+p <- p + annotate("text", x = 31, y = 170, label = "Age = 118", size = 2, color = thesis[1])
+p <- p + annotate("text", x = 55, y = 535, label = "Age = 484", size = 2, color = thesis[1])
+p <- p + annotate("text", x = 95, y = 770, label = "Age = 720", size = 2, color = thesis[1])
+p <- p + annotate("text", x = 140, y = 1290, label = "Age = 1237", size = 2, color = thesis[1])
+p <- p + annotate("text", x = 200, y = 1490, label = "Age = 1441", size = 2, color = thesis[1])
 
 ```
 
@@ -123,7 +128,7 @@ p
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;When using the linear model, we make predictions in the following way: given a value of X (circumference) the coresponding value of Y (age) on the line is our prediction. The predictions from the tree are gathered similarly: given a value of X (circumference), our prediction is the average value of Y (age) with in the partition that X falls in to.[^2]
 
-[^2]: **ANDREW**: can we look at tree models as more general cases for the linear model? specifically, it seems to me that as the number of partitions approaches $\infty$ our tree approaches the linear model. 
+[^2]:While any curve can be approximated in a stepwise manner when the number of steps approaches $\infty$, a tree model does not converge to the linear model as the number of splits approaches $\infty$, even when the data is linear. See appendix for more. 
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Tree methods get their name from a common way of of representing them in higher dimensions, when there is more than one predictor. Figure \ref{fig:figorangeTree} shows this method. In this case, given a new value for circumference, one would start their predicitions at the top of the tree and, depending on the value of circumference and the instructions at each intersection or split, one would fall down branch by brach before landing on a prediction for age. 
 
@@ -151,12 +156,15 @@ lm1 <- lm(age ~ circumference, data = Orange)
 kable(summary(lm1)[[4]], caption="\\label{tab:tablmcoef}Estimated linear coefficients, error, and p-values from the model fit in section 1.1 on the orange tree dataset")
 ```
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;This table gives evidence that not only is trunk circumfernce a good predictor of age, the relationship between them is the equation of the line, or:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;This table gives evidence that not only is trunk circumfernce a good predictor of age, the relationship between them is the equation of the line:
 
 $$Age = 7.81 \cdot Circumference + 16.6$$
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;So, roughly, for every 1 cm of trunk growth, we would expect the tree to be 7.81 days older. A note should be made of the difference between inferential and descriptive statistics. One might be tempted to say that the tree in figure  \ref{fig:figorangeTree} provides a model that could lend to this type of claim. However, these claims would be descriptive not inferenctial. This paper's aim is to describe a process of making inferential claims using random forests, not descriptive ones. Descriptive statistics describe the data at hand without making any reference to a larger data generating system that they come from. It follows that inferential statistics then make claims about the data generating system given the data. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;So, roughly, for every 1 cm of trunk growth, we would expect the tree to be 7.81 days older. Not only are we provided with a way to describe the relationship between age and circumference, we have conducted statistical tests to make reasonably sure that our estimates are not just due to chance. Inferential claims about the nature of tree age and trunk growth are possible here. A note should be made of the difference between inferential and descriptive statistics. Descriptive statistics describe the data at hand without making any reference to a larger data generating system that they come from. It follows that inferential statistics then make claims about the data generating system given the data. The model in figure \ref{fig:figOrangeTree} could be used to make descriptive claims about the orange tree data. For example, given the data we have, we expect a sapling with a trunk circumference less than 41 cm to be 118 days old. However, trees are variable; they are very sensitive to changes in the data set. It's entirely possible that if we fit this tree on a sample of the data, the predictions would change. See chapter 2 for more discusion on the variablility of trees. Our claims about the relation between circumference and age in young orange trees can only be descriptive as we have not taken to account the variablility in gathering them.This paper's aim is to describe a process of making inferential claims using trees and random forests that employs permuatation tests.
 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; As stated in the introduction of the *Chronicle of Permutations Statistical Methods* by KJ Berry et al, 2014, there are two models of statistical inference. One is the population model, where we assume that the data was randomly sampled from one (or more) populations. Under this model, we assume that the data generated follows some known distribution. "Under the population model, the level of statistical significance that results from applying a statistical test to the results of an experiment or a survey corresponds to the frequency with which the null hypothesis would be rejected in repeated random samplings from the same specified population(s)", (Berry et al, 2014). 
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The permutation family of methods, on the other hand, only assumes that the observed result was caused by experimental variability. The test statistics is first calculated for the observed data, then the data is permuted a number of times. The statistic is calculated after each permutation to derive a distribution of possible values. Then the original test statistic is tested against this distribution. If it is exceptionally rare, then there is evidence that our observation was not simply experimental variability. 
 
 ##A Step Back 
 

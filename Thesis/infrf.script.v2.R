@@ -117,7 +117,7 @@ split.rf <- function(y,x, min) {
   }
 }
 
-tree.rf <- function(y,xs, mtry, bootsampled){
+tree.rf <- function(y,xs, mtry, bootsampled, min = 5){
   tree <- list()
   tree.frame <- list()
   tree.exc <- list()
@@ -144,12 +144,17 @@ tree.rf <- function(y,xs, mtry, bootsampled){
     if(frame[1] == "<leaf>"){
       return(frame)
     } else {
-      
-      yhatl <- y[xs[,spliton[[1]]] < split]
-      xsl <- xs[xs[,spliton[[1]]] < split,]
-      yhatr <- y[xs[,spliton[[1]]] >= split]
-      xsr <- xs[xs[,spliton[[1]]] >= split, ]
-      
+      if(is.null(ncol(xs))){
+        yhatl <- y[xs < split]
+        xsl <- xs[xs < split]
+        yhatr <- y[xs >= split]
+        xsr <- xs[xs >= split]
+      }else{
+        yhatl <- y[xs[,spliton[[1]]] < split]
+        xsl <- xs[xs[,spliton[[1]]] < split,]
+        yhatr <- y[xs[,spliton[[1]]] >= split]
+        xsr <- xs[xs[,spliton[[1]]] >= split, ]
+      }
       #    if(length(yhatl) < min & length(yhatr) < min){
       #      print(df)
       #      return(df)
@@ -233,7 +238,7 @@ tree.rf <- function(y,xs, mtry, bootsampled){
     y <- y[bootsample]
     
   }
-  min <- 5
+  #min <-5
   noder(y, xs, mtry,min)
   names(tree.frame) <- c("var", "n", "dev", "ypred","split.cutleft")
   tree[[1]] <- bootsample
@@ -246,6 +251,8 @@ tree.rf <- function(y,xs, mtry, bootsampled){
 predict.tree.rf <- function(t,xs) {
   t <- t[[2]] 
   first.split <- t[1,]
+  onex <- FALSE
+  
   if(sum(is.na(t$ypred)) > 0){
     return(NULL)
   }
@@ -258,6 +265,10 @@ predict.tree.rf <- function(t,xs) {
   rdn <- t$n[2]
   ldn <- t$n[1] - rdn 
   ldname <- as.numeric(row.names(t[t$n == ldn,]))
+  
+  if(is.null(ncol(xs))){
+    onex <- TRUE
+  }
   
   if(length(ldname) > 1) {
     
@@ -272,7 +283,11 @@ predict.tree.rf <- function(t,xs) {
   
   
   j <- 0
+  if(onex){
+    predictions <- c(rep(100000, length(xs)))
+  } else {
   predictions <- c(rep(100000, nrow(xs)))
+  }
   ###SKIPPING CONDITION
   #there's no need to map out the whole tree and have it on file, each y just needs the tree to 
   #a. check the split condition, i.e. xs[,var] < split.cutleft 
@@ -280,36 +295,68 @@ predict.tree.rf <- function(t,xs) {
   #b.2. if no, go one ahead
   #c. stop at leaf, pred[i] <- ypred
   
-  for(i in 1:(nrow(xs))){
-    
-    xsh <- xs[i,]
-    
-    if(xsh[,first.split$var] < first.split$split.cutleft){
-      #left daughter
-      ld <- left.daughter[1,]
-      j <- 1
-      while (ld$var != "<leaf>"){
-        if (xsh[,ld$var] < ld$split.cutleft) {
-          j <- j+2
-        } else {
+  if(onex) {
+    for (i in 1: length(xs)) {
+      xsh <- xs[i]
+      if(xsh < first.split$split.cutleft){
+        #left daughter
+        ld <- left.daughter[1,]
+        j <- 1
+        while (ld$var != "<leaf>"){
+          if (xsh < ld$split.cutleft) {
+            j <- j+2
+          } else {
           j <- j+1
+          }
+          ld <- left.daughter[j,]
         }
-        ld <- left.daughter[j,]
-      }
-      predictions[i] <- ld$ypred
-    } else {
-      #right daughter
-      rd <- right.daughter[2,]
-      j <- 2
-      while (rd$var != "<leaf>"){
-        if (xsh[,rd$var] < rd$split.cutleft) {
-          j <- j+2
-        } else {
-          j <- j+1
+        predictions[i] <- ld$ypred
+      } else {
+       #right daughter
+        rd <- right.daughter[2,]
+        j <- 2
+        while (rd$var != "<leaf>"){
+          if (xsh < rd$split.cutleft) {
+            j <- j+2
+          } else {
+            j <- j+1
+          }
+          rd <- right.daughter[j,]
         }
-        rd <- right.daughter[j,]
+        predictions[i] <- rd$ypred
+      }    
+    }
+  } else {
+  
+    for(i in 1:(nrow(xs))){
+      xsh <- xs[i,]
+      if(xsh[,first.split$var] < first.split$split.cutleft){
+        #left daughter
+        ld <- left.daughter[1,]
+        j <- 1
+        while (ld$var != "<leaf>"){
+          if (xsh[,ld$var] < ld$split.cutleft) {
+            j <- j+2
+          } else {
+            j <- j+1
+          }
+          ld <- left.daughter[j,]
+        }
+        predictions[i] <- ld$ypred
+      } else {
+        #right daughter
+        rd <- right.daughter[2,]
+        j <- 2
+       while (rd$var != "<leaf>"){
+          if (xsh[,rd$var] < rd$split.cutleft) {
+            j <- j+2
+          } else {
+            j <- j+1
+          }
+         rd <- right.daughter[j,]
+        }
+        predictions[i] <- rd$ypred
       }
-      predictions[i] <- rd$ypred
     }
   }
   return(predictions)
@@ -547,10 +594,10 @@ strobltrees <- function(t,y,xs) {
         predictions.for.y.xi.perm <- predict.tree.rf(ta,xs.ii)
         rss.post[i] <- abs(sum((y - as.numeric(predictions.for.y.xi.perm))^2)/length(y) - rss.pre)
         xs.i <- xs
-       # ex <- sum(names(xs)[i] ==  ta[[3]])/nrow(ta[[3]])
-       # if(ex > .7){
-       #   rss.post[i] <- rss.post[i] * (ex+1)
-       # }
+        ex <- sum(names(xs)[i] ==  ta[[3]])/nrow(ta[[3]])
+        if(ex > .8){
+          rss.post[i] <- rss.post[i] * (ex)
+        }
       }
     }
   }
