@@ -41,13 +41,13 @@ thesis <- c("#245e67", "#90bd98", "#cfd0a0", "#c49e46", "#d28383")
 
 #Simulations and Comparisons
 
-Our goal for this chapter is to compare trees, random forests, and linear models. We will leave our orange tree example behind for some simulated data. One reason for this is theoretical consistancy. One hopes that one's results will not be rendered null and void by a mistep in the data collection that comes to light. This also ensures that these simulations can be repeated by later researchers, but, granted, it does not make for the most exciting analysis. For now, consider $Y$ to be our response variable. In the first simulation, $V$ will be the set of our predictors, and $V_j$ to be a predictor in $V$. The formula will be the same for each model: $Y \sim V$. In our second simulation, our set of predictors will be denoted as $X$ and $X_j$ will be a member of $X$. The formula in this case is $Y \ sim X$. 
+Our goal for this chapter is to compare trees, random forests, and linear models. We will leave our orange tree example behind for some simulated data. One reason for this is theoretical consistency. One hopes that one's results will not be rendered null and void by a misstep in the data collection that comes to light. This also ensures that these simulations can be repeated by later researchers, but, granted, it does not make for the most exciting analysis. For now, consider $Y$ to be our response variable. In the first simulation, $V$ will be the set of our predictors, and $V_j$ to be a predictor in $V$. The formula will be the same for each model: $Y \sim V$. In our second simulation, our set of predictors will be denoted as $X$ and $X_j$ will be a member of $X$. The formula in this case is $Y \sim X$. 
 
 ###Simulated Data
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Random forests excel in predicting outcomes with correlated predictors, although these situations can pose problems for inference. In a situation with correlated predictors $X_1$ and $X_2$, and the tree model we are considering is $Y \sim X_1 + X_2$, it can be difficult to say if $X_1$ or $X_2$ is truely the better predictor. To illustrate this idea, compare a few existing methods, and explore methods of inference on tree based models two datasets will be simulated with different correlation structures. We will be focused more on the correlation structure between the predictors than on their relationships with the response and this will be reflected in the simulations.  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Random forests excel in predicting outcomes with correlated predictors, although these situations can pose problems for inference. In a situation with correlated predictors $X_1$ and $X_2$, and the formula we're estimating is $Y \sim X_1 + X_2$, it can be difficult to say if $X_1$ or $X_2$ is truly the better predictor. To illustrate this idea, compare a few existing methods, and explore methods of inference on tree based models two datasets will be simulated with different correlation structures. We will be focused more on the correlation structure between the predictors than on their relationships with the response and this will be reflected in the simulations.  
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;To aid in comparisons between the methods, one of the simulated datasets considered in this paper will be generated from the same method as used in (Strobl et al, 2008b). Under this method, the 13 x 1000 data set, $D_1$, has 12 predictors, $V_1,..,V_{12}$, where $V_j \sim N(0,1)$. The first four are, however, block correlated to each other with $\rho = .9$. They are related to $Y$ by the linear equation: $$Y = 5 \cdot V_1 + 5 \cdot V_2 + 2 \cdot V_3 + 0 \cdot V_4 + -5 \cdot V_5 + -5\cdot V_6 + 0\cdot V_7 + 0 \cdot ..... + E, E \sim N(0,\frac 1 2 )$$ Note in table \ref{tab:tabcorSim1}, the coefficients for $V_7,...,V_{12}$ are all zero. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;To aid in comparisons between the methods, one of the simulated datasets considered in this paper will be generated from the same method as used in \ref{bib:bibstrobl}. Under this method, the 13 x 1000 data set, $D_1$, has 12 predictors, $V_1,..,V_{12}$, where $V_j \sim N(0,1)$. The first four are, however, block correlated to each other with $\rho = .9$. They are related to $Y$ by the linear equation: $$Y = 5 \cdot V_1 + 5 \cdot V_2 + 2 \cdot V_3 + 0 \cdot V_4 + -5 \cdot V_5 + -5\cdot V_6 + 0\cdot V_7 + 0 \cdot ..... + E, E \sim N(0,\frac 1 2 )$$ Note in table \ref{tab:tabcorSim1}, the coefficients for $V_7,...,V_{12}$ are all zero. 
 
 ```{r stroblSim, warning=FALSE, message=FALSE, echo=FALSE}
 rep(0, 12) -> mu #mean of each variable
@@ -138,7 +138,7 @@ $$X_2 = log(X_1) + E, E \sim N(1,0)$$
 $$X_3 = log(X_2) + E, E \sim N(1,0)$$
 $$X_4 = log(X_4) + E, E \sim N(1,0)$$
 
-This simulation scheme leads to the first four variables having an obvious relationship between each other, but relatively low linear correlations. (See figure \ref{fig:corstructd2}). Predictors are sampled by $X_5,...,X_12 \sim N(0,1)$. The $Y$ values are generated according to the following formula:
+This simulation scheme leads to the first four variables having an obvious relationship between each other, but relatively low linear correlations. (See figure \ref{fig:corstructd2}). Predictors are sampled by $X_5,...,X_{12} \sim N(0,1)$. The $Y$ values are generated according to the following formula:
 
 $$Y = 5 \cdot (X_1)^2 + 5 \cdot(X_2)^2 + 2 \cdot (X_3)^2 + 0 \cdot X_4 + -5 \cdot X_5 + -5\cdot X_6 + 0\cdot X_7 + 0 \cdot ..... + E, E \sim N(0,\frac 1 2 )$$ 
 
@@ -193,8 +193,19 @@ ggpairs(
 )
 ```
 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The correlation structure in $D_2$ is much more difficult to capture with a single line. The relationships between the first four predictors form striking, symmetrical scatter plots in figure \ref{fig:corstructd2}. This information is considered again in table \ref{tab:tabcorSim2}, where the empirical correlations of the first seven variables are presented along with their observed correlations with $Y$ and their simulation coefficients. 
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The linear correlation structure in $D_2$ is not as striking as in $D_1$. The two strongest linear relationships are between $X_2$ and $X_3$ with $\rho = -.534$ and between $Y$ and $X_2$ with $\rho = .700$. 
+
+```{r, echo=FALSE, message=FALSE}
+cord2 <- round(cor(d2)[c(1:7),c(1:7,13)], digits = 3)
+cord2 <- cbind(cord2, "beta"= bts[1:7])
+```
+
+```{r, echo = FALSE, message = FALSE}
+kable(cord2, caption="\\label{tab:tabcorSim2}Empirical correlations and coefficients of the first six predictors and the response using the second simulated dataset")
+```
+
+
 
 ##Models and Comparisons
 
@@ -259,7 +270,7 @@ testmse <- (testmseC)
 tmse<- melt(as.data.frame(testmse))
 
 a <- ggplot(aes(x = value), data = tmse) + 
-  geom_density(alpha = .5)+
+  geom_density(alpha = .5, color = thesis[3])+
   scale_fill_manual(values = thesis)+
   guides(fill=guide_legend(title=NULL))+
  # scale_x_continuous(limits = c(0,40))+
@@ -280,7 +291,7 @@ for (i in 1:1000){
 mselm<- melt(as.data.frame(mselm))
 
 b <- ggplot(aes(x = value), data = mselm) + 
-  geom_density(alpha = .5)+
+  geom_density(alpha = .5, color = thesis[2], alpha = .8)+
   scale_fill_manual(values = thesis)+
   guides(fill=guide_legend(title=NULL))+
  # scale_x_continuous(limits = c(0,40))+
@@ -307,7 +318,7 @@ mserf <- data.frame(RandomForest= mseRF)
 mserf<- melt(mserf)
 
 c <- ggplot(aes(x = value), data = mserf) + 
-  geom_density(alpha = .5)+
+  geom_density(alpha = .5, color = thesis[1], alpha = .8)+
   scale_fill_manual(values = thesis)+
   guides(fill=guide_legend(title=NULL))+
  # scale_x_continuous(limits = c(0,40))+
@@ -321,6 +332,6 @@ grid.arrange(a,b,c, ncol=3)
 ```
 
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The linear model is characteristically less flexible and less prone to overfitting than either of the tree-based methods, CART and random forests, and has a $MSE_{test}$ distribution that is quite peaked. CART is flexible and suffers from high variance. The random forest models perform much better on average than either the CART or the linear model, due to both the non-linear relationships between $Y$ and the predictors and the random forest's ability to decorrelate each of the trees by restricting the variables available on each split. See chapter 3 for more discussion on the inforced hetergenaity of trees in the random forest. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The linear model is characteristically less flexible and less prone to over-fitting than either of the tree-based methods, CART and random forests, and has a $MSE_{test}$ distribution that is quite peaked. CART is flexible and suffers from high variance. The random forest models perform much better on average than either the CART or the linear model, due to both the non-linear relationships between $Y$ and the predictors and the random forest's ability to decorrelate each of the trees by restricting the variables available on each split. See chapter 3 for more discussion on the enforced heterogeneity of trees in the random forest. As, $MSE_{test}$, is a test of *predictive* accuracy it is not surprising that the random forest performed admirably. On a certain level, that is what they are designed to do. The linear model is extremely popular in predictive situations but it is ubiquitous in inferential ones.
 
 
