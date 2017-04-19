@@ -41,11 +41,11 @@ thesis <- c("#245e67", "#90bd98", "#cfd0a0", "#c49e46", "#d28383")
 
 #Simulations and Comparisons
 
-Our goal for this chapter is to compare trees, random forests, and the linear model. We will leave our orange tree example behind for some simulated data. One reason for this is theoretical consistancy. One hopes that one's results will not be rendered null and void by a mistep in the data collection that comes to light. It also ensures that these simulations can be repeated by later researchers, but it does not make for the most exciting analysis. 
+Our goal for this chapter is to compare trees, random forests, and linear models. We will leave our orange tree example behind for some simulated data. One reason for this is theoretical consistancy. One hopes that one's results will not be rendered null and void by a mistep in the data collection that comes to light. This also ensures that these simulations can be repeated by later researchers, but, granted, it does not make for the most exciting analysis. For now, consider $Y$ to be our response variable. In the first simulation, $V$ will be the set of our predictors, and $V_j$ to be a predictor in $V$. The formula will be the same for each model: $Y \sim V$. In our second simulation, our set of predictors will be denoted as $X$ and $X_j$ will be a member of $X$. The formula in this case is $Y \ sim X$. 
 
 ###Simulated Data
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Tree-based methods shine in predictive situations with correlated predictors, although these situations can pose problems for inference. In a situation with correlated predictors $X_1$ and $X_2$, and the tree model we are considering is $Y \sim X_1 + X_2$, it can be difficult to say if $X_1$ or $X_2$ is truely the better predictor. To illustrate this idea, compare a few existing methods, and explore methods of inference on tree based models two datasets will be simulated with different correlation structures. We will be focused more on the correlation structure between the predictors than on their relationships with the response and this will be reflected in the simulations.  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Random forests excel in predicting outcomes with correlated predictors, although these situations can pose problems for inference. In a situation with correlated predictors $X_1$ and $X_2$, and the tree model we are considering is $Y \sim X_1 + X_2$, it can be difficult to say if $X_1$ or $X_2$ is truely the better predictor. To illustrate this idea, compare a few existing methods, and explore methods of inference on tree based models two datasets will be simulated with different correlation structures. We will be focused more on the correlation structure between the predictors than on their relationships with the response and this will be reflected in the simulations.  
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;To aid in comparisons between the methods, one of the simulated datasets considered in this paper will be generated from the same method as used in (Strobl et al, 2008b). Under this method, the 13 x 1000 data set, $D_1$, has 12 predictors, $V_1,..,V_{12}$, where $V_j \sim N(0,1)$. The first four are, however, block correlated to each other with $\rho = .9$. They are related to $Y$ by the linear equation: $$Y = 5 \cdot V_1 + 5 \cdot V_2 + 2 \cdot V_3 + 0 \cdot V_4 + -5 \cdot V_5 + -5\cdot V_6 + 0\cdot V_7 + 0 \cdot ..... + E, E \sim N(0,\frac 1 2 )$$ Note in table \ref{tab:tabcorSim1}, the coefficients for $V_7,...,V_{12}$ are all zero. 
 
@@ -132,13 +132,15 @@ a
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; As in figure \ref{fig:figdenv1v5}, the densities of $V_1,...,V_4$ are all very similar due to the way they were generated. 
 
-$D_1$ represents the case where some of the predictors are linearly correlated with each other, but that is not the only possible correlation structure. The data set $D_2$ is simulated similarly to $D_2$ in that $D_2$ contains twelve predictors and one response variable. The response, $Y$, is related to the predictors by the same equation as in $D_1$. The first four variables, however, are related to each other in the following way: 
-$$\omega_1 \sim N(1,0)$$
-$$\omega_2 = log(\omega_1) + E, E \sim N(1,0)$$
-$$\omega_3 = log(\omega_2) + E, E \sim N(1,0)$$
-$$\omega_4 = log(\omega_4) + E, E \sim N(1,0)$$
+$D_1$ represents the case where some of the predictors are linearly correlated with each other, but that is not the only possible correlation structure. The data set $D_2$ is simulated similarly to $D_2$ in that $D_2$ contains twelve predictors and one response variable. The first four variables are generated in the following way: 
+$$X_1 \sim N(1,0)$$
+$$X_2 = log(X_1) + E, E \sim N(1,0)$$
+$$X_3 = log(X_2) + E, E \sim N(1,0)$$
+$$X_4 = log(X_4) + E, E \sim N(1,0)$$
 
-This simulation scheme leads to the first four variables having an obvious relationship between each other, but relatively low linear correlations. (See figure \ref{fig:corstructd2})
+This simulation scheme leads to the first four variables having an obvious relationship between each other, but relatively low linear correlations. (See figure \ref{fig:corstructd2}). Predictors are sampled by $X_5,...,X_12 \sim N(0,1)$. The $Y$ values are generated according to the following formula:
+
+$$Y = 5 \cdot (X_1)^2 + 5 \cdot(X_2)^2 + 2 \cdot (X_3)^2 + 0 \cdot X_4 + -5 \cdot X_5 + -5\cdot X_6 + 0\cdot X_7 + 0 \cdot ..... + E, E \sim N(0,\frac 1 2 )$$ 
 
 ```{r logAbs,echo=FALSE, message=FALSE}
 w1 <- rnorm(1000)
@@ -149,7 +151,10 @@ w3 <- 2*log(abs(w2)) + rnorm(1000)
 
 w4 <- 2*log(abs(w3)) + rnorm(1000)
 
-mvrnorm(n =n, mu = mu, Sigma = sigma) -> simw5w12
+sigma <- diag(8)
+
+
+mvrnorm(n =n, mu = mu[1:8], Sigma = sigma) -> simw5w12
 
 data.frame(w1,w2,w3,w4,simw5w12) -> d2
               
@@ -158,9 +163,9 @@ c("W1","W2","W3","W4","W5","W6", "W7","W8","W9","W10","W11","W12") -> names(d2)
 rep(0, 1000) -> ys #init a vector of zeros
 
 for( i in 1:1000){ #go row by row and create the ys based on the function of e, bts, and d2
-ys[i] <- d2[i,1]*bts[1]+
-    d2[i,2]*bts[2]+ 
-    d2[i,3]*bts[3]+ 
+ys[i] <- d2[i,1]^2*bts[1]+
+    d2[i,2]^2*bts[2]+ 
+    d2[i,3]^2*bts[3]+ 
     d2[i,4]*bts[4]+ 
     d2[i,5]*bts[5]+ 
     d2[i,6]*bts[6]+
@@ -189,7 +194,7 @@ ggpairs(
 ```
 
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The linear correlation structure in $D_3$ is not as striking as in $D_1$. The two strongest linear relationships are between $\omega_2$ and $\omega_3$ with $\rho = -.534$ and between $Y$ and $\omega_2$ with $\rho = .700$. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The linear correlation structure in $D_2$ is not as striking as in $D_1$. The two strongest linear relationships are between $X_2$ and $X_3$ with $\rho = -.534$ and between $Y$ and $X_2$ with $\rho = .700$. 
 
 ##Models and Comparisons
 
@@ -197,7 +202,7 @@ ggpairs(
 
 ```{r,echo=FALSE, message=FALSE,cache=TRUE}
 library(tree)
-t1 <- tree(y~., round(d1))
+t2 <- tree(y~., round(d2))
 #t1 <- prune.tree(t1, k = 2)
 #t2 <- tree(y~., round(d2))
 #plot(cv.tree(t2))
@@ -206,27 +211,27 @@ t1 <- tree(y~., round(d1))
 #plot(cv.tree(t3))
 #t3 <- prune.tree(t3, k = 6)
 
-t1$frame$yval <- round(t1$frame$yval)
+t2$frame$yval <- round(t2$frame$yval)
 #t2$frame$yval <- round(t2$frame$yval)
 #t3$frame$yval <- round(t3$frame$yval)
 ```
 
-```{r figcarts, echo = FALSE, fig.pos = 'H',fig.cap="CART representing Y~ V1,...,V12, from D1", results="asis"}
+```{r figcarts, echo = FALSE, fig.pos = 'H', fig.cap="CART representing Y~ X, from D2", results="asis"}
 #par(mfrow=c(1,3))
-draw.tree(t1, digits = 2, col = c(thesis, rep(thesis, 3)))
-#draw.tree(t2, digits = 2, col = c(thesis, rep(thesis, 3)))
+
+draw.tree(t2, digits = 2, col = c(thesis, rep(thesis, 3)))
 #draw.tree(t3, digits = 2, col = c(thesis, rep(thesis, 3)))
 ```
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;A single CART tree representing the model $Y \sim X_1,...,X_{12}$ is easy enough to understand. Starting at the very top of the tree, predictions can be made based on the values of the leaves (or ending nodes) given the requirements of the path to get there. Trees can be quite variable, so to get a better idea of the differences between the methods let's run a simulation.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The CART tree representing the model $Y \sim X$ in figure \ref{fig:figcarts} is easy enough to understand. Starting at the very top of the tree, predictions can be made based on the values of the leaves (or ending nodes) given the requirements of the path to get there. Trees can be quite variable, so to get a better idea of the differences between the methods let's run a simulation. This simulation scheme will take advantage of the non linearity present in $D_2$. 
 
 \begin{algorithm}
 \caption{Simulation Scheme 2.1}
 \label{sim2.1}
 \begin{algorithmic}[1]
 \For{$i \leq 1000$ }
-\State Randomly sample $\frac 2 3$  of the observations in  $D_1$  to a training set,  $D_{1, train}^i$. The other observations,  $x \in D_1, x \notin D_{1, train}^i$ form the testing set $D_{1, test}^i$
-\State Fit a tree, $T^i$, to the data under the model $Y \sim X_1,...,X_2$ using the observations in      $D_{1}^i$
+\State Randomly sample $\frac 2 3$  of the observations in  $D_1$  to a training set,  $D_{1, train}^i$. The other observations,  $x \in D_2, x \notin D_{2, train}^i$ form the testing set $D_{2, test}^i$
+\State Fit a tree, $T^i$, to the data under the model $Y \sim X_1,...,X_2$ using the observations in $D_{2}^i$
 \State Calculate the $MSE_{test}$ of the model using the equation:
     $MSE_{test} = \frac 1 n \sum (y_j - \hat{y_j})^2$
 \EndFor
@@ -234,7 +239,7 @@ draw.tree(t1, digits = 2, col = c(thesis, rep(thesis, 3)))
 \end{algorithm}
 
 
-Note that $n$ is the number of observations in  $D_{1, test}^i$, $y_j \in D_{1, test}^i, \hat{y_j} \in  T^i(D_{2, test}^i)$ for $1 \leq j \leq n$ This produces one  distribution of $MSE_{test}$ for CART. 
+Note that $n$ is the number of observations in  $D_{1, test}^i$, $y_j \in D_{2, test}^i, \hat{y_j} \in  T^i(D_{2, test}^i)$ for $1 \leq j \leq n$ This produces one distribution of $MSE_{test}$ for CART. This simulation scheme will be repeated for the linear model and the random forest and the $MSE_{test}$ distributions are compared in figure \ref{fig:baggedvcartvforest}. 
 
 
 ```{r fig10,echo=FALSE, message=FALSE,cache=TRUE}
@@ -251,6 +256,15 @@ for(i in 1:1000){
 
 testmse <- (testmseC)
 
+tmse<- melt(as.data.frame(testmse))
+
+a <- ggplot(aes(x = value), data = tmse) + 
+  geom_density(alpha = .5)+
+  scale_fill_manual(values = thesis)+
+  guides(fill=guide_legend(title=NULL))+
+ # scale_x_continuous(limits = c(0,40))+
+  xlab(" ")+
+  ylab(" ")
 ```
 
 
@@ -263,6 +277,16 @@ for (i in 1:1000){
   mselm[i] <- mean((d2$y[-train] - predict(b, d2[-train,]))^2)
 }
 
+mselm<- melt(as.data.frame(mselm))
+
+b <- ggplot(aes(x = value), data = mselm) + 
+  geom_density(alpha = .5)+
+  scale_fill_manual(values = thesis)+
+  guides(fill=guide_legend(title=NULL))+
+ # scale_x_continuous(limits = c(0,40))+
+  xlab(" ")+
+  ylab(" ")
+
 ```
 
 
@@ -270,31 +294,33 @@ for (i in 1:1000){
 
 mseRF <- rep(0,1000)
 
-start <- Sys.time()
+#start <- Sys.time()
 for(i in 1:1000){
   train = sample(1000,666)
   rf <- randomForest(x = d2[,1:12], y= d2[,13], subset = train, ntree = 100)
   mseRF[i] <- mean((d2$y[-train] - predict(rf, d2[-train,]))^2)
 }
 
-
-mserf <- data.frame("LinearModel" = mselm, "CART" = testmse, "RandomForest" = mseRF)
+#
+mserf <- data.frame(RandomForest= mseRF)
 
 mserf<- melt(mserf)
-```
 
-
-```{r baggedvcartvforest, echo = FALSE, fig.pos= 'H', fig.height=3 ,fig.cap="Simulated MSEtest Distributions of CART, Random, and Bagged Forests", results="asis"}
-ggplot(aes(x = value, fill = variable), data = mserf) + 
+c <- ggplot(aes(x = value), data = mserf) + 
   geom_density(alpha = .5)+
   scale_fill_manual(values = thesis)+
   guides(fill=guide_legend(title=NULL))+
-  scale_x_continuous(limits = c(0,40))+
+ # scale_x_continuous(limits = c(0,40))+
   xlab(" ")+
   ylab(" ")
 ```
 
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The distribution of 100 CART trees' $MSE_{test}$ in the figure \ref{fig:baggedvcartvforest} is roughly normal with a variance of `var(testmseC)`. There is a fair amount of variability in a single tree, they are heavily dependent on fluctuations in the starting data set. The linear model is less flexible but it  
+```{r baggedvcartvforest, echo = FALSE, fig.pos= 'H', fig.height=3 ,fig.cap="The simulated MSE distributions of CART, linear model, and the random forest on D2", results="asis"}
+grid.arrange(a,b,c, ncol=3)
+```
+
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The linear model is characteristically less flexible and less prone to overfitting than either of the tree-based methods, CART and random forests, and has a $MSE_{test}$ distribution that is quite peaked. CART is flexible and suffers from high variance. The random forest models perform much better on average than either the CART or the linear model, due to both the non-linear relationships between $Y$ and the predictors and the random forest's ability to decorrelate each of the trees by restricting the variables available on each split. See chapter 3 for more discussion on the inforced hetergenaity of trees in the random forest. 
 
 

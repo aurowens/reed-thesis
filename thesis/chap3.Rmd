@@ -10,6 +10,8 @@ header-includes:
 
 <!--
 You can delete the header-includes (lines 3-6 above) if you like and also the chunk below since it is loaded in the skeleton.Rmd file.  They are included so that chap3.Rmd will compile by itself when you hit Knit PDF.
+
+
 -->
 
 ```{r include_packages_2, include = FALSE}
@@ -137,11 +139,36 @@ d3$y <- ys
 
 #Random Forest Variable Importance
 
-##Populations and Permutations
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; As stated in the introduction of the *Chronicle of Permutations Statistical Methods* by KJ Berry et al, 2014, there are two models of statistical inference. One is the population model, where we assume that the data was randomly sampled from one (or more) populations. Under this model, we assume that the data generated follows some known distribution. "Under the population model, the level of statistical significance that results from applying a statistical test to the results of an experiment or a survey corresponds to the frequency with which the null hypothesis would be rejected in repeated random samplings from the same specified population(s)", (Berry et al, 2014). 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Implementing the `INFFOREST` and therefor the `INFTREES` algorithms, required creating a suite of functions to create trees and random forests. The trees are fit following the standard two-part CART-like algorithm. [^1] The function chooses a variable to split on with linear correlation with respect to $Y$, but instead of looking for correlations above a certain threshold which is common, it chooses the variable with the highest correlation when compared to its peers. This alleviates the situation where a variable with a non-linear relationship would be passed over again and again. The splitting is done via minimization of the following function with respect to $i$:
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The permutation family of methods, on the other hand, only assumes that the observed result was caused by experimental variability. The test statistics is first calculated for the observed data, then the data is permuted a number of times. The statistic is calculated after each permutation to derive a distribution of possible values. Then the original test statistic is tested against this distribution. If it is exceptionally rare, then there is evidence that our observation was not simply experimental variability. 
+$$RSS_{node} (i,X,Y) = RSS_{leaf}(Y|X <i) + RSS_{leaf}(Y|X \geq i) $$
+$$RSS_{leaf} = \sum (y - \hat{y})^2 $$
+$$\hat{Y}: \hat{y} \in \hat{Y}: \hat{y} = E(Y), \ where\  |\hat{Y}| = |Y|$$
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;This function considers the regression case only, and only numeric predictors. Leafs are created when the resultant split would be unsatisfactory, i.e. at least one daughter node would have five members or less. This generates very large trees - a quality that is not an issue in random forests but may be problematic in a stand-alone setting. At this time, there is also no function to prune the trees. 
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE, cache=TRUE}
+t1 <- tree.rf(d2$y[1:50],d2[1:50, 1:4],mtry = 4, bootsampled = FALSE)
+t <- t1[[2]]
+t$var[t$var == "<leaf>"] = "leaf"
+
+```
+
+
+```{r, fig.pos= 'H', echo = FALSE, message = FALSE}
+kable(t, caption="\\label{tab:tabhomegrowntree}A home-grown tree grown on the first four columns and the first 50 rows of D2")
+```
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The tree output is read in the following way: each row corresponds to a node of the tree which considers `n` observations. The mean of the $Y$ values included in the node are `ypred`. If there is an optimal and allowable split, [^2] then the chosen variable, `var`, and the $RSS_{node}$, `dev`, are recorded.[^3] The value of the variable in question that acts as the split point is recorded as `split.cutleft`. If there is no split on the node in question, then `var` will be recorded as `<leaf>` and the `dev` value will be the value of $RSS_{leaf}$ at this node. 
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The tree output is read roughly from top to bottom, with a coda in the middle. The first row corresponds to the first node, or the node that includes the entire dataset. The second row is the beginning of the right subtree or the right daughter of first node. This pattern continues, favoring the right daughter, until a leaf is reached. The left daughter of the first node is found after all of the splits off of the right daughter have finished but is easily identified as the row with a value of `n` that is exactly the difference between the `n` values of the first two rows. In the case where the right daughter contained many more observations of the original dataset, there may be a node within the right subtree that contains the same number of observations as the left daughter of the first node. In this case, the left daughter is simply the second row with this property. The pattern of following the right daughter until a leaf is reached continues with the left subtree. 
+
+[^3]: Recall that we only allow splits to take place that split the data into two groups, each with more than five members. 
+
+[^4]: It's the convention to call the $RSS_{node}$ the deviance at a node $N$, but, of course, this only makes sense when the node is a leaf. 
+
+[^5]: A great deal of effort was undertaken by the author to find the definitive, authentic CART algorithm. This implementation follows the rough strokes set out in the 1984 text *Classification and Regression Trees* to the best of the author's ability and may not be exactly the algorithm found in R packages like 'tree()'
 
 ##Breiman et al Introduce Permuted Variable Importance (1984)
 
