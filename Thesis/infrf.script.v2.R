@@ -89,7 +89,7 @@ max.cor <- function(yy,sxs){
   
 }
 
-split.rf <- function(y,x, min) {
+split.rf <- function(y,x, min, parent_rss) {
   
   sp <- list()
   if(length(x) <= min) {
@@ -101,6 +101,9 @@ split.rf <- function(y,x, min) {
     op.partition <- suppressWarnings(optimise(rss.node, interval = range(x), 
                                               upper = max(x), y=y,x=x, maximum = FALSE))
     
+    if(parent_rss < rss.leaf( y[x < op.partition[[1]]])){
+      return(NULL)
+    }
     
     if (length(x[x < op.partition[[1]]]) < min | length(x[x >= op.partition[[1]]]) < min){
       
@@ -201,7 +204,7 @@ tree.rf <- function(y,xs, mtry, bootsampled, min = 5){
       } else {
         maxxr <- max.cor(yy = y,sxs= xssrd)
       }
-      sprd <- split.rf(y, maxxr[[1]], min)
+      sprd <- split.rf(y, maxxr[[1]], min, parent_rss = rss.leaf(y))
       if(is.null(sprd)) {
         frame[1,] <- c("<leaf>",nrow(xssrd),rss.leaf(y),  mean(y), 0)
         

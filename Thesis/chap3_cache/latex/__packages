@@ -1,0 +1,14 @@
+base
+devtools
+dplyr
+ggplot2
+reedtemplates
+tree
+MASS
+randomForest
+cluster
+rpart
+maptree
+knitr
+GGally
+reshape

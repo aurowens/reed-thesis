@@ -119,11 +119,40 @@ $(document).ready(function () {
 </div>
 
 
+<p>header-includes: -  -  -  -  -  -  output: pdf_document —</p>
 <!--
 You can delete the header-includes (lines 3-6 above) if you like and also the chunk below since it is loaded in the skeleton.Rmd file.  They are included so that chap3.Rmd will compile by itself when you hit Knit PDF.
+
+
 -->
 <div id="random-forest-variable-importance" class="section level1">
 <h1>Random Forest Variable Importance</h1>
+<p>     Implementing the <code>INFFOREST</code> and therefor the <code>INFTREES</code> algorithms, required creating a suite of functions to create trees and random forests. The trees are fit following the standard two-part CART-like algorithm. [^1] The function chooses a variable to split on with linear correlation with respect to <span class="math inline">\(Y\)</span>, but instead of looking for correlations above a certain threshold which is common, it chooses the variable with the highest correlation when compared to its peers. This alleviates the situation where a variable with a non-linear relationship would be passed over again and again. The splitting is done via minimization of the following function with respect to <span class="math inline">\(i\)</span>:</p>
+<p><span class="math display">\[RSS_{node} (i,X,Y) = RSS_{leaf}(Y|X &lt;i) + RSS_{leaf}(Y|X \geq i) \]</span> <span class="math display">\[RSS_{leaf} = \sum (y - \hat{y})^2 \]</span> <span class="math display">\[\hat{Y}: \hat{y} \in \hat{Y}: \hat{y} = E(Y), \ where\  |\hat{Y}| = |Y|\]</span></p>
+<p>     This function considers the regression case only, and only numeric predictors. Leafs are created when the resultant split would be unsatisfactory, i.e. at least one daughter node would have five members or less. This generates very large trees - a quality that is not an issue in random forests but may be problematic in a stand-alone setting. At this time, there is also no function to prune the trees.</p>
+<table>
+<caption>A home-grown tree grown on the first four columns and the first 50 rows of D2</caption>
+<thead>
+<tr class="header">
+<th align="left">var</th>
+<th align="left">n</th>
+<th align="left">dev</th>
+<th align="left">ypred</th>
+<th align="left">split.cutleft</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">leaf</td>
+<td align="left">50</td>
+<td align="left">632421.683706045</td>
+<td align="left">66.2228208383958</td>
+<td align="left">0</td>
+</tr>
+</tbody>
+</table>
+<p>     The tree output is read in the following way: each row corresponds to a node of the tree which considers <code>n</code> observations. The mean of the <span class="math inline">\(Y\)</span> values included in the node are <code>ypred</code>. If there is an optimal and allowable split, [^2] then the chosen variable, <code>var</code>, and the <span class="math inline">\(RSS_{node}\)</span>, <code>dev</code>, are recorded.<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a> The value of the variable in question that acts as the split point is recorded as <code>split.cutleft</code>. If there is no split on the node in question, then <code>var</code> will be recorded as <code>&lt;leaf&gt;</code> and the <code>dev</code> value will be the value of <span class="math inline">\(RSS_{leaf}\)</span> at this node.</p>
+<p>     The tree output is read roughly from top to bottom, with a coda in the middle. The first row corresponds to the first node, or the node that includes the entire dataset. The second row is the beginning of the right subtree or the right daughter of first node. This pattern continues, favoring the right daughter, until a leaf is reached. The left daughter of the first node is found after all of the splits off of the right daughter have finished but is easily identified as the row with a value of <code>n</code> that is exactly the difference between the <code>n</code> values of the first two rows. In the case where the right daughter contained many more observations of the original dataset, there may be a node within the right subtree that contains the same number of observations as the left daughter of the first node. In this case, the left daughter is simply the second row with this property. The pattern of following the right daughter until a leaf is reached continues with the left subtree.</p>
 <div id="breiman-et-al-introduce-permuted-variable-importance-1984" class="section level2">
 <h2>Breiman et al Introduce Permuted Variable Importance (1984)</h2>
 <div id="variable-importance-on-a-single-tree" class="section level3">
@@ -153,6 +182,12 @@ You can delete the header-includes (lines 3-6 above) if you like and also the ch
 
 <p>     There are several ways mentioned in ref:<span class="citation">@strobl2008</span> to choose the set of predictors <span class="math inline">\(Z\)</span> to condition <span class="math inline">\(X_j\)</span> upon. <span class="math inline">\(Z\)</span> might be chosen due to outside theory about the problem or <span class="math inline">\(Z\)</span> might include every <span class="math inline">\(p-1\)</span> predictor possible. In that paper’s simulations section as well as in this one’s, <span class="math inline">\(Z\)</span> is chosen as the set of predictors with empirical correlation <span class="math inline">\(\geq .2\)</span></p>
 </div>
+</div>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>Recall that we only allow splits to take place that split the data into two groups, each with more than five members.<a href="#fnref1">↩</a></p></li>
+</ol>
 </div>
 
 
