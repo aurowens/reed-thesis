@@ -66,7 +66,7 @@ ggplot(aes(y = age, x = circumference), data = Orange) +
   ylab("Age of Tree (in days")
 ```
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As can be seen in figure \ref{fig:figOrangeTree1}, generally older trees have thicker trunks, and it seems like we are not wrong to suspect that circumference is a good predictor of age. As the data could be reasonably represented by a straight line, we can say that the relationship between trunk circumference and tree age is roughly linear. To create our predictions of circumference, we fit the formula: $Age \sim Circumference$, to a model. A predictive model is, put simply, a systematic way to make our predictions. The most common type of model is the linear model, which predicts based on a specific line through the data. (See figure 2). 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As can be seen in figure \ref{fig:figOrangeTree1}, generally older trees have thicker trunks, and it seems like we are not wrong to suspect that circumference is a good predictor of age. As the data could be reasonably represented by a straight line, we can say that the relationship between trunk circumference and tree age is roughly linear. To create our predictions of circumference, we fit the formula: $Age \sim Circumference$, to a model. A predictive model is, put simply, a systematic way to make our predictions. The most common type of model is the linear model, which predicts based on a specific line through the data. (See figure \ref{fig:figOrangeLM}). 
 
 
 ```{r figOrangeLM, echo=FALSE, fig.pos='H',message=FALSE, fig.height= 3, fig.cap = "A linear model representing age ~ trunk circumference in orange trees. Shaded area represents a 95% confidence interval around this line."}

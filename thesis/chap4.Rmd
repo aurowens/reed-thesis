@@ -902,3 +902,109 @@ As noted in several publications (Strobl et al, Breiman, Intro to Stat Learning)
 
 
 
+
+#INFFOREST Comparisons With Other Methods
+
+```{r comparisons, echo=FALSE, cache=TRUE, message=FALSE, warning=FALSE}
+set.seed(3)
+
+rf1 <- rforest(d1$y[1:200],d1[1:200, 1:12],mtry = 3,ntree = 100)
+
+set.seed(3)
+
+inf1 <- infforest(rf1, d1$y[1:200],d1[1:200, 1:12])
+inf1[inf1 == "NaN"] <- NA
+inf1[inf1 == "Inf"] <- NA
+inf11 <- inf1[complete.cases(inf1),]
+
+set.seed(2)
+condinf1 <- conditional.inf(rf1, d1$y[1:200],d1[1:200, 1:12])
+
+set.seed(2)
+
+perminf <- permuted.inf(rf1, d1$y[1:200],d1[1:200, 1:12])
+```
+
+```{r morecomputation, echo=FALSE, message=FALSE, warning=FALSE}
+
+b <- data.frame("variable" = names(as.data.frame(inf11)),
+                  "median" = sapply(as.data.frame(inf11), median),
+                  "iqr" = sapply(as.data.frame(inf11), IQR),
+                 "betas" = bts)
+
+c <- data.frame("variable" = names(as.data.frame(condinf1)),
+                  "median" = sapply(as.data.frame(condinf1), median),
+                  "iqr" = sapply(as.data.frame(condinf1), IQR),
+                 "betas" = bts)
+d <- data.frame("variable" = names(as.data.frame(perminf)),
+                  "median" = sapply(as.data.frame(perminf), median),
+                  "iqr" = sapply(as.data.frame(perminf), IQR),
+                 "betas" = bts)
+b$variable <- factor(b$variable, levels = b$variable)
+c$variable <- factor(c$variable, levels = c$variable)
+d$variable <- factor(d$variable, levels = d$variable)
+
+b$q1 <- rep(0,12)
+b$q3 <- rep(0,12)
+for(i in 1:12){
+  b$q1[i] <- quantile(inf11[,i], 1/4)
+  b$q3[i] <- quantile(inf11[,i], 3/4)
+}
+
+c$q1 <- rep(0,12)
+c$q3 <- rep(0,12)
+for(i in 1:12){
+  c$q1[i] <- quantile(condinf1[,i], 1/4)
+  c$q3[i] <- quantile(condinf1[,i], 3/4)
+}
+d$q1 <- rep(0,12)
+d$q3 <- rep(0,12)
+for(i in 1:12){
+  d$q1[i] <- quantile(perminf[,i], 1/4)
+  d$q3[i] <- quantile(perminf[,i], 3/4)
+}
+p <- ggplot(data = b, aes( x = variable, y = median, group = 1)) +
+  geom_point() +
+   ylab(" ")+
+  xlab(" ")+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  geom_line()+
+  geom_ribbon(ymin = b$q1 , ymax = b$q3, data = b, alpha = .4)+
+  scale_y_continuous(limits = c(0,1))
+
+q<- ggplot(data = c, aes( x = variable, y = median, group = 1)) +
+  geom_point() +
+  ylab(" ")+
+  xlab(" ")+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  geom_line()+
+  geom_ribbon(aes(ymin = c$q1, ymax = c$q3), alpha = .4)+
+  scale_y_continuous(limits = c(0,1))
+
+r <- ggplot(data = d, aes( x = variable, y = median, group = 1)) +
+  geom_point()+
+  ylab(" ")+
+  xlab(" ")+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  geom_line()+
+  geom_ribbon(aes(ymin = d$q1, ymax = d$q3), alpha = .4)+
+  scale_y_continuous(limits = c(0,1))
+```
+
+```{r figcomparisons, warning=FALSE, echo=FALSE, message = FALSE, fig.cap="Median Values of INFFOREST, Conditionally Permuted, and Permuted Variable Importance"}
+grid.arrange(p,q,r, ncol=3)
+```
+
+
+INFFOREST holds its own amongst the other methods described in Chapter 4. The conditional permuted variable importance, when ran on the same random forest, had more difficulty parsing out the situation with paired variables than INFFOREST, only selecting the first two variables to be important. Permuted variable importance does not pick up on the correlation structure within the predictors and deems $V2$ and $V6$ unimportant.  
+
+
+INNFOREST and conditional permuted variable importance both ignored the unfluential predictors that were not correlated with $V1,V2,V3$ and $V4$. This is a situation that also occured in the simulation run in Strobl et al (2008b). 
+
+
+
+
+
+
+
+
