@@ -115,26 +115,39 @@
   \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
 
 \Acknowledgements{
-I want to thank a few people.
+.
 }
 
 \Dedication{
-You can have a dedication here if you wish.
+.
 }
 
 \Preface{
-This is an example of a thesis setup to use the reed thesis document
-class.
+
 }
 
 \Abstract{
-The preface pretty much says it all. \par  Second paragraph of abstract
-starts here.
+Random forests are powerful predictive models but there is not a
+built-in method for statistical inference within these models. This
+paper compares several of the most common methods of performing
+inference on random forests while presenting a new method, INFFOREST
+variable importance. On simulated data with multicolinearity, the
+INFFOREST method is able to show significance for four out of five
+predictors used to generate the response. Existing methods are tested
+and performed similarly on the simulated data set. INFFOREST variable
+importance allows claims to be made about the relationship between a
+predictor and the response, in the context of the rest of the variables
+in the model. This sets it apart from the exiting methods and creates
+some interesting implications.\par
 }
 
+	\usepackage{amssymb,amsthm,amsmath}
+	\usepackage{chemarr}
 	\usepackage{algorithm}
 	\usepackage{algpseudocode}
+	\usepackage{pifont}
 	\usepackage{float}
+	\usepackage{tikz}
 % End of CII addition
 %%
 %% End Preamble
@@ -150,13 +163,9 @@ starts here.
   \pagestyle{empty} % this removes page numbers from the frontmatter
 
       \begin{acknowledgements}
-      I want to thank a few people.
+      .
     \end{acknowledgements}
   
-      \begin{preface}
-      This is an example of a thesis setup to use the reed thesis document
-      class.
-    \end{preface}
   
       \hypersetup{linkcolor=black}
     \setcounter{tocdepth}{2}
@@ -167,12 +176,22 @@ starts here.
       \listoffigures
   
       \begin{abstract}
-      The preface pretty much says it all. \par  Second paragraph of abstract
-      starts here.
+      Random forests are powerful predictive models but there is not a
+      built-in method for statistical inference within these models. This
+      paper compares several of the most common methods of performing
+      inference on random forests while presenting a new method, INFFOREST
+      variable importance. On simulated data with multicolinearity, the
+      INFFOREST method is able to show significance for four out of five
+      predictors used to generate the response. Existing methods are tested
+      and performed similarly on the simulated data set. INFFOREST variable
+      importance allows claims to be made about the relationship between a
+      predictor and the response, in the context of the rest of the variables
+      in the model. This sets it apart from the exiting methods and creates
+      some interesting implications.\par
     \end{abstract}
   
       \begin{dedication}
-      You can have a dedication here if you wish.
+      .
     \end{dedication}
   
   \mainmatter % here the regular arabic numbering starts
@@ -182,68 +201,242 @@ starts here.
   
   \section{Trees and Random Forests}\label{trees-and-random-forests}
   
-  \subsection{Trees}\label{trees}
+  To begin our discussion of trees and random forests, we will first
+  consider the following example using data from a dendrologic study of
+  five orange trees. This study measured two things for each tree: the age
+  of the tree (recorded in days) and the circumference of the trunk (in
+  cm). These are called, in general terms, the variables recorded by the
+  study. In the dataset below, each column represents a variable and each
+  row represents one set of measurements. There are 2 columns (age and
+  circumference) and 35 rows. The first six rows are displayed in table
+  \ref{tab:taborange}.
   
-  ~~~~~Decision trees may be familiar to many with a background in social
-  science as a convenient way to represent data and assist in decision
-  making. Morgan and Sonquist (1963) derived a way for constructing trees
-  motivated by the specific feature space of data collected from
-  interviews and surveys. Unlike, agricultural data which involves mostly
-  numeric variables, the data collected from interviews is mostly
-  categorical. On top of this, the datasets Morgan and Sonquist dealt with
-  had few participants, and a lot of data collected on each one. To add to
-  their difficulties, there was reason to believe that there were lurking
-  errors in the data that would be hard identify and quantify. Lastly,
-  many of the predictors were correlated. Morgan and Sonquist doubted that
-  the additive assumptions of many models would be appropriate for this
-  data. They noted that while many statistical methods would have
-  difficulty accurately parsing this data, a clever researcher with quite
-  a lot of time could create a suitable model simply by grouping values in
-  the feature space and predicting that the response corresponding to
-  these values would be an average of the observed responses given the
-  grouped conditions. Their formalization of this procedure in terms of
-  ``decision rules'' laid the ground work for future research on decision
-  trees.
+  \begin{table}
+  
+  \caption{\label{tab:unnamed-chunk-1}\label{tab:taborange}The first six rows of the Orange data set}
+  \centering
+  \begin{tabular}[t]{r|r}
+  \hline
+  age & circumference\\
+  \hline
+  118 & 30\\
+  \hline
+  484 & 58\\
+  \hline
+  664 & 87\\
+  \hline
+  1004 & 115\\
+  \hline
+  1231 & 120\\
+  \hline
+  1372 & 142\\
+  \hline
+  \end{tabular}
+  \end{table}
+  
+  ~~~~~Let's pretend we are interested in the following question: knowing
+  only the circumference of the orange tree, can we predict the age of the
+  tree? This question is called a formula, or a guess at how the relation
+  between the two variables functions. We often refer to formulas using
+  the following notation:
+  
+  \[Age \sim Circumference \]
+  
+  ~~~~~In this formula, circumference is the predictor and age is the
+  response. Suppose we expanded the study to include the height of the
+  orange trees at various stages of development. Now we can consider both
+  the circumference and the height of the tree when we make our
+  predictions of the age. When we have multiple predictors, we add them to
+  the notation in the following way:\footnote{Often the notation for
+    multiple predictors is written \(Y \sim X+W\) but this assumes an
+    additive, linear relationship between the predictors and the response.
+    This assumption is unnecessary for tree-based models so the notation,
+    \(Y\sim X,W\) is used.} \[Age \sim Circumference, Height\]
+  
+  ~~~~~Returning to the original orange tree data set, we can begin our
+  investigation into the validity of the formula by plotting the data and
+  observing the relationship between the variables in figure
+  \ref{fig:figOrangeTree1}.
+  
+  \begin{figure}[H]
+  
+  {\centering \includegraphics{Thesis_files/figure-latex/figOrangeTree1-1} 
+  
+  }
+  
+  \caption{The relationship between age and circumference of the trunk of orange trees.}\label{fig:figOrangeTree1}
+  \end{figure}
+  
+  ~~~~~As can be seen in figure \ref{fig:figOrangeTree1}, generally older
+  trees have thicker trunks, and it seems like we are not wrong to suspect
+  that circumference is a good predictor of age. As the data could be
+  reasonably represented by a straight line, we can say that the
+  relationship between trunk circumference and tree age is roughly linear.
+  To create our predictions of age, we fit the formula
+  \(Age \sim Circumference\) to a model. A predictive model is, put
+  simply, a systematic way to make our predictions. The most common type
+  of model is the linear model, which creates predictions from a line
+  through the data.
+  
+  \begin{figure}[htbp]
+  \centering
+  \includegraphics{Thesis_files/figure-latex/unnamed-chunk-2-1.pdf}
+  \caption{\label{fig:unnamed-chunk-2}\label{fig:OrangeLM}A linear model
+  representing age \textasciitilde{} trunk circumference in orange trees.
+  The shaded area represents a 95\% confidence interval around this line.}
+  \end{figure}
+  
+  ~~~~~As can be guessed from figure \ref{fig:OrangeLM}, the linear model
+  works better on certain data than others. The linear model necessitates
+  several assumptions that may not always be appropriate. We'll return to
+  a brief discussion of the assumptions of the linear model later in this
+  chapter.
+  
+  ~~~~~This paper discusses at length tree-based models. A tree for the
+  formula \(age \sim circumference\) is similar to the linear model in
+  that it presents a systematic way to make predictions, but the two
+  differ in that the tree is not linear in any fashion. In fact, we can
+  compare the differences between the two models by comparing figures
+  \ref{fig:OrangeLM} and \ref{fig:orangeTreePartition}.
+  
+  \begin{figure}[H]
+  
+  {\centering \includegraphics{Thesis_files/figure-latex/unnamed-chunk-5-1} 
+  
+  }
+  
+  \caption{\label{fig:orangeTreePartition}A tree modeling the formula age  \ \  trunk circumference first creates partitions on the predictor, seen as vertical lines, and then predicts the value of the response within that partition, seen as text.}\label{fig:unnamed-chunk-5}
+  \end{figure}
+  
+  ~~~~~When using the linear model, we make predictions in the following
+  way: given a value of X (circumference) the corresponding value of Y
+  (age) on the line is our prediction. The predictions from the tree are
+  gathered similarly: given a value of X (circumference), our prediction
+  is the average value of Y (age) within the partition that X falls
+  into.\footnote{While any curve can be approximated in a step-wise manner
+    when the number of steps approaches \(\infty\), a tree model does not
+    converge to the linear model as the number of splits approaches
+    \(\infty\), even when the data is linear.}
+  
+  ~~~~~Tree methods get their name from a common way of representing them
+  in higher dimensions, when there is more than one predictor. Figure
+  \ref{fig:figorangeTree} shows this method. In this case, given a new
+  value for circumference, one would start their predictions at the top of
+  the tree and, depending on the value of circumference and the
+  instructions at each intersection or split, one would fall down branch
+  by branch before landing on a prediction for age.
+  
+  \begin{figure}[H]
+  
+  {\centering \includegraphics{Thesis_files/figure-latex/unnamed-chunk-6-1} 
+  
+  }
+  
+  \caption{\label{fig:figorangeTree}A tree representing age \ \ trunk circumference in orange trees.}\label{fig:unnamed-chunk-6}
+  \end{figure}
+  
+  \subsection{Trees: Background}\label{trees-background}
+  
+  Decision trees are a convenient way to represent data and assist in
+  decision making. Morgan and Sonquist (1963) derived a way for
+  constructing trees motivated by the specific characteristics of data
+  collected from interviews and surveys. The first difficulty in analyzing
+  this data was that data collected from surveys is mostly categorical,
+  where the observation is that the participant is a member of some
+  discrete group. Some common categorical variables are gender, ethnicity,
+  and education level. Numeric variables, like age, height, and weight
+  are, in general, much easier to work with. On top of this, the data sets
+  Morgan and Sonquist dealt with had few participants (rows) and many
+  variables (columns). To add to their difficulties, there was reason to
+  believe that there were lurking errors in the data that would be hard to
+  identify and quantify. Lastly, many of the predictors were correlated.
+  Morgan and Sonquist doubted that the additive assumptions of many models
+  would be appropriate for this data. They noted that while many
+  statistical methods would have difficulty accurately parsing this data,
+  a clever researcher with quite a lot of time could create a suitable
+  model simply by grouping values of the predictors and predicting that
+  the response corresponding to these values would be an average of the
+  observed responses given the grouped conditions. Their formalization of
+  this procedure in terms of ``decision rules'' laid the groundwork for
+  future research on decision trees. See figure
+  \ref{fig:orangeTreePartition} for a visualization of this process.
   
   ~~~~~Later researchers proposed new methods for creating trees that
   improved upon the Morgan and Sonquist model. Leo Breiman et al (1984)
-  proposed an algorithm called CART, \emph{classification and regression
-  trees}, that would allow trees to be fit on various types of data. An
-  alternative to this method is conditional inference trees. Torsten
-  Hothorn, Kurt Hornik, Achim Zeileis argue in their 2006 paper
-  \emph{Unbiased Recursive Partitioning: A Conditional Inference
-  Framework}, CART has a selection bias toward variables with either
-  missing values or a great number of possible splits. This bias can
-  effect the interpretability of all tree models fit using this method. As
-  an alternative to CART and other algorithms, Hothorn et al propose a new
-  method, conditional inference trees.
+  proposed an algorithm called CART (Classification And Regression Trees)
+  to fit trees on various types of data. Torsten Hothorn, Kurt Hornik and
+  Achim Zeileis argue in their 2006 paper \emph{Unbiased Recursive
+  Partitioning: A Conditional Inference Framework} CART has a selection
+  bias toward variables with either missing values or a great number of
+  possible splits. This bias can affect the interpretability of all tree
+  models fit using this method. As an alternative to CART and other
+  algorithms, Hothorn et al. propose a new method: conditional inference
+  trees.
   
   ~~~~~ There is a limit to the predictive capabilities of a single tree
   as they suffer from high variance. To alleviate this, aggregate methods
   called forests are often used instead. They function by enlisting the
   help of many trees, and then by aggregating the responses over all of
   them. The two most common types of forests are bagged and random
-  forests.
-  
-  \section{What We Mean When We Talk About
-  Inference}\label{what-we-mean-when-we-talk-about-inference}
+  forests. This is further explored in chapter 2.
   
   \subsection{Inferential vs Descriptive
   Statistics}\label{inferential-vs-descriptive-statistics}
   
-  ~~~~~ A note should be made of the difference between inferential and
-  descriptive statistics. This paper's aim is to describe a process of
-  making inferential claims using random forests, not descriptive ones.
-  Descriptive statistics describe the data at hand without making any
-  reference to a larger data generating system that they come from. It
-  follows that inferential statistics then make claims about the data
-  generating system given the data.
+  In the earlier sections, we focused on building predictive models, but
+  this paper hopes to use tree-based methods beyond this context. The
+  linear model is a mainstay in social science because it allows for easy
+  and interpret-able statistical inference. Return to the orange tree
+  example from section 1.1. The linear model gives us a line with which we
+  can make predictions, but it also gives estimated coefficients and
+  conducts hypothesis tests on the values of the coefficients.
   
-  \section{Permutations and
-  Populations}\label{permutations-and-populations}
+  \begin{table}
   
-  ~~~~~ As stated in the introduction of the \emph{Chronical of
-  Permutations Statistical Methods} by KJ Berry et al, 2014, there are two
+  \caption{\label{tab:unnamed-chunk-8}\label{tab:tablmcoef}Estimated linear coefficients, error, and p-values from the model fit in section 1.1 on the orange tree dataset}
+  \centering
+  \begin{tabular}[t]{l|r|r|r|r}
+  \hline
+    & Estimate & Std. Error & t value & Pr(>|t|)\\
+  \hline
+  (Intercept) & 16.603609 & 78.1406182 & 0.2124837 & 0.8330368\\
+  \hline
+  circumference & 7.815998 & 0.6058806 & 12.9002281 & 0.0000000\\
+  \hline
+  \end{tabular}
+  \end{table}
+  
+  This table provides evidence that not only is trunk circumference a good
+  predictor of age, the relationship between them is the equation of the
+  line:
+  
+  \[Age = 7.81 \cdot Circumference + 16.6\]
+  
+  Roughly, for every 1 cm of trunk growth, we would expect the tree to be
+  7.81 days older. Not only are we provided with a way to describe the
+  relationship between age and circumference, we have conducted
+  statistical tests to make reasonably sure that our estimates are not
+  just due to chance. Inferential claims about the nature of tree age and
+  trunk growth are possible here. It is important to note the difference
+  between inferential and descriptive statistics. Descriptive statistics
+  describe the data at hand without making any reference to a larger data
+  generating system that they come from. It follows that inferential
+  statistics then make claims about the data generating system given the
+  data. The model in figure \ref{fig:figorangeTree} could be used to make
+  descriptive claims about the orange tree data. For example, given the
+  data we have, we expect a sapling with a trunk circumference less than
+  41 cm to be 118 days old. However, trees are variable; they are very
+  sensitive to changes in the data set. It's entirely possible that if we
+  fit this tree on a sample of the data, the predictions would change. See
+  chapter 2 for more discussion on the variability of trees. Our claims
+  about the relation between circumference and age in young orange trees
+  can only be descriptive as we have not taken into account the
+  variability in gathering them. This paper's aim is to describe a process
+  of making inferential claims using trees and random forests that employs
+  permutation tests.
+  
+  ~~~~~ As stated in the introduction of the \emph{Chronicle of
+  Permutations Statistical Methods} by KJ Berry et al. 2014, there are two
   models of statistical inference. One is the population model, where we
   assume that the data was randomly sampled from one (or more)
   populations. Under this model, we assume that the data generated follows
@@ -251,197 +444,237 @@ starts here.
   statistical significance that results from applying a statistical test
   to the results of an experiment or a survey corresponds to the frequency
   with which the null hypothesis would be rejected in repeated random
-  samplings from the same specified population(s)'', (Berry et al, 2014).
+  samplings from the same specified population(s)'' (Berry et al, 2014).
   
   ~~~~~The permutation family of methods, on the other hand, only assumes
   that the observed result was caused by experimental variability. The
-  test statistics is first calculated for the observed data, then the data
-  is permuted a number of times. The statistic is calculated after each
-  permutation to dervive a distribution of possible values. Then the
-  original test statistic is tested against this distribution. If it is
-  exceptionally rare, then there is evidence that our observation was not
-  simply experimental variability.
+  test statistics are calculated for the observed data, then the data is
+  permuted a number of times. The statistic is calculated after each
+  permutation to derive a distribution of possible values. Then the
+  original test statistic is tested against this distribution. If the
+  observed value is exceptionally rare, then there is evidence that our
+  observation was not simply experimental variability.
   
   \section{A Step Back}\label{a-step-back}
   
-  ~~~~~A random forest \(R_f\) is the set of functions \(T_1,...,T_N\)
-  where each \(T_j\) is a piece-wise function from the sample space
-  \(\Omega\) to the response space \(\Phi\). In general, \(\Omega\) is
-  defined by an n x p matrix where each column is a random variable and
-  \(\Phi\) is defined by an n x 1 vector \(Y\).
+  A random forest \(R_f\) is the set of functions \(T_1,...,T_N\) where
+  each \(T_j\) is a piece-wise function from the sample space \(\Omega\)
+  into itself. In general, \(\Omega\) is defined by an n x p +1 matrix
+  where each column is a random variable.
   
-  ~~~~~Each tree in a random forest, \(T_j \in R_f\), is generated on a
-  subset of both \(\Omega\) and \(\Phi\) called the training set. This
-  training set is a bootstrapped sample of the original dataset and is
-  noted as \({B}^t\). It is then tested on a disjoint subset of \(\Omega\)
-  called the test set, \(\bar{B}^t\), where
-  \(\bar{B}^t = \Omega \backslash B^t\). The image of \(T_j\) in \(\Phi\)
-  is called the predictions of \(T_j\)
+  \[when \ n = 3, p = 2 \] \[D = \begin{bmatrix} 
+  y_{1} &  x_{11} & x_{1p}\\
+  y_2  &  x_{21} & x_{2p}\\
+  y_3  &  x_{31} &  x_{3p}
+  \end{bmatrix}\]
   
-  ~~~~~As outlined in the 1984 textbook, \emph{Classification and
-  Regression Trees}, Brieman, Friedman, Olshen, and Stone described their
-  method for creating, pruning, and testing regression trees. There are
-  essentially three steps: one, decide on a variable to split over, two,
-  partition that variable space in two distinct partitions, and three, set
-  our initial predictions for each partition to be mean value of the
-  response according to the observed responses corresponding to the values
-  in the partitions. Recursively, this process is repeated for each new
-  partition until some stopping condition is reached.This is a top down,
-  greedy algorithm that functions by creating as large a tree as possible
-  and then is pruned down to prevent over fitting.
+  Each tree in a random forest, \(T_j \in R_f\), is generated on a subset
+  of \(\Omega\) called the training set. This training set is a
+  bootstrapped sample of the original dataset and is noted as \({B}^t\).
+  \footnote{In the bootstrapped sample, there will be repeated rows from
+    the original data. This allows \({B}^t\) to be a subset of \(\Omega\)
+    without sacrificing the number of observations.}
+  
+  \[{B}^t = \begin{bmatrix} 
+  y_{1} &  x_{11} & x_{1p}\\
+  y_1  &  x_{11} & x_{1p}\\
+  y_3  &  x_{31} &  x_{3p}
+  \end{bmatrix}\]
+  
+  It is then tested on a disjoint subset of \(\Omega\) called the test
+  set, \(\bar{B}^t\), where \(\bar{B}^t = \Omega \backslash B^t\). The
+  image of \(T_j\) is called the predictions of \(T_j\).
+  
+  \[\bar{B}^t = \begin{bmatrix} 
+  y_{2} &  x_{21} & x_{2p}
+  \end{bmatrix}\]
+  
+  As outlined in the 1984 textbook \emph{Classification and Regression
+  Trees}, Breiman, Friedman, Olshen, and Stone described their method for
+  creating, pruning, and testing regression trees. There are essentially
+  three steps: one, decide on a variable to split over, two, partition
+  that variable space in two distinct partitions, and three, set our
+  initial predictions for each partition to be mean value of the response
+  according to the observed responses corresponding to the values in the
+  partitions. Recursively, this process is repeated for each new partition
+  until some stopping condition is reached. This is a top down, greedy
+  algorithm that functions by creating as large a tree as possible
+  ({[}@bibCART{]}).
   
   ~~~~~Random Forests are generated by fitting a large number of trees,
-  each on a boosted sample of the data. The crutial difference, however,
+  each on a boosted sample of the data. The crucial difference, however,
   between the trees in CART and the trees in a random forest, is that at
   each node in a random forest, only a subset of the predictors are
   considered as candidates for possible splits. This decorrelates each
-  tree from its neighbors, and decreases bias of the whole model while
-  slightly increasing variance of each tree.
+  tree from its neighbors, and limits variability of the whole forest.
+  ({[}@bibISL{]})
+  
+  Predictor columns from the bootstrapped sample are themselves sampled to
+  select the columns available for a tree to split over.
+  
+  \[{B}^t = \begin{bmatrix} 
+  y_{1} &  x_{11} \\
+  y_1  &  x_{11} \\
+  y_3  &  x_{31} 
+  \end{bmatrix}\]
   
   \section{Inference on Random Forests}\label{inference-on-random-forests}
   
   \subsection{The Problem}\label{the-problem}
   
-  ~~~~~Random forests create models with great predictive-, but poor
-  inferential capabilities. After Morgan and Sonquist's initial
-  development of decision trees, trees quickly moved to the domain of
-  machine learning and away from statistics. Researchers focused on
-  bettering predictions and improving run times and less on the statistics
-  behind them. Inferential statistics with random forests is usually
-  treated as a variable selection problem, and generally falls behind the
-  predictions in importance. This has limited the applications of random
-  forests in certain fields, as to many the question of ``why'' the data
-  is the way it is, is just, if not more, important as the predictions.
-  There are several means of performing descriptive statistics with random
-  forests that could be interpreted incorrectly as attempting to answer
-  this but without a statistically backed method for performing variable
-  importance, the use of random forest is limited to prediction-only
-  settings.
+  Random forests create models with great predictive, but poor inferential
+  capabilities. After Morgan and Sonquist's initial development of
+  decision trees, trees quickly moved to the domain of machine learning
+  and away from statistics. Researchers focused on bettering predictions
+  and improving run times and less on the statistics behind them. In a
+  single tree, descriptive claims may be simple to make, but it is much
+  more difficult to describe the behavior of the whole forest. Inferential
+  statistics with random forests generally falls behind the predictions in
+  importance. This has limited the applications of random forests in
+  certain fields, as to many the question of ``why'' the data is the way
+  it is is more important than building predictions. There are several
+  means of performing descriptive statistics with random forests that
+  could be interpreted incorrectly as attempting to answer this but
+  without a statistically backed method for performing inference, the use
+  of random forest is limited to prediction-only settings.
   
   \subsection{Proposed solutions to this
   problem}\label{proposed-solutions-to-this-problem}
   
-  ~~~~~Breiman and Cutler proposed a method of permuted variable
-  importance in their paper (cite) to answer this problem. Their method
-  compares the variable importance for each variable in a tree-wise
-  manner. For each tree, the permuted variable importance of the variable
-  \(X_j\) is:
+  Variable importance could be the tree-based analogue to the coefficients
+  of the linear model, in that the variable importance for the predictor
+  \(X_i\) in the model for \(Y \sim X_1,...,X_p\) is the amount of
+  variance in model accuracy due to \(X_i\). Breiman proposed a method of
+  permuted variable importance in his paper \emph{Statistical Modeling:
+  The Two Cultures} to answer this problem. Their method compares the
+  variable importance for each variable in a tree-wise manner. For each
+  tree, the permuted variable importance of the variable \(X_j\) is:
   
+  \label{eq:eqpermvi}
   \[VI^t(x_j) = \frac{\sum_{i \in |\bar{B}^t|} ({y} - \hat{y})^2}{|\bar{B}^t|} - \frac{\sum_{i \in |\bar{B}^t_p|} ({y} - \hat{y_p})^2}{|\bar{B_p}^t|} \]
   
   ~~~~~ Where \(\bar{B}^t\) is the out of bag sample for tree t, \(|B|\)
   is the number of observations in that sample, \(\bar{B}_p^t\) is with
   \(X_j\) permuted, \(\hat{y}\) is the predicted outcome, and
   \(\hat{*y}^t\) is the predicted outcomes after variable \(X_j\) has been
-  permuted. This value is averaged over all the trees. It's important to
+  permuted. This value is averaged over all the trees. It is important to
   note that if the variable \(X_j\) is not split on in the tree \(t\), the
   tree-wise variable importance will be 0.
   
-  ~~~~~ Creating a permutation-based method is certainly an attractive
-  solution to our problem. One, it allows us to estimate the distribution
-  of variable importance and generate a Z score under the null hypothesis
-  that \(PV = 0\).
-  
-  \[VI_{\alpha}(x_j) = \frac{\sum_1^ntree PV^t(x_j)}{\frac{\hat{\sigma}}{\sqrt{ntree}}}\]
-  
   ~~~~~ Strobl et al from the University of Munich criticize this method
-  in their 2008 technical report, \emph{Danger: High Power! -- Exploring
+  in their 2008 technical report \emph{Danger: High Power! -- Exploring
   the Statistical Properties of a Test for Random Forest Variable
-  Importance}. One, this method has the downside of increasing power with
-  increasing numbers of trees in the forest. This is a more or less
+  Importance}. First, this method has the downside of increasing power
+  with increasing numbers of trees in the forest. This is a more or less
   arbitrary parameter which we would hope would not affect our importance
-  estimates. Secondly, the null hypothesis under Breiman and Cutler's
-  strategy is that the variable importance \(V\) for any variable \(X_j\)
+  estimates. Second, the null hypothesis under Breiman and Cutler's
+  strategy is that the variable importance \(VI\) for any variable \(X_j\)
   is not equal to zero given \(Y\), the response. Because random forests
   are most often used in situations with multicolinearity that would make
   other methods like the linear model difficult, Strobl argues that any
-  variable importance measure worth its salt should not be mislead by
+  variable importance measure worth its salt should not be misled by
   correlation within the predictors.
   
   ~~~~~ The researchers at the University of Munich published a fully
   fleshed response to the Breiman and Cutler method in 2008, titled
-  \emph{Conditional Variable Importance for Random Forests} that address
+  \emph{Conditional Variable Importance for Random Forests} that addresses
   these issues. Strobl et al propose restructuring the Breiman and Cutler
-  algorithm to account for conditional dependence among the predictors.The
-  null hypothesis is that \(VI_{\beta}(X_j) = 0\) given the predictor
-  \(Y\) \emph{and all other predictors} \(X_1,..X_n\).This accounts for
-  interactions between \(X_j\) and the other predictors.
+  algorithm to account for conditional dependence among the predictors.
+  The null hypothesis is that \(VI_{\beta}(X_j) = 0\) given the predictor
+  \(Y\) \emph{and all other predictors} \(X_1,..X_n\). This accounts for
+  interactions between \(X_j\) and the other predictors, while preserving
+  the relationship between \(Y\) and the remaining predictors.
   
   ~~~~~This paper aims to provide a response to this method. The
   partitions are made from the random forest corresponding to the formula
   of \(Y~X_1,...,X_n\) instead of a model of \(X_j~X_1,...,X_n\). This
-  ignores the common situation where the predictors are correlated enough,
-  they act as stand ins for each other, so that if one variable is heavily
-  influential in a certain tree at predicting \(Y\), the other variable
-  will be forgotten all together.
+  ignores the common situation where if the predictors are correlated
+  enough, then they act as stand ins for each other, so that if one
+  variable is heavily influential in a certain tree at predicting \(Y\),
+  the other variable will be forgotten altogether.
   
   \chapter{Simulations and Comparisons}\label{simulations-and-comparisons}
   
-  \section{Simulated Data}\label{simulated-data}
+  Our goal for this chapter is to compare trees, random forests, and
+  linear models. In this chapter, we will use simulated data instead of
+  the orange data set. One reason for this is theoretical consistency. One
+  hopes that one's results will not be rendered null and void by any
+  misstep in the data collection that comes to light. This also ensures
+  that these simulations can be repeated by later researchers, but,
+  granted, it does not make for the most exciting analysis. For now,
+  consider \(Y\) to be our response variable. In the first simulation,
+  \(V\) will be the set of our predictors, and \(V_j\) to be a predictor
+  in \(V\). The formula will be the same for each model: \(Y \sim V\). In
+  our second simulation, our set of predictors will be denoted as \(X\)
+  and \(X_j\) will be a member of \(X\). The formula in this case is
+  \(Y \sim X\).
   
-  ~~~~~Tree-based methods shine in predictive situations with correlated
-  predictors, although these situations can pose problems for inference.
-  In a situation with correlated predictors \(X_1\) and \(X_2\), and the
-  treemodel we are considering is \(Y \sim X_1 + X_2\), it is difficult to
-  say how much of the modeled effect on \(Y\) is due to \(X_1\) or
-  \(X_2\). To illustrate this idea, compare a few existing methods, and
-  explore methods of inference on tree based models three datasets will be
-  simulated with different correlation structures. We will be focused more
-  on the correlation structure between the predictors than on their
+  \subsection{Simulated Data}\label{simulated-data}
+  
+  Random forests excel in predicting outcomes with correlated predictors,
+  although these situations can make it difficult to perform intelligible
+  inference. In a situation in which the correlated predictors are \(X_1\)
+  and \(X_2\) and the formula we're estimating is \(Y \sim X_1 + X_2\), it
+  can be difficult to say if \(X_1\) or \(X_2\) is truly the better
+  predictor. To illustrate this idea, compare a few existing methods, and
+  explore methods of inference on tree based models, we will simulate two
+  data sets with different correlation structures. We will focus more on
+  the correlation structure between the predictors than on their
   relationships with the response and this will be reflected in the
   simulations.
   
-  ~~~~~To aid in comparisons between the methods, one of the simulated
-  datasets considered in this paper will be generated from the same method
-  as used in (Strobl et al, 2008b). Under this method, the 13 x 1000 data
-  set, \(D_1\), has 12 predictors, \(V_1,..,V_{12}\), where
-  \(V_j \sim N(0,1)\). The first four are, however, block correlated to
-  each other with \(\rho = .9\). They are related to \(Y\) by the linear
-  equation:
+  ~~~~~The first simulated dataset is generated under the same scheme as
+  in {[}@bibstrobl2008{]}. Under this method, the 13 x 1000 data set,
+  \(D_1\), has 12 predictors, \(V_1,..,V_{12}\), where
+  \(V_j \sim N(0,1)\). The first four are block correlated to each other
+  with \(\rho = .9\). They are related to \(Y\) by the linear equation:
   \[Y = 5 \cdot V_1 + 5 \cdot V_2 + 2 \cdot V_3 + 0 \cdot V_4 + -5 \cdot V_5 + -5\cdot V_6 + 0\cdot V_7 + 0 \cdot ..... + E, E \sim N(0,\frac 1 2 )\]
-  Note that the coefficients for \(V_7,...,V_{12}\) are all zero.
+  Note in table \ref{tab:tabcorSim1}, the coefficients for
+  \(V_7,...,V_{12}\) are all zero.
   
-  \subsubsection{\texorpdfstring{Table 1: Correlation of \(V_1,..., V_7\)
-  and
-  \(Y\)}{Table 1: Correlation of V\_1,..., V\_7 and Y}}\label{table-1-correlation-of-v_1...-v_7-and-y}
+  \begin{table}
   
-  \begin{tabular}{l|r|r|r|r|r|r|r|r|r}
+  \caption{\label{tab:unnamed-chunk-9}\label{tab:tabcorSim1}Empirical correlations and coefficients of the variables in the first simulated data set}
+  \centering
+  \begin{tabular}[t]{l|r|r|r|r|r|r|r|r|r}
   \hline
     & V1 & V2 & V3 & V4 & V5 & V6 & V7 & y & beta\\
   \hline
-  V1 & 1.000 & 0.915 & 0.908 & 0.907 & -0.034 & 0.006 & 0.012 & 0.829 & 5\\
+  V1 & 1.000 & 0.915 & 0.908 & 0.907 & -0.034 & 0.006 & 0.012 & 0.839 & 5\\
   \hline
-  V2 & 0.915 & 1.000 & 0.914 & 0.914 & -0.020 & -0.001 & -0.001 & 0.830 & 5\\
+  V2 & 0.915 & 1.000 & 0.914 & 0.914 & -0.020 & -0.001 & -0.001 & 0.838 & 5\\
   \hline
-  V3 & 0.908 & 0.914 & 1.000 & 0.903 & -0.017 & -0.007 & 0.007 & 0.808 & 2\\
+  V3 & 0.908 & 0.914 & 1.000 & 0.903 & -0.017 & -0.007 & 0.007 & 0.818 & 2\\
   \hline
-  V4 & 0.907 & 0.914 & 0.903 & 1.000 & -0.002 & -0.015 & 0.023 & 0.789 & 0\\
+  V4 & 0.907 & 0.914 & 0.903 & 1.000 & -0.002 & -0.015 & 0.023 & 0.800 & 0\\
   \hline
-  V5 & -0.034 & -0.020 & -0.017 & -0.002 & 1.000 & 0.044 & 0.005 & -0.388 & -5\\
+  V5 & -0.034 & -0.020 & -0.017 & -0.002 & 1.000 & 0.044 & 0.005 & -0.392 & -5\\
   \hline
-  V6 & 0.006 & -0.001 & -0.007 & -0.015 & 0.044 & 1.000 & -0.005 & -0.364 & -5\\
+  V6 & 0.006 & -0.001 & -0.007 & -0.015 & 0.044 & 1.000 & -0.005 & -0.368 & -5\\
   \hline
-  V7 & 0.012 & -0.001 & 0.007 & 0.023 & 0.005 & -0.005 & 1.000 & -0.141 & -2\\
+  V7 & 0.012 & -0.001 & 0.007 & 0.023 & 0.005 & -0.005 & 1.000 & 0.004 & 0\\
   \hline
   \end{tabular}
+  \end{table}
   
-  ~~~~~As can be seen from the last column in the table, ``beta'',
-  although \(V4\) was not included in the model \(Y \sim V1,..V_{12}\), it
-  has a strong correlation with more influential predictors
-  \(V_1,...,V_3\) insures that it still shows a strong, empirical linear
-  correlation with \(Y\). A linear model would likely \emph{overstate} the
-  effect of \(V_4\) on \(Y\). \footnote{A brief note on uncertainty is
-    needed here. It's true that in this setting we can say that \(V_4\) is
-    actually unimportant to understanding \(Y\), but in situations with
-    real data this is profoundly more difficult to parse. Often like in
-    the social science situations that Morgan and Sonquist encountered,
-    the real relationship between correlated predictors is complicated and
-    often there is some theoretical backing or other insight that is
-    gained to include variables that may not be important to the model.}
-  \footnote{Another point that could be said is that, no \(V_4\) is not
-    unimportant, \(V_1, V_2,\) and \(V_3\) are just stand ins for the real
-    star, \(V_4\), as they are nearly the same (\(\rho \sim 1\)). Then the
-    real relationship represented here is
+  ~~~~~In the last column of table \ref{tab:tabcorSim1}, the coefficient
+  ``beta'', refers to the function used to generate the \(Y\) values.
+  Although \(V4\) was not included in the model \(Y \sim V1,..V_{12}\),
+  its strong correlation with more influential predictors \(V_1,...,V_3\)
+  ensures that it still shows a strong, empirical linear correlation with
+  \(Y\). A linear model would likely \emph{overstate} the effect of
+  \(V_4\) on \(Y\). \footnote{A brief note on uncertainty is needed here.
+    It's true that in this setting we can say that \(V_4\) is actually
+    unimportant to understanding \(Y\), but in situations with real data
+    this is profoundly more difficult to parse. Often like in the social
+    science situations that Morgan and Sonquist encountered, the real
+    relationship between correlated predictors is complicated and often
+    there is some theoretical backing or other insight that is gained to
+    include variables that may not be important to the model.} \footnote{Another
+    point that could be said is that, no \(V_4\) is not unimportant,
+    \(V_1, V_2,\) and \(V_3\) are just stand ins for the real star,
+    \(V_4\), as they are nearly the same (\(\rho \sim 1\)). Then the real
+    relationship represented here is
     \(Y \sim (5 + 5 + 2) \cdot V_4 + -5 \cdot V_5 + -5 \cdot V_6 + -2 \cdot V_7\).
     This model is not unsuccessful in capturing the structure of the data,
     and this is typically the practice used to model data with highly
@@ -450,13 +683,76 @@ starts here.
   
   \begin{figure}[htbp]
   \centering
-  \includegraphics{Thesis_files/figure-latex/figdenv1v5-1.pdf}
-  \caption{\label{fig:figdenv1v5}Density Graphs for V1 through V5 and a Plot
-  of Y \textasciitilde{} V4, Correlation = .789}
+  \includegraphics{Thesis_files/figure-latex/figdenv4y-1.pdf}
+  \caption{\label{fig:figdenv4y}Relation between V4 and Y. This relation has
+  empirical linear correlation = .789}
   \end{figure}
   
-  ~~~~~ As can be seen in Figure 1 the densities of \(V_1,...,V_5\) are
-  all very similar due to the way they were generated.
+  \begin{figure}[htbp]
+  \centering
+  \includegraphics{Thesis_files/figure-latex/unnamed-chunk-11-1.pdf}
+  \caption{\label{fig:unnamed-chunk-11}\label{fig:figdenv1v5}Empirical
+  densities for V1 through V4}
+  \end{figure}
+  
+  ~~~~~The densities of \(V_1,...,V_4\) in figure \ref{fig:figdenv1v5} are
+  all very similar due to the way they were generated. \(D_1\) represents
+  the case where some of the predictors are linearly correlated with each
+  other, but that is not the only possible correlation structure. The data
+  set \(D_2\) is simulated similarly to \(D_2\) in that \(D_2\) contains
+  twelve predictors and one response variable. The first four variables
+  are generated in the following way: \[X_1 \sim N(1,0)\]
+  \[X_2 = log(X_1) + E, E \sim N(1,0)\]
+  \[X_3 = log(X_2) + E, E \sim N(1,0)\]
+  \[X_4 = log(X_4) + E, E \sim N(1,0)\]
+  
+  This simulation scheme leads to the first four variables having an
+  obvious relationship between each other, but relatively low linear
+  correlations, as seen in figure \ref{fig:corstructd2}. Predictors are
+  sampled by \(X_5,...,X_{12} \sim N(0,1)\). The \(Y\) values are
+  generated according to the following formula:
+  
+  \[Y = 5 \cdot (X_1)^2 + 5 \cdot(X_2)^2 + 2 \cdot (X_3)^2 + 0 \cdot X_4 + -5 \cdot X_5 + -5\cdot X_6 + 0\cdot X_7 + 0 \cdot ..... + E, E \sim N(0,\frac 1 2 )\]
+  
+  \begin{figure}[htbp]
+  \centering
+  \includegraphics{Thesis_files/figure-latex/unnamed-chunk-12-1.pdf}
+  \caption{\label{fig:unnamed-chunk-12}\label{fig:corstructd2}Correlation
+  structure of the first four variables in D2}
+  \end{figure}
+  
+  ~~~~~The correlation structure in \(D_2\) is much more difficult to
+  capture with a single line. The relationships between the first four
+  predictors form striking, symmetrical scatter plots in figure
+  \ref{fig:corstructd2}. This information is considered again in table
+  \ref{tab:tabcorSim2}, where the empirical correlations of the first
+  seven variables are presented along with their observed correlations
+  with \(Y\) and their simulation coefficients.
+  
+  \begin{table}
+  
+  \caption{\label{tab:unnamed-chunk-14}\label{tab:tabcorSim2}Empirical correlations and coefficients of the first seven predictors and the response using the second simulated dataset}
+  \centering
+  \begin{tabular}[t]{l|r|r|r|r|r|r|r|r|r}
+  \hline
+    & X1 & X2 & X3 & X4 & X5 & X6 & X7 & y & beta\\
+  \hline
+  X1 & 1.000 & 0.013 & 0.044 & 0.002 & -0.012 & -0.012 & -0.044 & -0.003 & 5\\
+  \hline
+  X2 & 0.013 & 1.000 & -0.520 & -0.272 & 0.073 & 0.004 & 0.006 & -0.697 & 5\\
+  \hline
+  X3 & 0.044 & -0.520 & 1.000 & -0.004 & 0.030 & -0.013 & 0.023 & 0.271 & 2\\
+  \hline
+  X4 & 0.002 & -0.272 & -0.004 & 1.000 & -0.031 & 0.022 & -0.002 & 0.352 & 0\\
+  \hline
+  X5 & -0.012 & 0.073 & 0.030 & -0.031 & 1.000 & 0.010 & -0.030 & -0.099 & -5\\
+  \hline
+  X6 & -0.012 & 0.004 & -0.013 & 0.022 & 0.010 & 1.000 & -0.088 & -0.022 & -5\\
+  \hline
+  X7 & -0.044 & 0.006 & 0.023 & -0.002 & -0.030 & -0.088 & 1.000 & 0.013 & 0\\
+  \hline
+  \end{tabular}
+  \end{table}
   
   \section{Models and Comparisons}\label{models-and-comparisons}
   
@@ -464,24 +760,26 @@ starts here.
   
   \begin{figure}[htbp]
   \centering
-  \includegraphics{Thesis_files/figure-latex/figcarts-1.pdf}
-  \caption{\label{fig:figcarts}CART for the Model Y\textasciitilde{}, from D1}
+  \includegraphics{Thesis_files/figure-latex/unnamed-chunk-16-1.pdf}
+  \caption{\label{fig:unnamed-chunk-16}\label{fig:figcarts}CART representing
+  Y\textasciitilde{} X, from D2}
   \end{figure}
   
-  ~~~~~A single CART tree representing the model \(Y \sim X_1,...,X_{12}\)
-  is easy enough to understand. Starting at the very top of the tree,
-  predictions can be made based on the values of the leaves (or ending
-  nodes) given the requirements of the path to get there. Trees can be
-  quite variable, so to get a better idea of the differences between the
-  methods let's run a simulation.
+  The CART tree representing the model \(Y \sim X\) in figure
+  \ref{fig:figcarts} is easy enough to understand. Starting at the very
+  top of the tree, predictions can be made based on the values of the
+  leaves (or ending nodes) given the requirements of the path to get
+  there. Trees can be quite variable, so to get a better idea of the
+  differences between the methods let's run a simulation. This simulation
+  scheme will take advantage of the non linearity present in \(D_2\).
   
   \begin{algorithm}
   \caption{Simulation Scheme 2.1}
   \label{sim2.1}
   \begin{algorithmic}[1]
   \For{$i \leq 1000$ }
-  \State Randomly sample $\frac 2 3$  of the observations in  $D_1$  to a training set,  $D_{1, train}^i$. The other observations,  $x \in D_1, x \notin D_{1, train}^i$ form the testing set $D_{1, test}^i$
-  \State Fit a tree, $T^i$, to the data under the model $Y \sim X_1,...,X_2$ using the observations in      $D_{1}^i$
+  \State Randomly sample $\frac 2 3$  of the observations in  $D_1$  to a training set,  $D_{1, train}^i$. The other observations,  $x \in D_2, x \notin D_{2, train}^i$ form the testing set $D_{2, test}^i$
+  \State Fit a tree, $T^i$, to the data under the model $Y \sim X_1,...,X_2$ using the observations in $D_{2}^i$
   \State Calculate the $MSE_{test}$ of the model using the equation:
       $MSE_{test} = \frac 1 n \sum (y_j - \hat{y_j})^2$
   \EndFor
@@ -489,86 +787,250 @@ starts here.
   \end{algorithm}
   
   Note that \(n\) is the number of observations in \(D_{1, test}^i\),
-  \(y_j \in D_{1, test}^i, \hat{y_j} \in T^i(D_{2, test}^i)\) for
+  \(y_j \in D_{2, test}^i, \hat{y_j} \in T^i(D_{2, test}^i)\) for
   \(1 \leq j \leq n\) This produces one distribution of \(MSE_{test}\) for
-  CART.
+  CART. This simulation scheme will be repeated for the linear model and
+  the random forest and the \(MSE_{test}\) distributions are compared in
+  figure \ref{fig:baggedvcartvforest}.
   
   \begin{figure}[htbp]
   \centering
-  \includegraphics{Thesis_files/figure-latex/baggedvcartvforest-1.pdf}
-  \caption{\label{fig:baggedvcartvforest}Simulated MSEtest Distributions of
-  CART, Random, and Bagged Forests}
+  \includegraphics{Thesis_files/figure-latex/unnamed-chunk-17-1.pdf}
+  \caption{\label{fig:unnamed-chunk-17}\label{fig:baggedvcartvforest}The
+  simulated MSE distributions of CART, linear model, and the random forest
+  on D2}
   \end{figure}
   
-  ~~~~~The distribution of 100 CART trees' \(MSE_{test}\) in the above
-  figure is roughly normal with a variance of \texttt{var(testmseC)}.
-  There is a fair amount of variability in a single tree, they are heavily
-  dependent on fluctuations in the starting data set. As mention briefly
-  in the introduction, bagged forests present one solution to this
-  problem. To create a bagged forest, as outlined in \emph{An Introduction
-  to Statistical Learning} by James, Witten, Hastie and Tibshirani, 2013,
-  many bootstrapped samples are taken from the initial dataset and trees
-  are fitted to them. The final predictions are, then, averaged over all
-  of the trees. This ensures that while each tree has high variance, when
-  they are aggregated the variance will decrease. As one can see, the
-  values of \(MSE_{test}\) for the bagged forest were entirely below the
-  \(MSE_test\) for the trees and the variance was much smaller. As random
-  forests are unbiased, they can be much smaller than their bagged forest
-  cousins without sacrificing accuracy.
+  ~~~~~The linear model is characteristically less flexible and less prone
+  to over-fitting than either of the tree-based methods, CART and random
+  forests, and has a \(MSE_{test}\) distribution that is quite peaked.
+  CART is flexible and suffers from high variance. The random forest
+  models perform much better on average than either the CART or the linear
+  model, due to both the non-linear relationships between \(Y\) and the
+  predictors and the random forest's ability to decorrelate each of the
+  trees by restricting the variables available on each split. See chapter
+  3 for more discussion on the enforced heterogeneity of trees in the
+  random forest. As, \(MSE_{test}\), is a test of \emph{predictive}
+  accuracy it is not surprising that the random forest performed
+  admirably. On a certain level, that is what they are designed to do. The
+  linear model is not popular in predictive situations but it is
+  ubiquitous in inferential ones.
   
   \chapter{Random Forest Variable
   Importance}\label{random-forest-variable-importance}
   
-  \section{Breiman et al Introduce Permuted Variable Importance
-  (1984)}\label{breiman-et-al-introduce-permuted-variable-importance-1984}
+  To implement the various variable importance measures discussed in this
+  chapter and in chapter 4, functions for creating trees, random forests,
+  and their importance measures were created. The trees were fit using the
+  standard two-part CART-like algorithm. The function chooses a variable
+  to split on with linear correlation with respect to \(Y\), but instead
+  of looking for correlations above a certain threshold which is common,
+  it chooses the variable with the highest correlation when compared to
+  its peers. This alleviates the situation where a variable with a
+  non-linear relationship would be passed over again and again. The
+  splitting is then done via minimization of the following function with
+  respect to \(i\):
+  
+  \[RSS_{node} (i,X,Y) = RSS_{leaf}(Y|X <i) + RSS_{leaf}(Y|X \geq i) \]
+  \[RSS_{leaf} = \sum (y - \hat{y})^2 \]
+  
+  ~~~~~This function considers the regression case only, and only numeric
+  predictors. Leaves are created when the resultant split would be
+  unsatisfactory, i.e.~at least one of these cases applies: one daughter
+  node would have five members or less, the split on the chosen variable
+  would not result in a decrease in RSS, or the data contained in the node
+  is already suitably homogeneous. This generates very large trees: a
+  quality that is not an issue in random forests but may be problematic in
+  a stand-alone setting.
+  
+  \begin{table}
+  
+  \caption{\label{tab:unnamed-chunk-21}\label{tab:tabhomegrowntree}T, a home-grown tree grown on the first four columns and the first 140 rows of D2}
+  \centering
+  \begin{tabular}[t]{l|l|l|l|l}
+  \hline
+  var & n & dev & ypred & split.cutleft\\
+  \hline
+  X2 & 140 & 307025.374636735 & 60.9097319888865 & -6.96100384656169\\
+  \hline
+  X2 & 135 & 83169.2792831922 & 43.0483530491652 & -3.7891602649377\\
+  \hline
+  X4 & 120 & 50705.5649592679 & 31.9334396084353 & 3.2448237665193\\
+  \hline
+  leaf & 9 & 6741.84547650294 & 78.1476720868562 & 0\\
+  \hline
+  X3 & 111 & 29377.3267469149 & 28.1863396777525 & 1.7396083892122\\
+  \hline
+  X3 & 22 & 6346.55869350374 & 51.2429853154712 & 2.20767162100899\\
+  \hline
+  leaf & 15 & 4912.82259054594 & 60.1969690603788 & 0\\
+  \hline
+  leaf & 7 & 1433.7361029578 & 32.0558772906692 & 0\\
+  \hline
+  X4 & 89 & 18301.6870406292 & 22.4869441268558 & -0.836982585945597\\
+  \hline
+  leaf & 56 & 11890.2428451579 & 24.9942412092431 & 0\\
+  \hline
+  X3 & 33 & 5898.67340773121 & 18.232136956744 & 0.0529476269400149\\
+  \hline
+  leaf & 21 & 4741.70649830849 & 21.2119268553199 & 0\\
+  \hline
+  leaf & 12 & 1156.96690942271 & 13.0175046342361 & 0\\
+  \hline
+  leaf & 15 & 11683.3926459505 & 131.967660575004 & 0\\
+  \hline
+  leaf & 5 & 90431.4904950311 & 543.166963361362 & 0\\
+  \hline
+  \end{tabular}
+  \end{table}
+  
+  ~~~~~There are several ways to display a tree, but when it is displayed
+  as a table it is read in the following way: each row corresponds to a
+  node of the tree which contains a certain number, \texttt{n}
+  observations. This number of observations, or rows in the data set is
+  naturally a subset of both the original data set and the subsets above
+  the node on the tree. Here our predictions, \texttt{ypred}, are the mean
+  of the \(Y\) values included in the node. If there is an optimal and
+  allowable split, \footnote{Recall that we only allow splits to take
+    place that split the data into two groups, each with more than five
+    members.} then the chosen variable, \texttt{var}, and the
+  \(RSS_{node}\), \texttt{dev}, are recorded.\footnote{It's the convention
+    to call the \(RSS_{node}\) the deviance at a node \(N\), but, of
+    course, this only makes sense when the node is a leaf.} The value of
+  the variable in question that acts as the split point is recorded as
+  \texttt{split.cutleft}. If there is no split on the node in question,
+  then \texttt{var} will be recorded as
+  \texttt{\textless{}leaf\textgreater{}} and the \texttt{dev} value will
+  be the value of \(RSS_{leaf}\) at this node.
+  
+  ~~~~~The tree output is read roughly from top to bottom, with a coda in
+  the middle. The first row corresponds to the first node, or the node
+  that includes the entire data set. The second row is the beginning of
+  the right subtree or the right daughter of the first node. This pattern
+  continues, favoring the right daughter, until a leaf is reached. The
+  left daughter of the first node is found after all of the splits off of
+  the right daughter have finished but is easily identified as the row
+  with a value of \texttt{n} that is exactly the difference between the
+  \texttt{n} values of the first two rows. In the case where the right
+  daughter contained many more observations of the original data set,
+  there may be a node within the right subtree that contains the same
+  number of observations as the left daughter of the first node. In this
+  case, the left daughter is simply the second row with this property. The
+  pattern of following the right daughter until a leaf is reached
+  continues with the left subtree.
+  
+  \section{Breiman et al. Introduce Permuted Variable Importance
+  (1984)}\label{breiman-et-al.-introduce-permuted-variable-importance-1984}
   
   \subsection{Variable Importance on a Single
   Tree}\label{variable-importance-on-a-single-tree}
   
-  ~~~~~Breiman et al in \emph{Classification and Regression Trees} (1984)
+  Breiman et al. in \emph{Classification and Regression Trees} (1984)
   propose a method for variable importance for individual trees that stems
   from their definition of \(\tilde{s}\), a surrogate split. Surrogate
-  splits help Brieman et al deal with several common problems: missing
+  splits help Breiman et al. deal with several common problems: missing
   data, masking, and variable importance. They are defined using logic
   that resembles that behind random forests.
   
-  Definitions
+  ~~~~~Before we discuss surrogate splits, lets cover an obvious
+  definition of variable importance for a single tree. In the tree
+  represented by table \ref{tab:tabhomegrowntree}, define variable
+  importance as the number of splits on each variable. This would allow us
+  to answer the question: how useful (important) was variable \(X_i\) in
+  constructing our model for \(Y\)? Just by counting the splits on that
+  variable, we would arrive at the following ranking:
   
-  ~~~~~Assume the standard structure for tree models. Let \(D\) be the
-  dataset composed of \(D = {Y, X_1,...X_p}\), where the model we would
-  like to estimate is of the form \(T: Y \sim X_1,...X_p\). For any node
-  \(t \in T(D)\), \(s*\) is the best split of the node into daughters
-  \(t_r\) and \(t_l\). Take \(X_i \in D\) and let \(S_i\) be the set of
-  all of the splits on \(X_i\) in \(T\). Then set \(\bar{S_i}\) equal to
-  the complement of \(S_i\), \(\bar{S_i} = S_i^c\). For any possible split
-  \(s_i \in S_i \cup \bar{S_i}\), \(s_i\) will split the node \(t\) into
-  two daughters, \(t_{i,l}\) and \(t_{i,r}\). Count the number of times
-  that \(s*\) and \(s_i\), while splitting differently, generate the same
-  left daughter \(t_{l}\) as \(N_{LL}\) and the number of times they
-  generate the same right daughter as \(N_{RR}\). Then the probability
-  that a case falls within \(t_L \cap t'_L\) is
-  \(P(t_L \cap t'_L) = \sum_j \frac{\pi(j) N_j(LL)}{N_j}\) and the
-  probability that a case falls within \(t_R \cap t'_R\) is
-  \(P(t_R \cap t'_R) = \sum_j \frac{\pi(j) N_j(RR)}{N_j}\). Where
-  \(\pi(j)\) is the prior assumed for the the jth variable.Finally, the
-  probability that a surrogate split predicts \(s*\) is
-  \(P(s*, s_M) = (t_R \cap t'_R) + P(t_L \cap t'_L)\). Then the surrogate
-  split is the value of \(s*\) that maximizes this probability. It is
-  denoted \(\tilde{s}\)
+  \begin{table}
   
-  ~~~~~A surrogate split \(\tilde{s}\),is one that estimates the best
-  possible univariate split \(s*\) on node \(t\).
+  \caption{\label{tab:unnamed-chunk-23}\label{tab:tabbvi}The number of splits on each variable in the tree T.}
+  \centering
+  \begin{tabular}[t]{l|r}
+  \hline
+  variable & appearances.in.tree\\
+  \hline
+  X1 & 0\\
+  \hline
+  X2 & 2\\
+  \hline
+  X3 & 3\\
+  \hline
+  X4 & 2\\
+  \hline
+  \end{tabular}
+  \end{table}
   
-  \textbf{Defintion: Variable Importance, Single Tree}
+  ~~~~~There are several downfalls to this method. One, trees are
+  variable. If we were to resample this data and fit another tree, it's
+  likely that this ranking would change. Two, in the case where two
+  variables are close enough to each other that they could act as
+  stand-ins for one another, these rankings are much less interesting. We
+  are lucky in this case to know without doubt that \(X_1\) has a rich
+  relationship with \(X_2\) and the other predictors included in this
+  model (see chapter 2, section 1). This leads us to believe that while
+  \(X_1\) is left out of these rankings, it just as easily could have been
+  included instead of \(X_2\), or one of the other predictors. \(X_1\) had
+  bad luck by not being in this model and it wouldn't make sense to say
+  that the \(X_1\) is the least important predictor of \(Y\) when it is
+  very nearly identical to \(X_2\). However, it's possible that the tree
+  algorithm would only pick one of the correlated predictors to be
+  included in a model at a time. Is it possible that we can grasp this
+  relationship by only fitting one tree?
   
-  \[VI_{tree}(X_i, T) = \sum_{t \in T} \Delta RSS(\tilde{s_i}, t)\]
-  ~~~~~Or the decrease of RSS attributable to \(X_i\) across the tree
-  \(T\). In \emph{Classification and Regression Trees},Brieman et al,
-  outline several potential problems with this method that the do not
-  attempt to solve. First, that this is only one of a number of reasonable
-  ways to define variable importance. Second, the variable importances for
-  variables \(X_1,..,X_p\) can be effected by outliers or random
-  fluctuations within the data. (Ch 5.3)
+  ~~~~~This dilemma is solved by surrogate splits. To set the stage for
+  surrogate splitting, imagine a CART tree, \(T\), fit on some data set
+  \(D\) according to the formula \(Y \sim X\) where
+  \(X_i \in X, \ if i \in 1:p\). Now say that we're only considering a
+  single node, \(N\), in \(T\). The node \(N\) contains the subset of the
+  rows in the original data set \(D\), \(D_N\). \(D_N\) is determined by
+  the previous nodes and splits in the tree.
+  
+  \begin{center}
+  \begin{tikzpicture}[level/.style={sibling distance=60mm/#1}]
+  \node [circle,draw] (z){$N:\left\{ D_N \right\}$};
+  \end{tikzpicture}
+  \end{center}
+  
+  ~~~~~On that node, we have the split on \(X_j\) where \(X_j < a\). This
+  gives us two daughter nodes to \(N\), \(N_L\) and \(N_R\).
+  
+  \usetikzlibrary{positioning}
+  
+  \begin{center}
+  \begin{tikzpicture}[level/.style={sibling distance=60mm/#1}]
+  \node [circle,draw] (z) {$N:\left\{ D_N, \left\{X_j < a \right\}\right\}$};
+  \node [circle,draw] (a) [below left = of z] {$N_L:\left\{ D_{N_L} \right\}$};
+  \node [circle,draw] (b) [below right = of z] {$N_R:\left\{ D_{N_R} \right\}$};
+  \end{tikzpicture}
+  \end{center}
+  
+  ~~~~~The data sets \(D_{N_L}\) and \(D_{N_R}\) are subsets of \(D_N\)
+  and when combined, they equal \(D_N\). They are determined by the rule:
+  if a row of observations has a value of \(X_j < a\) then it is a member
+  of \(D_{N_L}\), if the value of \(X_j\) in that row is greater than or
+  equal to \(a\) then it belongs to \(D_{N_R}\). \(X_j\) was chosen to
+  split on in node \(N\) because the correlation between the subsets of
+  \(X_j\) and \(Y\) in \(D_N\) was stronger than the correlations between
+  \(Y\) and any of the other predictors in that subset of the original
+  data. Imagine, however, that a split on \(X_i\) would lead to very
+  similar \footnote{This is intentionally vague. The level of similarity
+    considered ``similar enough'' depends on the properties of the data
+    set and there's no guarantee that suitable surrogate splits exist.
+    (@bibCART)} left and right daughter nodes, even though \(X_i\) and
+  \(Y\) had a lower correlation than \(Y\) and \(X_j\). This would be
+  considered a surrogate split for our original split on \(N\). Now define
+  variable importance for a predictor \(X_j\) across the tree \(T\) as the
+  decrease in \(RSS_{node}\) according to the split on \(X_j\), whether
+  \emph{surrogate} or not. This allows \(X_j\) and \(X_i\) to share the
+  importance measure, if both \(X_j\) and \(X_i\) would have provided a
+  similar, valuable split on node \(N\). In \emph{Classification and
+  Regression Trees}, Breiman et al, outline several potential problems
+  with this method that they do not attempt to solve. First, that this is
+  only one of a number of reasonable ways to define variable importance.
+  Second, the variable importances for variables \(X_1,..,X_p\) can be
+  affected by outliers or random fluctuations within the data. (Ch 5.3).
+  The second problem is mitigated when we move from single trees to a
+  random forest, but the first is a problem with variable importance in
+  general.
   
   \subsection{Variable Importance for a Random
   Forest}\label{variable-importance-for-a-random-forest}
@@ -578,15 +1040,21 @@ starts here.
   each tree in a random forest is fit to a bootstrapped sample of the
   original observations. To estimate the test error, therefor, no cross
   validation is needed - each tree is simply tested against the test set
-  of observations that were not in that tree's initial training set. To
-  determine variable importance for a predictor \(X_j\), we look at the
-  RSS of the each tree's prediction that did not split on \(X_j\). These
-  values are then averaged over the subset forest that did not include
-  \(X_j\). A large value would imply that in trees that included \(X_j\),
-  the predictive capabilities were increased.
+  of observations that were not in that tree's initial training set.
+  Additionally, we may be interested in defining variable importance for a
+  predictor \(X_j\) by considering the predictive capabilities of the
+  other \(p-1\) predictors. Recall: a random forest is a set of trees that
+  are de-correlated with each other because at each split on each tree,
+  less than half of the predictors are not even considered as possible
+  candidates for splitting. To estimate the importance of \(X_j\) given
+  the other variables \(X_{-j}\) and their relationship with \(Y\), we can
+  consider the ``test'' RSS of the set of trees that did not ever split on
+  \(X_j\). These values are then averaged over the subset forest that did
+  not include \(X_j\). A large value would imply that in trees that
+  included \(X_j\), the predictive capabilities were increased.
   
   ~~~~~To formalize that idea, let's refer to the set of trees that did
-  not consider \(X_j\), \(T_{x_j}^c\). Now, \(T_{x_j}^c \subset R\), the
+  not consider \(X_j\), \(T_{x_j}^c\). Now, \(T_{x_j}^c \subset R_f\), the
   random forest. The subset of the original data that will be tested on
   each tree, \(t\), is \(\bar{B}^t\). The dimensions of \(\bar{B}^t\) are
   \(\nu_t\) x \(p\), where \(p\) is the number of predictors and
@@ -599,53 +1067,62 @@ starts here.
   
   ~~~~~However, this method poses some problems. Namely, while variable
   importance for random forests is more stable than for the variable
-  importance values for CART, (this is because the model is less variable
+  importance values for CART (this is because the model is less variable
   in general), it is lacking the traditional inferential capabilities of
   other regression models. In an effort to derive a p-value for variable
-  importance values, Breiman 2001b, describes a \emph{permuted variable
+  importance values, Breiman (2001b) describes a \emph{permuted variable
   importance} or \(VI_{\beta}\) that does not utilize \(T_{x_j}^c\).
   
   \begin{algorithm}
   \caption{Permuted Variable Importance for Random Forests, $VI_{\beta}$}
   \label{breiman}
   \begin{algorithmic}
-  \State Fit a random forest, $R$ on the dataset $D$ fitting the model $Y \sim X_1,...,X_p$.
+  \State Fit a random forest, $R_f$ on the data set $D$ estimating the model $Y \sim X_1,...,X_p$.
   \For{each $X_i \in {{X_1,...,X_p}}$}
-  \For{each $t \in R$}
-  \State Calculate: $\Phi_o =  \frac 1 {\nu_t} RSS(t,\bar{B}^t)$
-  \State Permute $X_i$. Now find $\Phi^* =  \frac 1 {\nu_t} RSS(t,\bar{B}_t^*)$
+  \For{each $T \in R$}
+  \State Calculate: $\Phi_o =  \frac 1 {\nu_t} RSS(T,\bar{B}^t)$
+  \State Permute $X_i$. Now find $\Phi^* =  \frac 1 {\nu_t} RSS(T,\bar{B}_t^*)$
   \State The difference between these values, $\Phi^* - \Phi_o$,  is the variable importance for $X_j$ on $t$,  
   \EndFor
-  \State Average over all $t \in R$ 
-   $$VI_{\beta}(X_j) = \frac 1 {ntree} \sum^{ntree} \Phi^* - \Phi_o$$
-   $$VI_{\beta}(X_j) = \frac 1 {ntree} \sum^{ntree} \frac 1 {\nu_t} RSS(t,\bar{B}_t^*) - \frac 1 {\nu_t} RSS(t,\bar{B}^t)$$
   \EndFor
   \end{algorithmic}
   \end{algorithm}
   
-  ~~~~~Again, a large variable importance value suggests that \(X_j\) is a
-  valuable predictor for the model.
+  ~~~~~ In other words, we start with one tree in the random forest,
+  \(T_u\), and one variable, \(X_j\), where \(1 \leq u \leq ntree\) and
+  \(1 \leq j \leq p\). There are two subsets of the original data
+  associated with \(T_u\), one is the subset used to generate the tree
+  \({B}^t\) and the other is the rest of the original data set, notated as
+  \(\bar{B}^t\). We calculate the residual sum of squares for \(T_u\) on
+  the new (to \(T_u\)) data, \(\bar{B}^t\). Then we alter \(\bar{B}^t\) by
+  randomly shuffling \(X_j\). This means that in one row of \(\bar{B}^t\),
+  the values are the same as they were before, except the values for
+  \(X_j\) may be interchanged with the values in other rows. Then RSS is
+  calculated again and compared with the RSS before the shuffling took
+  place. As each tree in the random forest is fit to a bootstrapped sample
+  of the original data set and splits on a fraction of the possible
+  predictors, the tree-wise computation gives an estimate of the
+  distribution of \(VI_{\beta}(X_j)\).
   
   \section{Strobl et al Respond (2008)}\label{strobl-et-al-respond-2008}
   
-  ~~~~~Strobl et al (2008) respond to Breiman's method with one main
-  argument: the null hypothesis implied by the permutation distribution
-  utilized in permuted variable importance is that \(X_i\) is independent
-  of \(Y\) \textbf{and} \({X_j \notin X_1,...,X_p}\) so the null
-  hypothesis will be rejected in the case where \(X_j\) is independent of
-  \(Y\) but not some subset of the other predictors. As correlation among
-  the predictors is very common in data sets that are used for random
-  forests, this is a large problem for Breiman's method.
-  
-  ~~~~~To alleviate this difficulty, Strobl et al propose a permutation
-  scheme under the null hypothesis that \(X_j\) given it's relationship
-  with the other predictors is independent of \(Y\).
+  ~~~~~Strobl et al respond to Breiman's method with one main argument:
+  the null hypothesis implied by the permutation distribution utilized in
+  permuted variable importance is that \(X_i\) is independent of \(Y\)
+  \textbf{and} \({X_j \notin X_1,...,X_p}\) so the null hypothesis will be
+  rejected in the case where \(X_j\) is independent of \(Y\) but not some
+  subset of the other predictors. As correlation among the predictors is
+  very common in data sets that are used for random forests, this is a
+  large problem for Breiman's method. To alleviate this difficulty, Strobl
+  et al propose a permutation scheme under the null hypothesis that
+  \(X_j\) given its relationship with the other predictors is independent
+  of \(Y\).
   
   \begin{algorithm}
   \caption{Conditional Variable Importance for Random Forests, $VI_{\gamma}$}
   \label{strobl}
   \begin{algorithmic}[1]
-  \State Fit a random forest, $R$ on the dataset $D$ fitting the model $Y \sim X_1,...,X_p$.
+  \State Fit a random forest, $R$ on the data set $D$ fitting the model $Y \sim X_1,...,X_p$.
   \For{each $t \in R$}
   \State Calculate: $\Psi_o =  \frac 1 {\nu_t} RSS(t,\bar{B}^t)$
   \For{each $X_i \in {{X_1,...,X_p}}$}
@@ -655,220 +1132,433 @@ starts here.
   \State Now find $\Psi^* =  \frac 1 {\nu_t} RSS(t,\bar{B}_t^*)$
   \State The difference between these values, $\Psi^* - \Psi_o$,  is the variable importance for $X_j$ on $t$,  
   \EndFor
-  \State Average over all $t \in R$ 
-   $$VI_{\gamma}(X_i,R) = \frac 1 {ntree} \sum^{ntree} \Psi^* - \Psi_o$$
-   $$VI_{\gamma}(X_i, R) = \frac 1 {ntree} \sum^{ntree} \frac 1 {\nu_t} RSS(t,\bar{B}_t^*) - \frac 1 {\nu_t} RSS(t,\bar{B}^t)$$
   \EndFor
   \end{algorithmic}
   \end{algorithm}
   
-  ~~~~~There are several ways mentioned in ref:@strobl2008 to choose the
-  set of predictors \(Z\) to condition \(X_j\) upon. \(Z\) might be chosen
-  due to outside theory about the problem or \(Z\) might include every
-  \(p-1\) predictor possible. In that paper's simulations section as well
-  as in this one's, \(Z\) is chosen as the set of predictors with
-  empirical correlation \(\geq .2\)
+  ~~~~~This method is fairly similar to permuted variable importance, but
+  there are a few key differences. Given a tree \(T_u\) and a variable
+  \(X_j\), first we find the out of bag RSS, then we permute. In this
+  case, however, our permutations or shuffling of \(X_j\) is not always
+  done blindly. If \(X_j\) has no (or low) empirical correlation with each
+  of its fellow predictors, then \(X_j\) is shuffled exactly as in
+  permuted variable importance. If that is not the case, then we select
+  the set, \(Z\), of the predictors with the strongest empirical
+  correlation \footnote{@bibstrobl2008 recommends constructing the set
+    \(Z\) from prior information about the data or as the set of
+    predictors where each one has empirical correlation greater than or
+    equal to .2 with \(X_j\).} to \(X_j\). Recall that our tree \(T_u\)
+  contains many nodes, and each node contains a subset of the data along
+  with a split that determines the subsets of the daughter nodes. We feed
+  the out of bag sample for \(T_u\) into \(T_u\) and look at all the
+  subsets of data in nodes that split on a predictor in \(Z\). This time
+  when we shuffle \(X_j\) it will only be in these subsets. The union of
+  these subsets is called \(\bar{B}_t^*\) and is used to calculate the
+  permuted RSS.
   
-  \chapter{Chapter 4}\label{chapter-4}
+  \chapter{INFFOREST Variable
+  Importance}\label{infforest-variable-importance}
   
-  \section{INFFORESTS}\label{infforests}
+  Variable importance measures must contend with the following
+  relationships in the data, for each \(V_j\) in \(V\): first, there is
+  the relationship between \(Y\) and \(V_j\), then the relationship
+  between \(V_j\) and the other predictors, \(V_{-j}\), and finally the
+  relationship between \(Y\) and the other predictors \(V_{-j}\).
   
-  ~~~~~The INFFOREST variable importance is a method of permuted variable
-  importance not unlike that of conditionally permuted variable importance
-  (Algorthim 3). Permuted variable importance is calculated at the tree
-  level, using the partitions on \(X_j\) from a tree created to predict
-  the model \(X_j \sim X_1,..., X_{j-1}, X_{j+1},...,X_p\). This auxiliary
-  tree is fit by considering all \(p-1\) predictors at each split and so
-  may be quite large or quite small depending on the richness of the
-  correlation structure around \(X_j\). The auxiliary tree is also fit
-  using the OOB sample for the tree at question. If the auxiliary tree
-  results in a single leaf, i.e.~there are no splits, then \(X_j\) is
-  permuted blindly, without partitions. If the auxiliary tree results in
-  two leaves, there will be two partitions on \(X_j\) to permute \(X_j\)
-  within, and so on. After permuting \(X_j\) within these partitions, the
-  RSS is calculated for that tree using the OOB sample of predictors,
-  including the now-permuted \(X_j\). The absolute difference of the RSS
-  after permutation and the RSS with the untouched OOB sample is INFFOREST
-  variable importance for that tree. Note that for this reason, the
-  INFFOREST variable importance is always greater than or equal to zero,
-  and is standardized by the max INFFOREST variable importance value given
-  by that tree. As the variable importance values are calculated for each
-  tree for each variable, once the method is completed there is a
-  distribution of potential variable importance values for \(X_j\), one
-  for each tree. These distributions may or may not be normal, depending
-  on the multicollinearity of the predictors. The INFFOREST variable
-  importance algorithm works as follows:
+  \usetikzlibrary{positioning}
+  
+  \begin{center}
+  \begin{tikzpicture}[level/.style={sibling distance=60mm/#1}]
+  \node[circle,draw] (y) {$Y$};
+  \node[circle,draw] (xj) [below left = of y] {$V_j$};
+  \node[circle,draw] (xnotj) [below right = of y] {$V_{-j}$};
+  \draw[<->] (y.south) -- (xj.north);
+  \draw[<->] (y.south) -- (xnotj.north);
+  \draw[<->] (xj.east) -- (xnotj.west);
+  \end{tikzpicture}
+  \end{center}
+  
+  In permuted variable importance, the null hypothesis is that \(Y\) is
+  independent of \(V_j\), regardless of the relationship between \(V_j\)
+  and \(V_{-j}\). By permuting \(V_j\) blindly and then calculating the
+  RSS, the relationship between \(V_j\) and \(Y\) and the relationship
+  between \(V_j\) and \(V_{-j}\) are broken. The other variables,
+  \(V_{-j}\) are not permuted and since the RSS is calculated using the
+  original model fitting \(Y \sim V\), the relationship between \(Y\) and
+  the \(V_{-j}\) is maintained.
+  
+  \usetikzlibrary{positioning}
+  
+  \begin{center}
+  \begin{tikzpicture}[level/.style={sibling distance=60mm/#1}]
+    \node[circle,draw] (y1) {$Y$};
+  \node[circle,draw] (xj) [below left = of y1] {$V_j$};
+  \node[circle,draw] (xnotj) [below right = of y1] {$V_{-j}$};
+  \draw[red,thick,dashed] (y.south) -- (xj.north);
+  \draw[<->] (y.south) -- (xnotj.north);
+  \draw[red,thick,dashed] (xj.east) -- (xnotj.west);
+  \end{tikzpicture}
+  \end{center}
+  
+  In conditional variable importance, however, the null hypothesis that is
+  tested is that \(V_j\) is independent of \(Y\) given the relationship
+  between \(V_j\) and \(V_{-j}\) and the relationship between \(V_{-j}\)
+  and \(Y\). Therefore, the permutations on \(V_j\) are done in such a way
+  that the relationship between \(V_j\) and \(Y\) are broken, while
+  approximately maintaining the relationships between \(V_j\) and
+  \(V_{-j}\) and \(V_{-j}\) and \(Y\).
+  
+  \usetikzlibrary{positioning}
+  
+  \begin{center}
+  \begin{tikzpicture}[level/.style={sibling distance=60mm/#1}]
+    \node[circle,draw]  (y2) {$Y$};
+  \node[circle,draw] (xj) [below left = of y2] {$V_j$};
+  \node[circle,draw] (xnotj) [below right = of y2] {$V_{-j}$};
+  \draw[red,thick,dashed] (y.south) -- (xj.north);
+  \draw[<->] (y.south) -- (xnotj.north);
+  \draw[<->] (xj.east) -- (xnotj.west);
+  \end{tikzpicture}
+  \end{center}
+  
+  This permutation structure has the following implications: 1. If \(V_j\)
+  has a weak relationship with \(Y\) but a strong relationship with
+  \(V_{-j}\), the conditional variable importance value will be high. 2.
+  If \(V_j\) is approximately independent of \(V_{-j}\), but a good
+  predictor of \(Y\), then the conditional variable importance of \(V_j\)
+  will be high.
+  
+  Conditional variable importance provides a method of statistical
+  inference on random forests, but it does not answer the same question as
+  statistical inference on linear models. Namely, what is the relationship
+  between \(V_j\) and \(Y\) given the other \(V_{-j}\) variables in the
+  model? The INFFOREST method of variable importance permutes under the
+  null hypothesis that \(V_j\) given \(V_{-j}\) is independent of \(Y\).
+  This leads us to break the relationships between \(Y\) and the \(V_j\)
+  en mass, according to the respective structure of \(V_j\) and
+  \(V_{-j}\).
+  
+  \usetikzlibrary{positioning}
+  
+  \begin{center}
+  \begin{tikzpicture}[level/.style={sibling distance=60mm/#1}]
+  \node [circle,draw] (y) {$Y$};
+  \node [circle,draw] (xj) [below left = of y] {$V_j$};
+  \node [circle,draw] (xnotj) [below right = of y] {$V_{-j}$};
+  \draw[red,thick,dashed] (y.south) -- (xj.north);
+  \draw[red,thick,dashed] (y.south) -- (xnotj.north);
+  \draw[<->] (xj.east) -- (xnotj.west);
+  \end{tikzpicture}
+  \end{center}
+  
+  This has the following conclusions: 1. If \(V_j\) is a good predictor of
+  \(Y\) but independent of the rest of the predictors, the INFFOREST
+  variable importance will be high. 2. If \(V_j\) is a good predictor of
+  \(Y\) but is heavily correlated with at least one of the other
+  predictors, the INFFOREST variable importance will be low. It is assumed
+  that the information gained from adding \(V_j\) to the model could be
+  gained from one of the other predictors.
+  
+  \section{Algorithm and
+  Implementation}\label{algorithm-and-implementation}
+  
+  The INFFOREST variable importance is a method of permuted variable
+  importance not unlike that of conditionally permuted variable
+  importance. INFFOREST values are calculated at the tree level, using the
+  partitions on \(V_j\) from a tree created to predict the model
+  \(V_j \sim V_1,..., V_{j-1}, V_{j+1},...,V_p\). This auxiliary tree is
+  fit by considering all \(p-1\) predictors at each split and so may be
+  quite large or quite small depending on the richness of the correlation
+  structure around \(V_j\). The auxiliary tree is also fit using the OOB
+  sample, \(\hat{B}_t\), for the tree at question. If the auxiliary tree
+  results in a single leaf (i.e.~there are no splits), then \(\hat{B}_t\)
+  is permuted blindly, without partitions. If the auxiliary tree results
+  in two leaves, there will be two partitions on \(\hat{B}_t\) to permute
+  \(\hat{B}_t\) within, and so on. After permuting \(\hat{B}_t\) within
+  these partitions, the RSS is calculated for that tree using the permuted
+  dataset. The absolute difference of the RSS after permutation and the
+  RSS before permuting the sample is INFFOREST variable importance for
+  that tree.
+  
+  ~~~~~Note that for this reason, the INFFOREST variable importance is
+  always greater than or equal to zero, and is standardized by the max
+  INFFOREST variable importance value given by that tree. As the variable
+  importance values are calculated for each tree for each variable, once
+  the method is completed there is a distribution of potential variable
+  importance values for \(V_j\), one for each tree. These distributions
+  may or may not be normal, depending on the multicolinearity of the
+  predictors. The INFFOREST variable importance algorithm works as
+  follows:
   
   \begin{algorithm}
   \caption{INFForests, $VI_{inf}(R)$}
   \label{infforest}
   \begin{algorithmic}[1]
-  \State Fit a random forest, $R$ on the dataset $D$ fitting the model $Y \sim X_1,...,X_p$.
-  \For{each $X_i \in {{X_1,...,X_p}}$}
+  \State Fit a random forest, $R$ on the dataset $D$ fitting the model $Y \sim V_1,...,V_p$.
+  \For{each $V_i \in {{V_1,...,V_p}}$}
   \For{each $t \in R$}
-  \State Calculate: $\Xi_o =  \frac 1 {\nu_t} RSS(t,\bar{B}^t)$
-  \State Calculate a tree $T_i$ that predicts $X_i \sim X_1,...,X_{i-1}, X_{i+1},...X_p$ using the subset of the observations used to fit $t$  
-  \State Permute the subset of $X_i$ contained in $\bar{B}_t$ with respect to the set of partitions $P_{xi}$ from $T_i$.
+  \State Calculate: $\Xi_o =  \frac 1 {\nu_t} RSS(t,\bar{B}_t)$
+  \State Calculate a tree $T_i$ that predicts $V_i \sim V_1,...,V_{i-1}, V_{i+1},...V_p$ using the subset of the observations used to fit $t$  
+  \State Permute $\bar{B}_t$ with respect to the set of partitions $P_{xi}$ from $T_i$.
+  \If $T_i$ is a leaf
+  \State Permute the $V_i$ values blindly with respect to no partitions. Set $\bar{B}_t^*$ to be equal to $\bar{B}_t$ except $V_i$ is permuted. 
+  \EndIf
   \State Now find $\Xi^* =  \frac 1 {\nu_t} RSS(t,\bar{B}_t^*)$
-  \State The difference between these values, $\Xi^* - \Xi_o$,  is the variable importance for $X_i$ on $t$
+  \State The difference between these values, $\Xi^* - \Xi_o$,  is the variable importance for $V_i$ on $t$
   \EndFor
   \State Test the null hypothesis that $0$ is the likely value of $\frac 1 {\nu_t} RSS(t,\bar{B}_t^*)$ using the distribution of values of $\Xi^*$ gathered from each tree in $R$
   \EndFor
   \end{algorithmic}
   \end{algorithm}
   
-  ~~~~~INFFOREST variable importance operates under the null hypothesis
-  that \(Y\) is independent of \(X_J\) given the correlation structure of
-  \(X_j\) and the other \(p-1\) predictors, or that the true INFFOREST
-  variable importance for \(X_j\) is 0. The alternative hypothesis is that
-  \(Y\) and \(X_j\) are not independent given the correlation structure of
-  \(X_j\) and the other predictors or that the INFFOREST variable
-  importance for \(X_j\) is greater than zero. After INFFOREST values have
+  INFFOREST variable importance operates under the null hypothesis that
+  \(Y\) is independent of \(V_J\) given the correlation structure of
+  \(V_j\) and the other \(V_{-j}\) predictors, or that the true INFFOREST
+  variable importance for \(V_j\) is 0. The alternative hypothesis is that
+  \(Y\) and \(V_j\) are not independent given the correlation structure of
+  \(V_j\) and the other predictors or that the INFFOREST variable
+  importance for \(V_j\) is greater than zero. After INFFOREST values have
   been computed for the entire forest, they are treated as samples from
-  the population of possible INFFOREST values for \(X_j\) given the random
-  forest \(R_f\), and a significance test can be under the null
-  hypothesis.
+  the population of possible INFFOREST values for \(V_j\) given the random
+  forest \(R_f\), a significance test can be run under the null hypothesis
+  stated above.
   
-  \section{\texorpdfstring{Implementation In \texttt{INFTREES} and
-  Results}{Implementation In INFTREES and Results}}\label{implementation-in-inftrees-and-results}
+  ~~~~~Recall the data sets \(D_1\) and \(D_2\), introduced in chapter 2.
+  Both datasets contain 12 predictors and one response, where there is
+  some type of correlation structure between the first four variables. In
+  \(D_1\), this structure is linear, and in \(D_2\) it is not. The median
+  INFFOREST values for a random forest fit to a subset of each data set
+  are presented in the following tables. The p-values listed in table
+  \ref{tab:tabviD1} are the observed proportion of INFFOREST values for
+  that variable that are above zero.
   
-  \subsection{Notes on the
-  Implemetation}\label{notes-on-the-implemetation}
+  \begin{table}
   
-  ~~~~~Implementing the \texttt{INFFOREST} and therefor the
-  \texttt{INFTREES} algorithms, required creating a suite of functions to
-  create trees and random forests. The trees are fit following the
-  standard two-part CART-like algorithm. \footnote{A brief note on
-    uncertainty is needed here. It's true that in this setting we can say
-    that \(V_4\) is actually unimportant to understanding \(Y\), but in
-    situations with real data this is profoundly more difficult to parse.
-    Often like in the social science situations that Morgan and Sonquist
-    encountered, the real relationship between correlated predictors is
-    complicated and often there is some theoretical backing or other
-    insight that is gained to include variables that may not be important
-    to the model.} The function chooses a variable to split on with linear
-  correlation with respect to \(Y\), but instead of looking for
-  correlations above a certain threshold which is common, it chooses the
-  variable with the highest correlation when compared to its peers. This
-  alleviates the situation where a variable with a non-linear relationship
-  would be passed over again and again. The splitting is done via
-  minimization of the following function with respect to \(i\):
-  
-  \[RSS_{node} (i,X,Y) = RSS_{leaf}(Y|X <i) + RSS_{leaf}(Y|X \geq i) \]
-  \[RSS_{leaf} = \sum (y - \hat{y})^2 \]
-  \[\hat{Y}: \hat{y} \in \hat{Y}: \hat{y} = E(Y), \ where\  |\hat{Y}| = |Y|\]
-  
-  ~~~~~This function considers the regression case only, and only numeric
-  predictors. Leafs are created when the resultant split would be
-  unsatisfactory, i.e.~at least one daughter node would have five members
-  or less. This generates very large trees - a quality that is not an
-  issue in random forests but may be problematic in a stand-alone setting.
-  At this time, there is also no function to prune the trees.
-  
-  \subsubsection{\texorpdfstring{Table 2: A Home-Grown Tree on
-  \(Y~X_1+X_2+X_3+X_4\)}{Table 2: A Home-Grown Tree on Y\textasciitilde{}X\_1+X\_2+X\_3+X\_4}}\label{table-2-a-home-grown-tree-on-yx_1x_2x_3x_4}
-  
-  \begin{tabular}{l|l|l|l|l}
+  \caption{\label{tab:unnamed-chunk-25}\label{tab:tabviD1}Median INFFOREST variable importance values from random forests of 100 trees fit on the first simulated data set}
+  \centering
+  \begin{tabular}[t]{l|r|r|r}
   \hline
-  var & n & dev & ypred & split.cutleft\\
+    & median & Coefficient & pval\\
   \hline
-  X2 & 50 & 5958.56398616138 & -3.32099458459633 & 1.89262782336418\\
+  V1 & 0.3252743 & 5 & 0.0000000\\
   \hline
-  leaf & 14 & 1683.79172385909 & 15.2166924465285 & 0\\
+  V2 & 0.3325859 & 5 & 0.0000000\\
   \hline
-  X1 & 36 & 1771.9972397028 & -10.5300950967004 & -0.758420438327835\\
+  V3 & 0.3044358 & 2 & 0.0000000\\
   \hline
-  X1 & 27 & 1061.15524312941 & -5.71617332730625 & -0.251307488862014\\
+  V4 & 0.2967535 & 0 & 0.0000000\\
   \hline
-  leaf & 17 & 720.083908357861 & -2.51280971153014 & 0\\
+  V5 & 0.4687643 & -5 & 0.0505051\\
   \hline
-  leaf & 10 & 341.071334771552 & -11.1618914741256 & 0\\
+  V6 & 0.5529826 & -5 & 0.0202020\\
   \hline
-  leaf & 9 & 239.837381494473 & -24.971860404883 & 0\\
+  V7 & 0.4586385 & 0 & 0.1414141\\
+  \hline
+  V8 & 0.5320091 & 0 & 0.0505051\\
+  \hline
+  V9 & 0.5216065 & 0 & 0.0303030\\
+  \hline
+  V10 & 0.5001833 & 0 & 0.1717172\\
+  \hline
+  V11 & 0.4885839 & 0 & 0.1111111\\
+  \hline
+  V12 & 0.4824380 & 0 & 0.1414141\\
   \hline
   \end{tabular}
+  \end{table}
   
-  ~~~~~The tree output is read in the following way: each row corresponds
-  to a node of the tree which considers \texttt{n} observations. The mean
-  of the \(Y\) values included in the node are \texttt{ypred}. If there is
-  an optimal and allowable split, \footnote{Another point that could be
-    said is that, no \(V_4\) is not unimportant, \(V_1, V_2,\) and \(V_3\)
-    are just stand ins for the real star, \(V_4\), as they are nearly the
-    same (\(\rho \sim 1\)). Then the real relationship represented here is
-    \(Y \sim (5 + 5 + 2) \cdot V_4 + -5 \cdot V_5 + -5 \cdot V_6 + -2 \cdot V_7\).
-    This model is not unsuccessful in capturing the structure of the data,
-    and this is typically the practice used to model data with highly
-    correlated predictors. If this seems philosophically satisfying to
-    you, the rest of this thesis may seem a bit inconsequential.} then the
-  chosen variable, \texttt{var}, and the \(RSS_{node}\), \texttt{dev}, are
-  recorded.\footnote{Recall that we only allow splits to take place that
-    split the data into two groups, each with more than five members.} The
-  value of the variable in question that acts as the split point is
-  recorded as \texttt{split.cutleft}. If there is no split on the node in
-  question, then \texttt{var} will be recorded as
-  \texttt{\textless{}leaf\textgreater{}} and the \texttt{dev} value will
-  be the value of \(RSS_{leaf}\) at this node.
+  ~~~~~At significance level \(\alpha = .05\), we would reject the null
+  hypothesis that the true INFFOREST value for these variables is zero for
+  variables \(V_1,...,V_4\) and \(V_6\). We have found that in the context
+  of the other predictors these predictors have a significant relationship
+  with \(Y\).
   
-  ~~~~~The tree output is read roughly from top to bottom, with a coda in
-  the middle. The first row corresponds to the first node, or the node
-  that includes the entire dataset. The second row is the beginning of the
-  right subtree or the right daughter of first node. This pattern
-  continues, favoring the right daughter, until a leaf is reached. The
-  left daughter of the first node is found after all of the splits off of
-  the right daughter have finished but is easily identified as the row
-  with a value of \texttt{n} that is exactly the difference between the
-  \texttt{n} values of the first two rows. In the case where the right
-  daughter contained many more observations of the original dataset, there
-  may be a node within the right subtree that contains the same number of
-  observations as the left daughter of the first node. In this case, the
-  left daughter is simply the second row with this property. The pattern
-  of following the right daughter until a leaf is reached continues with
-  the left subtree.
-  
-  ~~~~~The INFTREE function follows the algorithm referenced earlier. The
-  partitions on \(X_j\) are generated by fitting a tree, \(T\), to the
-  model \(X_j \sim X_1,..., X_{j-1}, X_{j+1},..X_p\) and calculating the
-  predictions \(T(X_1,..., X_{j-1}, X_{j+1},..X_p)\). Then permuting
-  \(X_j\) with respect to the partitions on \(X_j\) given by those
-  predictions. For example, if \(x_j \in X_j\) and the value of
-  \(T(x_1,..., x_{j-1}, x_{j+1},..x_p)\) corresponding to \(x_j\) is
-  \(\alpha\), \(x_j\) is permuted along with the other values of \(X_j\)
-  that also have \(T(x_1,..., x_{j-1}, x_{j+1},..x_p)\) corresponding to
-  \(\alpha\).
-  
-  ~~~~~The values of \(INFFOREST(X_j)\) are scaled in the following way:
-  since the INFFOREST function computes the INFFTREES, (or the difference
-  in post and pre permutation RSS), values in a tree-wise manner, each
-  tree's values are divided by the maximum value. This ensures that the
-  values are between zero and one, and that in each tree one variable is
-  clearly deemed the \emph{most important}.
-  
-  \subsection{Results}\label{results}
+  ~~~~~The parameters of a random forest are the data, the formula, the
+  number of trees (\(ntree\)), and the number of variables to consider as
+  possible candidates at each split (\(mtry\)). We'll investigate how
+  INFFOREST variable importance on \(D_1\) changes as the last two
+  parameters are altered. First, random forests will be created for the
+  following values of \(mtry\): \(mtry = 4,7,12\). The random forest
+  behind table \ref{tab:tabviD1} was created using \(mtry = 7\). These
+  forests will all have the same number of trees, \(ntree = 50\).
   
   \begin{figure}[htbp]
   \centering
-  \includegraphics{Thesis_files/figure-latex/figmtry-1.pdf}
-  \caption{\label{fig:figmtry}Median Values of INFFOREST Variable Importance
-  for mtry = 4,6 and 8}
+  \includegraphics{Thesis_files/figure-latex/unnamed-chunk-28-1.pdf}
+  \caption{\label{fig:unnamed-chunk-28}\label{fig:figmtry}Distribution of
+  INFFOREST variable importance values for data set D1 in random forests
+  with mtry = 4,7,12.}
   \end{figure}
   
-  As in (ref Strobl et al 2008), the median INFFOREST variable importance
-  scores are reported here for the dataset \(D_1\). \footnote{It's the
-    convention to call the \(RSS_{node}\) the deviance at a node \(N\),
-    but, of course, this only makes sense when the node is a leaf.}
+  ~~~~~In figure \ref{fig:figmtry} the shading represents the most common
+  values of INFFOREST for that variable. The shaded area represents a 95\%
+  confidence interval around the average value. As \(mtry\) approaches the
+  full number of predictors for the data set, the distributions become
+  less variable. The parameter \(mtry\) is generally taken to be between
+  one third and just over one half of the predictors in the data set, but
+  should be optimized.
   
-  As noted in several publications (Strobl et al, Breiman, Intro to Stat
-  Learning), random forests structure is dependent on the value of
-  \texttt{mtry}.\footnote{A great deal of effort was undertaken by the
-    author to find the definitive, authentic CART algorithm. This
-    implementation follows the rough strokes set out in the 1984 text
-    \emph{Classification and Regression Trees} to the best of the author's
-    ability and may not be exactly the algorithm found in R packages like
-    `tree()'} INFFOREST variable importance remains fairly consistent as
-  \texttt{mtry} fluctuates.
+  \begin{table}
+  
+  \caption{\label{tab:unnamed-chunk-29}\label{tab:tabrssRF}Out of bag RSS values for random forests on data set D1 with mtry equal to 4, 7, or 12}
+  \centering
+  \begin{tabular}[t]{r|r}
+  \hline
+  mtry & RSS\\
+  \hline
+  4 & 21770.58\\
+  \hline
+  7 & 21485.52\\
+  \hline
+  12 & 24640.66\\
+  \hline
+  \end{tabular}
+  \end{table}
+  
+  While the significance of the variables changed slightly for different
+  values of \(mtry\), in applications this may not be anything more than a
+  practical inconvenience. The value of \(mtry\) that optimizes the tree
+  is \(mtry = 7\) as seen in table \ref{tab:tabrssRF}, and this is the
+  model that would be used both for prediction and for inference.
+  
+  ~~~~~Unlike \(mtry\) which must be optimized for each data set manually,
+  traditionally the number of trees to fit in a forest follows a simpler
+  rule: more trees are better. There is some risk that, given a high
+  enough value of \(mtry\), after a certain number of trees are fit, they
+  will begin to be more correlated with each other than they would have
+  been otherwise. To demonstrate the consistency in the INFFOREST variable
+  importance significance testing, two new random forests will be
+  constructed. Each will follow the same formula as the random forest from
+  table \ref{tab:tabviD1}, \(Y \sim V\), and will have \(mtry = 7\), and
+  \(ntree = 50, 200\) (the random forest where \(ntree = 100\) was fit in
+  the previous example).
+  
+  \begin{verbatim}
+  Warning in noder(y = yhatl, xs = xsl, mtry, min): NAs introduced by
+  coercion
+  \end{verbatim}
+  
+  \begin{table}
+  \caption{\label{tab:unnamed-chunk-30}\label{tab:tabntree}INFFOREST Variable Importance for random forests with 50, 100, and 200 trees}
+  
+  \centering
+  \begin{tabular}[t]{l|r|r}
+  \hline
+    & median & pval\\
+  \hline
+  V1 & 0.39 & 0.00\\
+  \hline
+  V2 & 0.36 & 0.00\\
+  \hline
+  V3 & 0.30 & 0.00\\
+  \hline
+  V4 & 0.29 & 0.00\\
+  \hline
+  V5 & 0.52 & 0.06\\
+  \hline
+  V6 & 0.52 & 0.00\\
+  \hline
+  V7 & 0.35 & 0.18\\
+  \hline
+  V8 & 0.55 & 0.02\\
+  \hline
+  V9 & 0.51 & 0.06\\
+  \hline
+  V10 & 0.48 & 0.16\\
+  \hline
+  V11 & 0.52 & 0.10\\
+  \hline
+  V12 & 0.53 & 0.14\\
+  \hline
+  \end{tabular}
+  \centering
+  \begin{tabular}[t]{r|r}
+  \hline
+  median & pval\\
+  \hline
+  0.33 & 0.00\\
+  \hline
+  0.33 & 0.00\\
+  \hline
+  0.30 & 0.00\\
+  \hline
+  0.30 & 0.00\\
+  \hline
+  0.47 & 0.05\\
+  \hline
+  0.55 & 0.02\\
+  \hline
+  0.46 & 0.14\\
+  \hline
+  0.53 & 0.05\\
+  \hline
+  0.52 & 0.03\\
+  \hline
+  0.50 & 0.17\\
+  \hline
+  0.49 & 0.11\\
+  \hline
+  0.48 & 0.14\\
+  \hline
+  \end{tabular}
+  \centering
+  \begin{tabular}[t]{r|r}
+  \hline
+  median & pval\\
+  \hline
+  0.32 & 0.01\\
+  \hline
+  0.35 & 0.00\\
+  \hline
+  0.29 & 0.00\\
+  \hline
+  0.36 & 0.00\\
+  \hline
+  0.51 & 0.03\\
+  \hline
+  0.55 & 0.03\\
+  \hline
+  0.49 & 0.14\\
+  \hline
+  0.51 & 0.06\\
+  \hline
+  0.50 & 0.07\\
+  \hline
+  0.48 & 0.16\\
+  \hline
+  0.50 & 0.08\\
+  \hline
+  0.50 & 0.16\\
+  \hline
+  \end{tabular}
+  \end{table}
+  
+  The p-values for each random forest with \(50,100,200\) trees vary
+  slightly, but ultimately the same variables are considered significant.
+  INFForest variable importance allows for consistent statistical
+  inference with random forests.
+  
+  \chapter*{Conclusion}\label{conclusion}
+  \addcontentsline{toc}{chapter}{Conclusion}
+  
+  \setcounter{chapter}{4} \setcounter{section}{0}
   
   \chapter{INFFOREST Comparisons With Other
   Methods}\label{infforest-comparisons-with-other-methods}
+  
+  As discussed in the beginning of chapter 4, each type of permuted
+  variable importance, permuted, conditionally permuted, and INFFOREST,
+  operates on a slightly different null hypothesis. This explains the
+  differences in the results when each method is run on the same random
+  forest.
+  
+  ~~~~~To compare the results, a random forest was generated on the first
+  200 rows of the data set \(D_1\), following the formula \(Y \sim V\).
+  This random forest considered \(7\) of the \(12\) predictors at each
+  split and contained \(200\) trees. Then the INFFOREST, conditional
+  permuted, and permuted variable importance distributions were calculated
+  for each variable. These distributions are represented below in figure
+  \ref{fig:figcomparisons}.
   
   \begin{figure}[htbp]
   \centering
@@ -877,18 +1567,39 @@ starts here.
   Permuted, and Permuted Variable Importance}
   \end{figure}
   
-  INFFOREST holds its own amongst the other methods described in Chapter
-  4. The conditional permuted variable importance, when ran on the same
-  random forest, had more difficulty parsing out the situation with paired
-  variables than INFFOREST, only selecting the first two variables to be
-  important. Permuted variable importance does not pick up on the
-  correlation structure within the predictors and deems \(V2\) and \(V6\)
-  unimportant.
+  Mimicking the construction of the plot in chapter 4, the ribbon
+  surrounding the average values is the 95\% confidence interval
+  constructed around the average importance values. The first main
+  difference visible between INFFOREST and the other methods in figure
+  \ref{fig:figcomparisons} is that the median INFFOREST values are above
+  zero, even for the variables that are not considered significant. The
+  random forest is conducted in such a way that even predictors that may
+  not be important in the overall model are important in a few trees.
+  These are three different methods, following three different permutation
+  schemes, and they are based on three different null hypotheses. Table
+  \ref{tab:tabVIties} demonstrates the implications of each permutation
+  scheme.
   
-  INNFOREST and conditional permuted variable importance both ignored the
-  unfluential predictors that were not correlated with \(V1,V2,V3\) and
-  \(V4\). This is a situation that also occured in the simulation run in
-  Strobl et al (2008b).
+  \begin{table}[H]
+  \begin{tabular}{|c|c|c|c|}
+  \hline
+  Variable Importance Method & Ties between $X_j$ and $Y$ & Ties between $X_j$ and $X_{-j}$ & Ties between $X_{-j}$ and $Y$ \\ \hline
+  Permuted                   & Broken                     & Broken                          & Maintained                    \\ \hline
+  Conditional Permuted       & Broken                     & Maintained                      & Maintained                    \\ \hline
+  INFFOREST                  & Broken                     & Maintained                      & Broken                        \\ \hline
+  \end{tabular}
+  \caption{The permutation structure in each variable importance method functions to break one or more ties between the predictors and the response.}
+  \label{tab:tabVIties}
+  \end{table}
+  
+  \backmatter
+  
+  \chapter{References}\label{references}
+  
+  \noindent
+  
+  \setlength{\parindent}{-0.20in} \setlength{\leftskip}{0.20in}
+  \setlength{\parskip}{8pt}
 
 
   % Index?

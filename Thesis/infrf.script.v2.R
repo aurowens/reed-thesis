@@ -6,11 +6,11 @@
 
 ########################################TESTING#############################################
 
-data("iris")
+#data("iris")
 #d <- iris[1:4]
-y <- iris$Sepal.Length
-xs <- iris[2:4]
-mtry <- 2
+#y <- iris$Sepal.Length
+#xs <- iris[2:4]
+#mtry <- 2
 # form <- as.formula("Sepal.Length ~.")
 # 
 # ######from chap2.Rmd
@@ -22,7 +22,7 @@ mtry <- 2
 #mtry = 6
 # form <- as.formula("y~.")
 # 
-t1 <- tree.rf(y,xs,mtry, bootsampled = TRUE)
+#t1 <- tree.rf(y,xs,mtry, bootsampled = TRUE)
 # 
 # start <- sys.time()
 # r <- rforest(y,xs, mtry, ntree = 100)
@@ -40,10 +40,10 @@ t1 <- tree.rf(y,xs,mtry, bootsampled = TRUE)
 # 
 # strobltrees(r[[3]],y[-r[[3]][[1]]],xs[-r[[3]][[1]],])
 
-v1 <- infforest(r1, d1$y, d1[,1:12])
+r1 <- rforest(d2$y[1:200], d2[1:200,1:12], mtry = 8, ntree = 300)
+v1 <- conditional.inf(r1, d2$y[1:200], d2[1:200,1:12])
 
-v22 <- v1[v1[,2]!= -100,2]
-
+v22 <- v1[, v1== 0]
 
 ###################################GROWING A TREE#########################################
 rss.node <- function(i,y,x) { 
@@ -101,10 +101,10 @@ split.rf <- function(y,x, min, parent_rss) {
     op.partition <- suppressWarnings(optimise(rss.node, interval = range(x), 
                                               upper = max(x), y=y,x=x, maximum = FALSE))
     
-    if(parent_rss < rss.leaf( y[x < op.partition[[1]]])){
-      return(NULL)
-    }
-    
+    # if(parent_rss < rss.leaf( y[x < op.partition[[1]]])){
+    #   return(NULL)
+    # }
+    # 
     if (length(x[x < op.partition[[1]]]) < min | length(x[x >= op.partition[[1]]]) < min){
       
       return(NULL)
@@ -129,8 +129,8 @@ tree.rf <- function(y,xs, mtry, bootsampled, min = 5){
   
   
   #if( length(y) != nrow(xs)){
-   # return("error, length y != dim xs")
- # }
+  # return("error, length y != dim xs")
+  # }
   
   noder <- function(y,xs,mtry, min){
     
@@ -289,7 +289,7 @@ predict.tree.rf <- function(t,xs) {
   if(onex){
     predictions <- c(rep(100000, length(xs)))
   } else {
-  predictions <- c(rep(100000, nrow(xs)))
+    predictions <- c(rep(100000, nrow(xs)))
   }
   ###SKIPPING CONDITION
   #there's no need to map out the whole tree and have it on file, each y just needs the tree to 
@@ -309,13 +309,13 @@ predict.tree.rf <- function(t,xs) {
           if (xsh < ld$split.cutleft) {
             j <- j+2
           } else {
-          j <- j+1
+            j <- j+1
           }
           ld <- left.daughter[j,]
         }
         predictions[i] <- ld$ypred
       } else {
-       #right daughter
+        #right daughter
         rd <- right.daughter[2,]
         j <- 2
         while (rd$var != "<leaf>"){
@@ -330,10 +330,10 @@ predict.tree.rf <- function(t,xs) {
       }    
     }
   } else {
-  
+    
     for(i in 1:(nrow(xs))){
       xsh <- xs[i,]
-      if(xsh[,first.split$var] < first.split$split.cutleft){
+      if(xsh[,first.split$var] < as.numeric(first.split$split.cutleft)){
         #left daughter
         ld <- left.daughter[1,]
         j <- 1
@@ -350,19 +350,34 @@ predict.tree.rf <- function(t,xs) {
         #right daughter
         rd <- right.daughter[2,]
         j <- 2
-       while (rd$var != "<leaf>"){
+        while (rd$var != "<leaf>"){
           if (xsh[,rd$var] < rd$split.cutleft) {
             j <- j+2
           } else {
             j <- j+1
           }
-         rd <- right.daughter[j,]
+          rd <- right.daughter[j,]
         }
         predictions[i] <- rd$ypred
       }
     }
   }
   return(predictions)
+}
+
+rssforest <- function(rf, y, xs){
+  rss <- sum((y[-rf[[1]][[1]]] - as.numeric(predict.tree.rf(rf[[1]],xs[-rf[[1]][[1]],])))^2)
+  rss.frame <- rss
+  for(i in 2:(length(rf))){ ##random forest is a list, pairs of trees + bootsamples
+    t <- rf[[i]]
+    rss.frame <- rbind(rss.frame,sum((y[-rf[[i]][[1]]] - as.numeric(predict.tree.rf(t,xs[-rf[[i]][[1]],])))^2))
+    
+    ##send tree off to inftrees with the -bootsampled data
+    ##get back frame
+  }
+  
+  ##generate distribution of vi's from frames - pval
+  return(mean(rss.frame))
 }
 
 ###################################GROWING A FOREST#########################################
@@ -446,10 +461,10 @@ conditional.inf <- function(rf, y, xs) {
 ###############################PERMUTED VARIABLE IMPORTANCE################################
 
 permuted.inf <- function(rf, y, xs) {
-  v <- briemantrees(rf[[1]],y[-rf[[1]][[1]]],xs[-rf[[1]][[1]],])
+  v <- breimantrees(rf[[1]],y[-rf[[1]][[1]]],xs[-rf[[1]][[1]],])
   
   for (i in 2:length(rf)){
-    v <- rbind(v, briemantrees(rf[[1]],y[-rf[[1]][[1]]],xs[-rf[[1]][[1]],]))
+    v <- rbind(v, breimantrees(rf[[1]],y[-rf[[1]][[1]]],xs[-rf[[1]][[1]],]))
   }
   
   return(v)
@@ -477,23 +492,29 @@ inftrees <- function(t, y, xs) {
   for(i in 1:ncol(xs)){
     xs.for.permuting.i <- xs
     ti <- tree.rf(xs[,i], xs[,-i], mtry = ncol(xs[,-i]), bootsample = FALSE) 
-    xi.partitions <- predict.tree.rf(ti, xs[,-i])
-    xs.for.permuting.i$groups <- as.factor(xi.partitions)
-    
-    for (j in 1:length(levels(xs.for.permuting.i$groups))) {
-      xs.for.permuting.i[xs.for.permuting.i$group == levels(xs.for.permuting.i$groups)[j],i] <-
-        sample(xs.for.permuting.i[xs.for.permuting.i$group == levels(xs.for.permuting.i$groups)[j],i], 
-               length(xs.for.permuting.i[xs.for.permuting.i$group == levels(xs.for.permuting.i$groups)[j],i]),
-               replace = TRUE)
+    if(nrow(ti[[2]]) <= 3) {
+      xs.for.permuting.i[,i] <- sample(xs.for.permuting.i[,i])
+    } else {
+      xi.partitions <- predict.tree.rf(ti, xs[,-i])
+      xs.for.permuting.i$groups <- as.factor(xi.partitions)
+      for (j in 1:length(levels(xs.for.permuting.i$groups))) {
+        for(n in 1:ncol(xs)){
+          xs.for.permuting.i[xs.for.permuting.i$group == levels(xs.for.permuting.i$groups)[j],n] <-
+            sample(xs.for.permuting.i[xs.for.permuting.i$group == levels(xs.for.permuting.i$groups)[j],n], 
+                   length(xs.for.permuting.i[xs.for.permuting.i$group == levels(xs.for.permuting.i$groups)[j],n]))
+        }
+      }
     }
-    
     predictions.for.y.xi.perm <- predict.tree.rf(ta,xs.for.permuting.i)
     rss.post[i] <- abs(sum((y - as.numeric(predictions.for.y.xi.perm))^2)/length(y) - rss.pre)
-    ex <- sum(names(xs)[i] ==  ta[[3]])/nrow(ta[[3]])
-    if(ex > .8){
-      rss.post[i] <- rss.post[i] * (ex)
-    }
+    #ex <- sum(names(xs)[i] ==  ta[[3]])/nrow(ta[[3]])
+    # if (is.null(ex)){
+    #   rss.post[i] <- rss.post[i] *0
+    # } else if(ex > .7) {
+    # rss.post[i] <- rss.post[i] * (ex)
+    # }
   }
+  rss.post <- rss.post/max(abs(rss.post))
   names(rss.post) <- names(xs)
   return(rss.post)
 }
@@ -516,14 +537,14 @@ ytrees <- function(t,y,xs) {
       yperm <- sample(y)
       rss.post[i] <- (rss.pre-sum((yperm - predictions)^2)/length(y) )
       xs.i <- xs
-       yperm <- y
+      yperm <- y
     } else {
       fr <- t[t$var %in% names(xs.i)[-1],]
       if(nrow(fr) == 0) {
-      yperm <- sample(y)
-      rss.post[i] <- (rss.pre-sum((yperm - predictions)^2)/length(y) )
-      xs.i <- xs
-      yperm <- y
+        yperm <- sample(y)
+        rss.post[i] <- (rss.pre-sum((yperm - predictions)^2)/length(y) )
+        xs.i <- xs
+        yperm <- y
       } else {
         for (j in 1:length(levels(as.factor(fr$var)))) {
           fri <- fr[fr$var == levels(as.factor(fr$var))[j],]
@@ -540,13 +561,12 @@ ytrees <- function(t,y,xs) {
   if(sum(abs(rss.post)) == 0) {
     return(rss.post)
   } else{
-   # rss.post <- rss.post/max(abs(rss.post))
+    # rss.post <- rss.post/max(abs(rss.post))
     # names(rss.post) <- names(xs)
     return(rss.post)
   }
-
+  
 }
-
 
 strobltrees <- function(t,y,xs) {
   rss.post <- rep(0, ncol(xs))
@@ -562,22 +582,21 @@ strobltrees <- function(t,y,xs) {
   for(i in 1:ncol(xs)){
     corrr <- sapply(xs[,-i],cor, y = xs[,i])
     xs.i <- xs[,-i]
-    xs.i <-  (xs.i[,abs(corrr) > .2])
+    xs.i <-  (xs.i[,abs(corrr) >= .2])
     xs.i <- cbind(xs[,i], xs.i)
     
-    if(ncol(xs.i) == 1){
+    if(ncol(xs.i) == 1 | is.null(dim(xs.i))){
       xs.i <- sample(xs.i)
       xs.ii <- xs
-      xs.ii[,i] <- xs.i[,1]
+      xs.ii[,i] <- xs.i
       names(xs.ii) <- names(xs)
       predictions.for.y.xi.perm <- predict.tree.rf(ta,xs.ii)
       rss.post[i] <- abs(sum((y - as.numeric(predictions.for.y.xi.perm))^2)/length(y) - rss.pre)
       xs.i <- xs
     } else {
-      
       fr <- t[t$var %in% names(xs.i)[-1],]
-      if(nrow(fr) == 0) {
-        xs.i <- sample(xs.i)
+      if(nrow(fr) < 3) {
+        xs.i[,1] <- sample(xs.i[,1])
         xs.ii <- xs
         xs.ii[,i] <- xs.i[,1]
         names(xs.ii) <- names(xs)
@@ -588,7 +607,7 @@ strobltrees <- function(t,y,xs) {
         for (j in 1:length(levels(as.factor(fr$var)))) {
           fri <- fr[fr$var == levels(as.factor(fr$var))[j],]
           for(n in 1:nrow(fri)){
-            xs.i[xs.i[,fri$var[n]] < fri$split.cutleft[n] ,1] <- sample(xs.i[xs.i[,fri$var[n]] < fri$split.cutleft[n] ,1])
+            xs.i[xs.i[,fri$var[n]] < fri$split.cutleft[n] ,1] <- sample(xs.i[xs.i[,fri$var[n]] < fri$split.cutleft[n] ,1], length(xs.i[xs.i[,fri$var[n]] < fri$split.cutleft[n] ,1]))
           }
         }
         xs.ii <- xs
@@ -597,17 +616,17 @@ strobltrees <- function(t,y,xs) {
         predictions.for.y.xi.perm <- predict.tree.rf(ta,xs.ii)
         rss.post[i] <- abs(sum((y - as.numeric(predictions.for.y.xi.perm))^2)/length(y) - rss.pre)
         xs.i <- xs
-        ex <- sum(names(xs)[i] ==  ta[[3]])/nrow(ta[[3]])
-        if(ex > .8){
-          rss.post[i] <- rss.post[i] * (ex)
-        }
+        # ex <- sum(names(xs)[i] ==  ta[[3]])/nrow(ta[[3]])
+        # if(ex > .8){
+        #   rss.post[i] <- rss.post[i] * (ex)
+        # }
       }
     }
   }
   if(sum(abs(rss.post)) == 0) {
     return(rss.post)  
   } else{
-    #rss.post <- rss.post/max(abs(rss.post))
+    rss.post <- rss.post/max(abs(rss.post))
     # names(rss.post) <- names(xs)
     return(rss.post)
   }
@@ -618,13 +637,13 @@ breimantrees <- function (t,y,xs){
   ta <- t
   t <- t[[2]]
   
-  rss.pre <- sum((y - as.numeric(predict.tree.rf(ta, y, xs)))^2)
+  rss.pre <- sum((y - as.numeric(predict.tree.rf(ta, xs)))^2)
   
   rss.post <- rep(0, ncol(xs))
   xs.for.permuting <- xs
   for (i in 1:ncol(xs)){
     xs.for.permuting[,i] <- sample(xs.for.permuting[,i], replace = TRUE)
-    predictions.for.y.xi.perm <- predict.tree.rf(ta,y,xs.for.permuting)
+    predictions.for.y.xi.perm <- predict.tree.rf(ta,xs.for.permuting)
     rss.post[i] <- abs(sum((y - as.numeric(predictions.for.y.xi.perm))^2) - rss.pre)
     xs.for.permuting <- xs
   }
@@ -632,4 +651,3 @@ breimantrees <- function (t,y,xs){
   names(rss.post) <- names(xs)
   return(rss.post)
 }
-

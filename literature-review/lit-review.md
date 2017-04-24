@@ -1,5 +1,4 @@
 ---
-title: "Introduction to R and RStudio"
 output:
   html_document:
     highlight: pygments

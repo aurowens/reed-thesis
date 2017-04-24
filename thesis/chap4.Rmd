@@ -1,13 +1,16 @@
 ---
 header-includes:
-- \usepackage{graphicx,latexsym}
 - \usepackage{amssymb,amsthm,amsmath}
-- \usepackage{longtable,booktabs,setspace}
+- \usepackage{chemarr}
 - \usepackage{algorithm}
 - \usepackage{algpseudocode}
 - \usepackage{pifont}
+- \usepackage{float}
+- \usepackage{tikz}
+
 output: pdf_document
 ---
+
 ```{r include_reedtemplates_4, include = FALSE}
 # This chunk ensures that the reedtemplates package is installed and loaded
 # This reedtemplates package includes the template files for the thesis and also
@@ -41,52 +44,6 @@ thesis <- c("#245e67", "#90bd98", "#cfd0a0", "#c49e46", "#d28383")
 ```
 
 ```{r infforestcode, echo=FALSE}
-
-############################################################################################
-#####################################INFFORESTS#############################################
-############################################################################################
-############################################################################################
-
-########################################TESTING#############################################
-
-# data("iris")
-# d <- iris[1:4]
-# y <- iris$Sepal.Length
-# xs <- iris[2:4]
-# mtry <- 2
-# form <- as.formula("Sepal.Length ~.")
-# 
-# ######from chap2.Rmd
-# ##d1
-# 
-# d <- d2[1:100,]
-# xs <- d2[1:100, 1:12]
-# y <- d2$y[1:100]
-# mtry = 6
-# form <- as.formula("y~.")
-# 
-# t1 <- tree.rf(y,xs,mtry)
-# 
-# start <- sys.time()
-# r <- rforest(y,xs, mtry, ntree = 100)
-# print(start - Sys.time())
-# 
-# p <- predict.tree.rf(r[[1]], y[-r[[1]][[1]]], xs[-r[[1]][[1]],])
-# 
-# vi <- inftrees(r[[2]], y[-r[[2]][[1]]], xs[-r[[2]][[1]],])
-# 
-# virf <- infforest(r,y,xs)
-# virfStrobl <- conditional.inf(r,y,xs)
-# virf_permuted <- permuted.inf(r,y,xs)
-# 
-# 
-# 
-# strobltrees(r[[3]],y[-r[[3]][[1]]],xs[-r[[3]][[1]],])
-
-
-###################################GROWING A TREE#########################################
-
-
 ###################################GROWING A TREE#########################################
 rss.node <- function(i,y,x) { 
   yleftpred <- mean(y[x< i])
@@ -131,7 +88,7 @@ max.cor <- function(yy,sxs){
   
 }
 
-split.rf <- function(y,x, min) {
+split.rf <- function(y,x, min, parent_rss) {
   
   sp <- list()
   if(length(x) <= min) {
@@ -143,7 +100,10 @@ split.rf <- function(y,x, min) {
     op.partition <- suppressWarnings(optimise(rss.node, interval = range(x), 
                                               upper = max(x), y=y,x=x, maximum = FALSE))
     
-    
+    # if(parent_rss < rss.leaf( y[x < op.partition[[1]]])){
+    #   return(NULL)
+    # }
+    # 
     if (length(x[x < op.partition[[1]]]) < min | length(x[x >= op.partition[[1]]]) < min){
       
       return(NULL)
@@ -159,15 +119,17 @@ split.rf <- function(y,x, min) {
   }
 }
 
-tree.rf <- function(y,xs, mtry, bootsampled){
+tree.rf <- function(y,xs, mtry, bootsampled, min = 5){
   tree <- list()
   tree.frame <- list()
   tree.exc <- list()
   leaf.partitions <- list()
   bootsample <- seq(1, length(y))
-  if( length(y) != nrow(xs)){
-    return("error, length y != dim xs")
-  }
+  
+  
+  #if( length(y) != nrow(xs)){
+   # return("error, length y != dim xs")
+ # }
   
   noder <- function(y,xs,mtry, min){
     
@@ -184,12 +146,17 @@ tree.rf <- function(y,xs, mtry, bootsampled){
     if(frame[1] == "<leaf>"){
       return(frame)
     } else {
-      
-      yhatl <- y[xs[,spliton[[1]]] < split]
-      xsl <- xs[xs[,spliton[[1]]] < split,]
-      yhatr <- y[xs[,spliton[[1]]] >= split]
-      xsr <- xs[xs[,spliton[[1]]] >= split, ]
-      
+      if(is.null(ncol(xs))){
+        yhatl <- y[xs < split]
+        xsl <- xs[xs < split]
+        yhatr <- y[xs >= split]
+        xsr <- xs[xs >= split]
+      }else{
+        yhatl <- y[xs[,spliton[[1]]] < split]
+        xsl <- xs[xs[,spliton[[1]]] < split,]
+        yhatr <- y[xs[,spliton[[1]]] >= split]
+        xsr <- xs[xs[,spliton[[1]]] >= split, ]
+      }
       #    if(length(yhatl) < min & length(yhatr) < min){
       #      print(df)
       #      return(df)
@@ -202,11 +169,20 @@ tree.rf <- function(y,xs, mtry, bootsampled){
     #  }
   }
   node1 <- function(y, xs, mtry, min){
+    onex <- FALSE
     
-    xssrd <- xs[,sample(ncol(xs),mtry)]
-    In <- names(xs) %in% names(xssrd)
-    In <- !In 
-    NotIn <- names(xs)[In]
+    if(is.null(ncol(xs))){
+      onex <- TRUE
+    }
+    if(onex == FALSE){
+      xssrd <- xs[,sample(ncol(xs),mtry)]
+      In <- names(xs) %in% names(xssrd)
+      In <- !In 
+      NotIn <- names(xs)[In]
+    } else {
+      xssrd <- as.data.frame(xs)
+      NotIn <- NULL
+    }
     
     frame <- data.frame("", 0,0,0,0)
     frame[,1] <- as.character(frame[,1])
@@ -222,9 +198,12 @@ tree.rf <- function(y,xs, mtry, bootsampled){
       return(frame)
       
     } else {
-      
-      maxxr <- max.cor(yy = y,sxs= xssrd)
-      sprd <- split.rf(y, maxxr[[1]], min)
+      if (onex){
+        maxxr <- list(xs, "X")
+      } else {
+        maxxr <- max.cor(yy = y,sxs= xssrd)
+      }
+      sprd <- split.rf(y, maxxr[[1]], min, parent_rss = rss.leaf(y))
       if(is.null(sprd)) {
         frame[1,] <- c("<leaf>",nrow(xssrd),rss.leaf(y),  mean(y), 0)
         
@@ -261,7 +240,7 @@ tree.rf <- function(y,xs, mtry, bootsampled){
     y <- y[bootsample]
     
   }
-  min <- 5
+  #min <-5
   noder(y, xs, mtry,min)
   names(tree.frame) <- c("var", "n", "dev", "ypred","split.cutleft")
   tree[[1]] <- bootsample
@@ -274,6 +253,8 @@ tree.rf <- function(y,xs, mtry, bootsampled){
 predict.tree.rf <- function(t,xs) {
   t <- t[[2]] 
   first.split <- t[1,]
+  onex <- FALSE
+  
   if(sum(is.na(t$ypred)) > 0){
     return(NULL)
   }
@@ -286,6 +267,10 @@ predict.tree.rf <- function(t,xs) {
   rdn <- t$n[2]
   ldn <- t$n[1] - rdn 
   ldname <- as.numeric(row.names(t[t$n == ldn,]))
+  
+  if(is.null(ncol(xs))){
+    onex <- TRUE
+  }
   
   if(length(ldname) > 1) {
     
@@ -300,7 +285,11 @@ predict.tree.rf <- function(t,xs) {
   
   
   j <- 0
+  if(onex){
+    predictions <- c(rep(100000, length(xs)))
+  } else {
   predictions <- c(rep(100000, nrow(xs)))
+  }
   ###SKIPPING CONDITION
   #there's no need to map out the whole tree and have it on file, each y just needs the tree to 
   #a. check the split condition, i.e. xs[,var] < split.cutleft 
@@ -308,39 +297,86 @@ predict.tree.rf <- function(t,xs) {
   #b.2. if no, go one ahead
   #c. stop at leaf, pred[i] <- ypred
   
-  for(i in 1:(nrow(xs))){
-    
-    xsh <- xs[i,]
-    
-    if(xsh[,first.split$var] < first.split$split.cutleft){
-      #left daughter
-      ld <- left.daughter[1,]
-      j <- 1
-      while (ld$var != "<leaf>"){
-        if (xsh[,ld$var] < ld$split.cutleft) {
-          j <- j+2
-        } else {
+  if(onex) {
+    for (i in 1: length(xs)) {
+      xsh <- xs[i]
+      if(xsh < first.split$split.cutleft){
+        #left daughter
+        ld <- left.daughter[1,]
+        j <- 1
+        while (ld$var != "<leaf>"){
+          if (xsh < ld$split.cutleft) {
+            j <- j+2
+          } else {
           j <- j+1
+          }
+          ld <- left.daughter[j,]
         }
-        ld <- left.daughter[j,]
-      }
-      predictions[i] <- ld$ypred
-    } else {
-      #right daughter
-      rd <- right.daughter[2,]
-      j <- 2
-      while (rd$var != "<leaf>"){
-        if (xsh[,rd$var] < rd$split.cutleft) {
-          j <- j+2
-        } else {
-          j <- j+1
+        predictions[i] <- ld$ypred
+      } else {
+       #right daughter
+        rd <- right.daughter[2,]
+        j <- 2
+        while (rd$var != "<leaf>"){
+          if (xsh < rd$split.cutleft) {
+            j <- j+2
+          } else {
+            j <- j+1
+          }
+          rd <- right.daughter[j,]
         }
-        rd <- right.daughter[j,]
+        predictions[i] <- rd$ypred
+      }    
+    }
+  } else {
+  
+    for(i in 1:(nrow(xs))){
+      xsh <- xs[i,]
+      if(xsh[,first.split$var] < first.split$split.cutleft){
+        #left daughter
+        ld <- left.daughter[1,]
+        j <- 1
+        while (ld$var != "<leaf>"){
+          if (xsh[,ld$var] < ld$split.cutleft) {
+            j <- j+2
+          } else {
+            j <- j+1
+          }
+          ld <- left.daughter[j,]
+        }
+        predictions[i] <- ld$ypred
+      } else {
+        #right daughter
+        rd <- right.daughter[2,]
+        j <- 2
+       while (rd$var != "<leaf>"){
+          if (xsh[,rd$var] < rd$split.cutleft) {
+            j <- j+2
+          } else {
+            j <- j+1
+          }
+         rd <- right.daughter[j,]
+        }
+        predictions[i] <- rd$ypred
       }
-      predictions[i] <- rd$ypred
     }
   }
   return(predictions)
+}
+
+rssforest <- function(rf, y, xs){
+  rss <- sum((y[-rf[[1]][[1]]] - as.numeric(predict.tree.rf(rf[[1]],xs[-rf[[1]][[1]],])))^2)
+  rss.frame <- rss
+  for(i in 2:(length(rf))){ ##random forest is a list, pairs of trees + bootsamples
+    t <- rf[[i]]
+    rss.frame <- rbind(rss.frame,sum((y[-rf[[i]][[1]]] - as.numeric(predict.tree.rf(t,xs[-rf[[i]][[1]],])))^2))
+    
+    ##send tree off to inftrees with the -bootsampled data
+    ##get back frame
+  }
+  
+  ##generate distribution of vi's from frames - pval
+  return(mean(rss.frame))
 }
 
 ###################################GROWING A FOREST#########################################
@@ -395,6 +431,19 @@ infforest.test <- function(inf){
   return(data.frame("var" =  names(as.data.frame(inf)), "P(var > 0)"= p, "mean" = mu, "sd" = sd))
 }
 
+##############################Y PERMUTED VARIABLE IMPORTANCE################################
+
+yperm.inf <- function(rf,y,xs) {
+  v <- ytrees(rf[[1]],y[-rf[[1]][[1]]],xs[-rf[[1]][[1]],])
+  v1 <- v
+  for (i in 2:length(rf)){
+    v1 <-  ytrees(rf[[i]],y[-rf[[1]][[1]]],xs[-rf[[1]][[1]],])
+    v <- rbind(v,v1)
+  }
+  
+  return(v)
+}
+
 ##############################CONDITIONAL VARIABLE IMPORTANCE################################
 
 conditional.inf <- function(rf, y, xs) {
@@ -442,73 +491,81 @@ inftrees <- function(t, y, xs) {
   for(i in 1:ncol(xs)){
     xs.for.permuting.i <- xs
     ti <- tree.rf(xs[,i], xs[,-i], mtry = ncol(xs[,-i]), bootsample = FALSE) 
-    xi.partitions <- predict.tree.rf(ti, xs[,-i])
-    xs.for.permuting.i$groups <- as.factor(xi.partitions)
-    
-    for (j in 1:length(levels(xs.for.permuting.i$groups))) {
-      xs.for.permuting.i[xs.for.permuting.i$group == levels(xs.for.permuting.i$groups)[j],i] <-
-        sample(xs.for.permuting.i[xs.for.permuting.i$group == levels(xs.for.permuting.i$groups)[j],i], 
-               length(xs.for.permuting.i[xs.for.permuting.i$group == levels(xs.for.permuting.i$groups)[j],i]),
-               replace = TRUE)
-    }
-    
+    if(nrow(ti[[2]]) <= 3) {
+        xs.for.permuting.i[,i] <- sample(xs.for.permuting.i[,i])
+      } else {
+          xi.partitions <- predict.tree.rf(ti, xs[,-i])
+          xs.for.permuting.i$groups <- as.factor(xi.partitions)
+          for (j in 1:length(levels(xs.for.permuting.i$groups))) {
+            for(n in 1:ncol(xs)){
+              xs.for.permuting.i[xs.for.permuting.i$group == levels(xs.for.permuting.i$groups)[j],n] <-
+                sample(xs.for.permuting.i[xs.for.permuting.i$group == levels(xs.for.permuting.i$groups)[j],n], 
+                     length(xs.for.permuting.i[xs.for.permuting.i$group == levels(xs.for.permuting.i$groups)[j],n]))
+            }
+          }
+      }
     predictions.for.y.xi.perm <- predict.tree.rf(ta,xs.for.permuting.i)
     rss.post[i] <- abs(sum((y - as.numeric(predictions.for.y.xi.perm))^2)/length(y) - rss.pre)
-    ex <- sum(names(xs)[i] ==  ta[[3]])/nrow(ta[[3]])
-    rss.post[i] <- rss.post[i]*ex
+    #ex <- sum(names(xs)[i] ==  ta[[3]])/nrow(ta[[3]])
+    # if (is.null(ex)){
+    #   rss.post[i] <- rss.post[i] *0
+    # } else if(ex > .7) {
+     # rss.post[i] <- rss.post[i] * (ex)
+    # }
   }
+  rss.post <- rss.post/max(abs(rss.post))
   names(rss.post) <- names(xs)
   return(rss.post)
 }
-# 
-# ytrees <- function(t,y,xs) {
-#   d <- rbind(y,xs)
-#   rss.post <- rep(0, ncol(xs))
-#   ta <- t
-#   t <- t[[2]]
-#   predictions <- as.numeric(predict.tree.rf(ta, xs))
-#   rss.pre <- sum((y - predictions)^2)/length(y)
-#   xs.for.permuting.i <- xs
-#   yperm <- y
-#   for(i in 1:ncol(xs)){
-#     corrr <- sapply(xs[,-i],cor, y = xs[,i])
-#     xs.i <- xs[,-i]
-#     xs.i <-  (xs.i[,corrr > .2])
-#     xs.i <- cbind(xs[,i], xs.i)
-#     if(ncol(xs.i) == 1){
-#       yperm <- sample(y)
-#       rss.post[i] <- abs(sum((yperm - predictions)^2)/length(y) - rss.pre)
-#       xs.i <- xs
-#        yperm <- y
-#     } else {
-#       fr <- t[t$var %in% names(xs.i)[-1],]
-#       if(nrow(fr) == 0) {
-#       yperm <- sample(y)
-#       rss.post[i] <- abs(sum((yperm - predictions)^2)/length(y) - rss.pre)
-#       xs.i <- xs
-#       yperm <- y
-#       } else {
-#         for (j in 1:length(levels(as.factor(fr$var)))) {
-#           fri <- fr[fr$var == levels(as.factor(fr$var))[j],]
-#           for(n in 1:nrow(fri)){
-#             yperm[xs.i[,fri$var[n]] < fri$split.cutleft[n]] <- sample(y[xs.i[,fri$var[n]] < fri$split.cutleft[n]],1])
-#           }
-#         }
-#         rss.post[i] <- abs(sum((yperm - predictions)^2)/length(y) - rss.pre)
-#         xs.i <- xs
-#         yperm <- y
-#       }
-#     }
-#   }
-#   if(sum(abs(rss.post)) == 0) {
-#     return(rss.post)  
-#   } else{
-#     rss.post <- rss.post/max(abs(rss.post))
-#     # names(rss.post) <- names(xs)
-#     return(rss.post)
-#   }
-#   
-# }
+
+ytrees <- function(t,y,xs) {
+  d <- rbind(y,xs)
+  rss.post <- rep(0, ncol(xs))
+  ta <- t
+  t <- t[[2]]
+  predictions <- as.numeric(predict.tree.rf(ta, xs))
+  rss.pre <- sum((y - predictions)^2)/length(y)
+  xs.for.permuting.i <- xs
+  yperm <- y
+  for(i in 1:ncol(xs)){
+    corrr <- sapply(xs[,-i],cor, y = xs[,i])
+    xs.i <- xs[,-i]
+    xs.i <-  (xs.i[,abs(corrr) > .2])
+    xs.i <- cbind(xs[,i], xs.i)
+    if(ncol(xs.i) == 1){
+      yperm <- sample(y)
+      rss.post[i] <- (rss.pre-sum((yperm - predictions)^2)/length(y) )
+      xs.i <- xs
+       yperm <- y
+    } else {
+      fr <- t[t$var %in% names(xs.i)[-1],]
+      if(nrow(fr) == 0) {
+      yperm <- sample(y)
+      rss.post[i] <- (rss.pre-sum((yperm - predictions)^2)/length(y) )
+      xs.i <- xs
+      yperm <- y
+      } else {
+        for (j in 1:length(levels(as.factor(fr$var)))) {
+          fri <- fr[fr$var == levels(as.factor(fr$var))[j],]
+          for(n in 1:nrow(fri)){
+            yperm[xs.i[,fri$var[n]] < fri$split.cutleft[n]] <- sample(y[xs.i[,fri$var[n]] < fri$split.cutleft[n]])
+          }
+        }
+        rss.post[i] <- (rss.pre - sum((yperm - predictions)^2)/length(y))
+        xs.i <- xs
+        yperm <- y
+      }
+    }
+  }
+  if(sum(abs(rss.post)) == 0) {
+    return(rss.post)
+  } else{
+   # rss.post <- rss.post/max(abs(rss.post))
+    # names(rss.post) <- names(xs)
+    return(rss.post)
+  }
+
+}
 
 
 strobltrees <- function(t,y,xs) {
@@ -525,7 +582,7 @@ strobltrees <- function(t,y,xs) {
   for(i in 1:ncol(xs)){
     corrr <- sapply(xs[,-i],cor, y = xs[,i])
     xs.i <- xs[,-i]
-    xs.i <-  (xs.i[,corrr > .2])
+    xs.i <-  (xs.i[,abs(corrr) > .2])
     xs.i <- cbind(xs[,i], xs.i)
     
     if(ncol(xs.i) == 1){
@@ -561,8 +618,8 @@ strobltrees <- function(t,y,xs) {
         rss.post[i] <- abs(sum((y - as.numeric(predictions.for.y.xi.perm))^2)/length(y) - rss.pre)
         xs.i <- xs
         ex <- sum(names(xs)[i] ==  ta[[3]])/nrow(ta[[3]])
-        if(ex > .7){
-          rss.post[i] <- rss.post[i] * (ex+1)
+        if(ex > .8){
+          rss.post[i] <- rss.post[i] * (ex)
         }
       }
     }
@@ -570,7 +627,7 @@ strobltrees <- function(t,y,xs) {
   if(sum(abs(rss.post)) == 0) {
     return(rss.post)  
   } else{
-    rss.post <- rss.post/max(abs(rss.post))
+    #rss.post <- rss.post/max(abs(rss.post))
     # names(rss.post) <- names(xs)
     return(rss.post)
   }
@@ -596,7 +653,6 @@ breimantrees <- function (t,y,xs){
   return(rss.post)
 }
 
-
 ```
 ```{r loaddatad2, echo=FALSE}
 rep(0, 12) -> mu #mean of each variable
@@ -620,7 +676,7 @@ sigma -> sigma1
 1000 -> n #number of observations
 set.seed(1)
 mvrnorm(n =n, mu = mu, Sigma = sigma1) -> sim1000 #sampling from the multivariate normal 
-c(5,5,2,0,-5,-5,-2,0,0,0,0,0) -> bts #these are the betas 
+c(5,5,2,0,-5,-5,0,0,0,0,0,0) -> bts #these are the betas 
 
 rnorm(1000, mean = 0, sd = .5) -> e #error terms
 
@@ -648,35 +704,32 @@ d1$y <- ys
 
 
 n <- 10000
-c(5,5,2,0,-5,-5,-2,0,0,0,0,0) -> bts #these are the betas 
+c(5,5,2,0,-5,-5,0,0,0,0,0,0) -> bts #these are the betas 
 rnorm(1000, mean = 0, sd = .5) -> e #error terms
 
-#library(MASS)
+
+
 x1 <- rnorm(1000)
 
-x2 <- x1 + rexp(1000)
+x2 <- 2*log(abs(x1)) + rnorm(1000)
 
-x3 <- x2 + rexp(1000)
+x3 <- 2*log(abs(x2)) + rnorm(1000)
 
-x4 <- x3 + rexp(1000)
+x4 <- 2*log(abs(x3)) + rnorm(1000)
 
-diag(8) -> sigma
+mvrnorm(n =n, mu = mu, Sigma = sigma) -> simx5x12
 
-rep(1, 8)-> mu
-
-mvrnorm(n =n, mu = mu, Sigma = sigma) -> simv5v12
-
-data.frame(x1,x2,x3,x4,simv5v12) -> d2
+data.frame(x1,x2,x3,x4,simx5x12) -> d2
               
 c("X1","X2","X3","X4","X5","X6", "X7","X8","X9","X10","X11","X12") -> names(d2)
 
 rep(0, 1000) -> ys #init a vector of zeros
 
 for( i in 1:1000){ #go row by row and create the ys based on the function of e, bts, and d2
-ys[i] <- d2[i,1]*bts[1]+
-    d2[i,2]*bts[2]+ 
-    d2[i,3]*bts[3]+ 
-    d2[i,4]*bts[4]+ 
+ys[i] <- d2[i,1]^2*bts[1]+
+    d2[i,2]^2*bts[2]+ 
+    d2[i,3]^2*bts[3]+ 
+    d2[i,4]^2*bts[4]+ 
     d2[i,5]*bts[5]+ 
     d2[i,6]*bts[6]+
     d2[i,7]*bts[7]+ 
@@ -690,317 +743,369 @@ ys[i] <- d2[i,1]*bts[1]+
 
 d2$y <- ys
 
-w1 <- rnorm(1000)
-
-w2 <- 2*log(abs(w1)) + rnorm(1000)
-
-w3 <- 2*log(abs(w2)) + rnorm(1000)
-
-w4 <- 2*log(abs(w3)) + rnorm(1000)
-
-mvrnorm(n =n, mu = mu, Sigma = sigma) -> simw5w12
-
-data.frame(w1,w2,w3,w4,simw5w12) -> d3
-              
-c("W1","W2","W3","W4","W5","W6", "W7","W8","W9","W10","W11","W12") -> names(d3)
-
-rep(0, 1000) -> ys #init a vector of zeros
-
-for( i in 1:1000){ #go row by row and create the ys based on the function of e, bts, and d3
-ys[i] <- d3[i,1]*bts[1]+
-    d3[i,2]*bts[2]+ 
-    d3[i,3]*bts[3]+ 
-    d3[i,4]*bts[4]+ 
-    d3[i,5]*bts[5]+ 
-    d3[i,6]*bts[6]+
-    d3[i,7]*bts[7]+ 
-    d3[i,8]*bts[8]+ 
-    d3[i,9]*bts[9]+ 
-    d3[i,10]*bts[10]+ 
-    d3[i,11]*bts[11]+ 
-    d3[i,12]*bts[12] +
-    e[i]
-}
-
-d3$y <- ys
-
 ```
 
-#Chapter 4
+#INFFOREST Variable Importance
 
-##INFFORESTS
+Variable importance measures must contend with the following relationships in the data, for each $V_j$ in $V$: first, there is the relationship between $Y$ and $V_j$, then the relationship between $V_j$ and the other predictors, $V_{-j}$, and finally the relationship between $Y$ and the other predictors $V_{-j}$. 
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The INFFOREST variable importance is a method of permuted variable importance not unlike that of conditionally permuted variable importance (Algorthim 3). Permuted variable importance is calculated at the tree level, using the partitions on $X_j$ from a tree created to predict the model $X_j \sim X_1,..., X_{j-1}, X_{j+1},...,X_p$. This auxiliary tree is fit by considering all $p-1$ predictors at each split and so may be quite large or quite small depending on the richness of the correlation structure around $X_j$. The auxiliary tree is also fit using the OOB sample for the tree at question. If the auxiliary tree results in a single leaf, i.e. there are no splits, then $X_j$ is permuted blindly, without partitions. If the auxiliary tree results in two leaves, there will be two partitions on $X_j$ to permute $X_j$ within, and so on. After permuting $X_j$ within these partitions, the RSS is calculated for that tree using the OOB sample of predictors, including the now-permuted $X_j$. The absolute difference of the RSS after permutation and the RSS with the untouched OOB sample is INFFOREST variable importance for that tree. Note that for this reason, the INFFOREST variable importance is always greater than or equal to zero, and is standardized by the max INFFOREST variable importance value given by that tree. As the variable importance values are calculated for each tree for each variable, once the method is completed there is a distribution of potential variable importance values for $X_j$, one for each tree. These distributions may or may not be normal, depending on the multicollinearity of the predictors. The INFFOREST variable importance algorithm works as follows:	
+\usetikzlibrary{positioning}
+\begin{center}
+\begin{tikzpicture}[level/.style={sibling distance=60mm/#1}]
+\node[circle,draw] (y) {$Y$};
+\node[circle,draw] (xj) [below left = of y] {$V_j$};
+\node[circle,draw] (xnotj) [below right = of y] {$V_{-j}$};
+\draw[<->] (y.south) -- (xj.north);
+\draw[<->] (y.south) -- (xnotj.north);
+\draw[<->] (xj.east) -- (xnotj.west);
+\end{tikzpicture}
+\end{center}
+
+In permuted variable importance, the null hypothesis is that $Y$ is independent of $V_j$, regardless of the relationship between $V_j$ and $V_{-j}$. By permuting $V_j$ blindly and then calculating the RSS, the relationship between $V_j$ and $Y$ and the relationship between $V_j$ and $V_{-j}$ are broken. The other variables, $V_{-j}$ are not permuted and since the RSS is calculated using the original model fitting $Y \sim V$, the relationship between $Y$ and the $V_{-j}$ is maintained. 
+
+\usetikzlibrary{positioning}
+\begin{center}
+\begin{tikzpicture}[level/.style={sibling distance=60mm/#1}]
+  \node[circle,draw] (y1) {$Y$};
+\node[circle,draw] (xj) [below left = of y1] {$V_j$};
+\node[circle,draw] (xnotj) [below right = of y1] {$V_{-j}$};
+\draw[red,thick,dashed] (y.south) -- (xj.north);
+\draw[<->] (y.south) -- (xnotj.north);
+\draw[red,thick,dashed] (xj.east) -- (xnotj.west);
+\end{tikzpicture}
+\end{center}
+
+In conditional variable importance, however, the null hypothesis that is tested is that $V_j$ is independent of $Y$ given the relationship between $V_j$ and $V_{-j}$ and the relationship between $V_{-j}$ and $Y$. Therefore, the permutations on $V_j$ are done in such a way that the relationship between $V_j$ and $Y$ are broken, while approximately maintaining the relationships between $V_j$ and $V_{-j}$ and $V_{-j}$ and $Y$. 
+
+\usetikzlibrary{positioning}
+\begin{center}
+\begin{tikzpicture}[level/.style={sibling distance=60mm/#1}]
+  \node[circle,draw]  (y2) {$Y$};
+\node[circle,draw] (xj) [below left = of y2] {$V_j$};
+\node[circle,draw] (xnotj) [below right = of y2] {$V_{-j}$};
+\draw[red,thick,dashed] (y.south) -- (xj.north);
+\draw[<->] (y.south) -- (xnotj.north);
+\draw[<->] (xj.east) -- (xnotj.west);
+\end{tikzpicture}
+\end{center}
+
+
+
+This permutation structure has the following implications: 
+1. If $V_j$ has a weak relationship with $Y$ but a strong relationship with $V_{-j}$, the conditional variable importance value will be high. 
+2. If $V_j$ is approximately independent of $V_{-j}$, but a good predictor of $Y$, then the conditional variable importance of $V_j$ will be high. 
+
+Conditional variable importance provides a method of statistical inference on random forests, but it does not answer the same question as statistical inference on linear models. Namely, what is the relationship between $V_j$ and $Y$ given the other $V_{-j}$ variables in the model? The INFFOREST method of variable importance permutes under the null hypothesis that $V_j$ given $V_{-j}$ is independent of $Y$. This leads us to break the relationships between $Y$ and the $V_j$ en mass, according to the respective structure of $V_j$ and $V_{-j}$. 
+
+
+\usetikzlibrary{positioning}
+\begin{center}
+\begin{tikzpicture}[level/.style={sibling distance=60mm/#1}]
+\node [circle,draw] (y) {$Y$};
+\node [circle,draw] (xj) [below left = of y] {$V_j$};
+\node [circle,draw] (xnotj) [below right = of y] {$V_{-j}$};
+\draw[red,thick,dashed] (y.south) -- (xj.north);
+\draw[red,thick,dashed] (y.south) -- (xnotj.north);
+\draw[<->] (xj.east) -- (xnotj.west);
+\end{tikzpicture}
+\end{center}
+
+This has the following conclusions: 
+1. If $V_j$ is a good predictor of $Y$ but independent of the rest of the predictors, the INFFOREST variable importance will be high.
+2. If $V_j$ is a good predictor of $Y$ but is heavily correlated with at least one of the other predictors, the INFFOREST variable importance will be low. It is assumed that the information gained from adding $V_j$ to the model could be gained from one of the other predictors. 
+
+##Algorithm and Implementation
+
+The INFFOREST variable importance is a method of permuted variable importance not unlike that of conditionally permuted variable importance. INFFOREST values are calculated at the tree level, using the partitions on $V_j$ from a tree created to predict the model $V_j \sim V_1,..., V_{j-1}, V_{j+1},...,V_p$. This auxiliary tree is fit by considering all $p-1$ predictors at each split and so may be quite large or quite small depending on the richness of the correlation structure around $V_j$. The auxiliary tree is also fit using the OOB sample, $\hat{B}_t$, for the tree at question. If the auxiliary tree results in a single leaf (i.e. there are no splits), then $\hat{B}_t$ is permuted blindly, without partitions. If the auxiliary tree results in two leaves, there will be two partitions on $\hat{B}_t$ to permute $\hat{B}_t$ within, and so on. After permuting $\hat{B}_t$ within these partitions, the RSS is calculated for that tree using the permuted dataset. The absolute difference of the RSS after permutation and the RSS before permuting the sample is INFFOREST variable importance for that tree. 
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Note that for this reason, the INFFOREST variable importance is always greater than or equal to zero, and is standardized by the max INFFOREST variable importance value given by that tree. As the variable importance values are calculated for each tree for each variable, once the method is completed there is a distribution of potential variable importance values for $V_j$, one for each tree. These distributions may or may not be normal, depending on the multicolinearity of the predictors. The INFFOREST variable importance algorithm works as follows:	
 
 \begin{algorithm}
 \caption{INFForests, $VI_{inf}(R)$}
 \label{infforest}
 \begin{algorithmic}[1]
-\State Fit a random forest, $R$ on the dataset $D$ fitting the model $Y \sim X_1,...,X_p$.
-\For{each $X_i \in {{X_1,...,X_p}}$}
+\State Fit a random forest, $R$ on the dataset $D$ fitting the model $Y \sim V_1,...,V_p$.
+\For{each $V_i \in {{V_1,...,V_p}}$}
 \For{each $t \in R$}
-\State Calculate: $\Xi_o =  \frac 1 {\nu_t} RSS(t,\bar{B}^t)$
-\State Calculate a tree $T_i$ that predicts $X_i \sim X_1,...,X_{i-1}, X_{i+1},...X_p$ using the subset of the observations used to fit $t$  
-\State Permute the subset of $X_i$ contained in $\bar{B}_t$ with respect to the set of partitions $P_{xi}$ from $T_i$.
+\State Calculate: $\Xi_o =  \frac 1 {\nu_t} RSS(t,\bar{B}_t)$
+\State Calculate a tree $T_i$ that predicts $V_i \sim V_1,...,V_{i-1}, V_{i+1},...V_p$ using the subset of the observations used to fit $t$  
+\State Permute $\bar{B}_t$ with respect to the set of partitions $P_{xi}$ from $T_i$.
+\If $T_i$ is a leaf
+\State Permute the $V_i$ values blindly with respect to no partitions. Set $\bar{B}_t^*$ to be equal to $\bar{B}_t$ except $V_i$ is permuted. 
+\EndIf
 \State Now find $\Xi^* =  \frac 1 {\nu_t} RSS(t,\bar{B}_t^*)$
-\State The difference between these values, $\Xi^* - \Xi_o$,  is the variable importance for $X_i$ on $t$
+\State The difference between these values, $\Xi^* - \Xi_o$,  is the variable importance for $V_i$ on $t$
 \EndFor
 \State Test the null hypothesis that $0$ is the likely value of $\frac 1 {\nu_t} RSS(t,\bar{B}_t^*)$ using the distribution of values of $\Xi^*$ gathered from each tree in $R$
 \EndFor
 \end{algorithmic}
 \end{algorithm}
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;INFFOREST variable importance operates under the null hypothesis that $Y$ is independent of $X_J$ given the correlation structure of $X_j$ and the other $p-1$ predictors, or that the true INFFOREST variable importance for $X_j$ is 0. The alternative hypothesis is that $Y$ and $X_j$ are not independent given the correlation structure of $X_j$ and the other predictors or that the INFFOREST variable importance for $X_j$ is greater than zero.  After INFFOREST values have been computed for the entire forest, they are treated as samples from the population of possible INFFOREST values for $X_j$ given the random forest $R_f$, and a significance test can be under the null hypothesis. 
+INFFOREST variable importance operates under the null hypothesis that $Y$ is independent of $V_J$ given the correlation structure of $V_j$ and the other $V_{-j}$ predictors, or that the true INFFOREST variable importance for $V_j$ is 0. The alternative hypothesis is that $Y$ and $V_j$ are not independent given the correlation structure of $V_j$ and the other predictors or that the INFFOREST variable importance for $V_j$ is greater than zero.  After INFFOREST values have been computed for the entire forest, they are treated as samples from the population of possible INFFOREST values for $V_j$ given the random forest $R_f$, a significance test can be run under the null hypothesis stated above. 
 
-###Results 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Recall the data sets $D_1$ and $D_2$, introduced in chapter 2. Both datasets contain 12 predictors and one response, where there is some type of correlation structure between the first four variables. In $D_1$, this structure is linear, and in $D_2$ it is not. The median INFFOREST values for a random forest fit to a subset of each data set are presented in the following tables. The p-values listed in table \ref{tab:tabviD1} are the observed proportion of INFFOREST values for that variable that are above zero. 
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The INFTREE function follows the algorithm referenced earlier. The partitions on $X_j$ are generated by fitting a tree, $T$, to the model $X_j \sim X_1,..., X_{j-1}, X_{j+1},..X_p$ and calculating the predictions $T(X_1,..., X_{j-1}, X_{j+1},..X_p)$. Then permuting $X_j$ with respect to the partitions on $X_j$ given by those predictions. For example, if $x_j \in X_j$ and the value of $T(x_1,..., x_{j-1}, x_{j+1},..x_p)$ corresponding to $x_j$ is $\alpha$, $x_j$ is permuted along with the other values of $X_j$ that also have $T(x_1,..., x_{j-1}, x_{j+1},..x_p)$ corresponding to $\alpha$.
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The values of $INFFOREST(X_j)$ are scaled in the following way: since the INFFOREST function computes the INFFTREES, (or the difference in post and pre permutation RSS), values in a tree-wise manner.
-
-```{r forest,echo=FALSE, message=FALSE, warning=FALSE, cache=TRUE}
+```{r, echo = FALSE, message=FALSE, warning=FALSE, cache = TRUE}
 set.seed(1)
+r1 <- rforest(d1$y[1:200], d1[1:200,1:12], mtry = 7, ntree = 100)
+#r2 <- rforest(d2$y[1:200], d2[1:200,1:12], mtry = 7, ntree = 70)
+v1 <- infforest(r1, d1$y[1:200], d1[1:200,1:12])
+#v2 <- infforest(r2, d2$y[1:100], d2[1:100,1:12])
+v1[is.nan(v1)] <- NA
+v1 <- v1[complete.cases(v1),]
+#v2[is.nan(v2)] <- NA
+#v2 <- v2[complete.cases(v2),]
+
+vi.d1 <-  rep(0,12)
+for (i in 1:12){
+  vi.d1[i] <- median(v1[,i])
+}
+pval <- rep(0,12)
+
+for(i in 1:12) {
+  pval[i] <- sum(v1[,i] == 0)/nrow(v1)  
+}
+
+vi.d1 <- data.frame("median" = (vi.d1))
+
+vi.d1$Coefficient <- bts
+vi.d1$pval <- pval
+
+#vi.d2 <-  rep(0,12)
+#for (i in 1:12){
+#   vi.d2[i] <- median(v2[,i])
+ #}
+#pval <- rep(0,12)
  
-rf1 <- rforest(d1$y,d1[, 1:12],mtry = 4,ntree = 50)
-
-rf2 <- rforest(d2$y,d2[, 1:12],mtry = 4,ntree = 100)
-# rf3 <- rforest(d3$y[1:200],d3[1:200, 1:12],mtry = 4,ntree = 200)
+#for(i in 1:12) {
+  # pval[i] <- sum(v2[,i] == 0)/nrow(v2)  
+# }
+#vi.d2 <- data.frame("Median INFFOREST values" = vi.d2)
+ 
+#vi.d2$Coefficient <- bts
+#vi.d2$pval <- pval
 ```
 
-```{r infforest,echo=FALSE, message=FALSE, warning=FALSE, cache=TRUE}
-set.seed(3)
+```{r, echo=FALSE, fig.pos='H',  message=FALSE}
+row.names(vi.d1) <- names(d1[,-13])
+a <- kable(vi.d1, caption="\\label{tab:tabviD1}Median INFFOREST variable importance values from random forests of 100 trees fit on the first simulated data set")
 
-inf1 <- infforest(rf1, d1$y,d1[, 1:12])
-inf2 <- infforest(rf2, d2$y,d2[, 1:12])
-# inf3 <- infforest(rf3, d3$y[1:200],d3[1:200, 1:12])
-inf1[inf1 == "NaN"] <- NA
-inf1[inf1 == "Inf"] <- NA
-inf11 <- inf1[complete.cases(inf1),]
-
-inf2[inf2 == "NaN"] <- NA
-inf2[inf2 == "Inf"] <- NA
-inf22 <- inf2[complete.cases(inf2),]
-# 
-# inf3[inf3 == "NaN"] <- NA
-# inf3[inf3 == "Inf"] <- NA
-# inf33 <- inf3[complete.cases(inf3),]
+#row.names(vi.d2) <- names(d2[,-13])
+#b <- kable(vi.d2)
 ```
 
-```{r mtry, echo=FALSE, message=FALSE, cache=TRUE, warning=FALSE}
-v <- as.data.frame(inf11)
-v$mtry <- rep(4, nrow(v))
+```{r, echo=FALSE, message=FALSE}
+#grid.arrange(a,b, col = 2)
+a
+```
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;At significance level $\alpha = .05$, we would reject the null hypothesis that the true INFFOREST value for these variables is zero for variables $V_1,...,V_4$ and $V_6$. We have found that in the context of the other predictors these predictors have a significant relationship with $Y$. 
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The parameters of a random forest are the data, the formula, the number of trees ($ntree$), and the number of variables to consider as possible candidates at each split ($mtry$). We'll investigate how INFFOREST variable importance on $D_1$ changes as the last two parameters are altered. First, random forests will be created for the following values of $mtry$: $mtry = 4,7,12$. The random forest behind table \ref{tab:tabviD1} was created using $mtry = 7$. These forests will all have the same number of trees, $ntree = 50$. 
+
+```{r mtry4, echo=FALSE, message=FALSE, warnings = FALSE, cache = TRUE}
 set.seed(1)
-r12 <- rforest(d1$y,d1[, 1:12],mtry = 6,ntree = 100)
-v12 <- as.data.frame(infforest(r12, d1$y,d1[, 1:12]))
-v12[v12 == "NaN"] <- NA
-v12[v12 == "Inf"] <- NA
+r4 <- rforest(d1$y[1:200],d1[1:200, 1:12], mtry = 4, ntree = 50)
+v4 <- infforest(r4, d1$y[1:200], d1[1:200,1:12])
+
+v4[is.nan(v4)] <- NA
+v4 <- v4[complete.cases(v4),]
+
+v4.d1 <-  rep(0,12)
+for (i in 1:12){
+  v4.d1[i] <- median(v4[,i])
+}
+q1 <- rep(0,12)
+
+for(i in 1:12) {
+  q1[i] <- quantile(v4[,i], .05)
+}
+
+q3 <- rep(0,12)
+
+for(i in 1:12) {
+  q3[i] <- quantile(v4[,i], .95)
+}
+
+v4.d1 <- data.frame("Median INFFOREST values" = (v4.d1))
+
+v4.d1$Coefficient <- bts
+v4.d1$q1 <- q1
+v4.d1$q3 <- q3
+```
+
+```{r mtry7, echo=FALSE, message=FALSE, warnings = FALSE, cache = TRUE}
+
+q1 <- rep(0,12)
+
+for(i in 1:12) {
+  q1[i] <- quantile(v1[,i], .05)
+}
+
+q3 <- rep(0,12)
+
+for(i in 1:12) {
+  q3[i] <- quantile(v1[,i], .95)
+}
+
+vi.d1 <- data.frame("median" = (vi.d1))
+
+vi.d1$Coefficient <- bts
+vi.d1$q1 <- q1
+vi.d1$q3 <- q3
+```
+
+```{r mtry12, echo=FALSE, message=FALSE, warnings = FALSE, cache = TRUE}
+set.seed(1)
+r12 <- rforest(d1$y[1:200],d1[1:200, 1:12], mtry = 12, ntree = 50)
+v12 <- infforest(r12, d1$y[1:200], d1[1:200,1:12])
+
+v12[is.nan(v12)] <- NA
 v12 <- v12[complete.cases(v12),]
+
+v12.d1 <-  rep(0,12)
+for (i in 1:12){
+  v12.d1[i] <- median(v12[,i])
+}
+q1 <- rep(0,12)
+
+for(i in 1:12) {
+  q1[i] <- quantile(v12[,i], .05)
+}
+
+q3 <- rep(0,12)
+
+for(i in 1:12) {
+  q3[i] <- quantile(v12[,i], .95)
+}
+
+v12.d1 <- data.frame("median" = (v12.d1))
+
+v12.d1$Coefficient <- bts
+v12.d1$q1 <- q1
+v12.d1$q3 <- q3
+```
+
+```{r, echo = FALSE, message=FALSE}
+vi.d1$variable <- factor(c(names(d1[,-13])), levels = names(d1[,-13]))
+v4.d1$variable <- factor(c(names(d1[,-13])),levels = names(d1[,-13]))
+v12.d1$variable <- factor(c(names(d1[,-13])),levels = names(d1[,-13]))
+
+p <- ggplot(data = v4.d1, aes( x = variable, y =  Median.INFFOREST.values, group = 1)) +
+  geom_point() +
+  ylab(" ")+
+  xlab(" ")+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  geom_line()+
+  geom_ribbon(ymin = v4.d1$q1, ymax = v4.d1$q3, data = v4.d1, alpha = .4)+
+  scale_y_continuous(limits = c(0,1))
+
+
+q<- ggplot(data = vi.d1, aes( x = variable, y = median.median, group = 1)) +
+  geom_point() +
+  ylab(" ")+
+  xlab(" ")+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  geom_line()+
+  geom_ribbon(aes(ymin = vi.d1$q1, ymax = vi.d1$q3), alpha = .4)+
+  scale_y_continuous(limits = c(0,1))
+
+
+r <- ggplot(data = v12.d1, aes( x = variable, y = median, group = 1)) +
+  geom_point()+
+  ylab(" ")+
+  xlab(" ")+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  geom_line()+
+  geom_ribbon(aes(ymin = v12.d1$q1, ymax = v12.d1$q3), alpha = .4)+
+  scale_y_continuous(limits = c(0,1))
+
+
+```
+
+
+```{r , warnings=FALSE, echo=FALSE, message = FALSE, fig.pos='H', fig.height=3, fig.cap="\\label{fig:figmtry}Distribution of INFFOREST variable importance values for data set D1 in random forests with mtry = 4,7,12."}
+grid.arrange(p,q,r, ncol=3)
+```
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;In figure \ref{fig:figmtry} the shading represents the most common values of INFFOREST for that variable. The shaded area represents a 95% confidence interval around the average value. As $mtry$ approaches the full number of predictors for the data set, the distributions become less variable. The parameter $mtry$ is generally taken to be between one third and just over one half of the predictors in the data set, but should be optimized. 
+
+```{r rssforest, echo= FALSE, warnings = FALSE, message = FALSE}
+
+rss4 <- rssforest(r4, d1$y[1:200], d1[1:200, 1:12])
+rss7 <- rssforest(r1, d1$y[1:200], d1[1:200, 1:12])
+rss12 <- rssforest(r12, d1$y[1:200], d1[1:200, 1:12])
+
+mtryrss <- data.frame("mtry" = c(4,7,12), "RSS" = c(rss4,rss7, rss12))
+```
+
+```{r, echo=FALSE, fig.pos='H', message=FALSE, warning=FALSE}
+kable(mtryrss, caption = "\\label{tab:tabrssRF}Out of bag RSS values for random forests on data set D1 with mtry equal to 4, 7, or 12")
+```
+
+While the significance of the variables changed slightly for different values of $mtry$, in applications this may not be anything more than a practical inconvenience. The value of $mtry$ that optimizes the tree is $mtry = 7$ as seen in table \ref{tab:tabrssRF}, and this is the model that would be used both for prediction and for inference. 
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Unlike $mtry$ which must be optimized for each data set manually, traditionally the number of trees to fit in a forest follows a simpler rule: more trees are better. There is some risk that, given a high enough value of $mtry$, after a certain number of trees are fit, they will begin to be more correlated with each other than they would have been otherwise. To demonstrate the consistency in the INFFOREST variable importance significance testing, two new random forests will be constructed. Each will follow the same formula as the random forest from table \ref{tab:tabviD1}, $Y \sim V$, and will have $mtry = 7$, and $ntree = 50, 200$ (the random forest where $ntree = 100$ was fit in the previous example). 
+
+```{r n10, echo=FALSE, message=FALSE, cache=TRUE, warnings=FALSE}
 set.seed(1)
-r13 <- rforest(d1$y,d1[, 1:12],mtry = 8,ntree = 100)
-v13 <- as.data.frame(infforest(r13, d1$y,d1[1:200, 1:12]))
-v13[v13 == "NaN"]<- NA
-v13[v13 == "Inf"]<- NA
-v13 <- v13[complete.cases(v13),]
-```
+r10 <- rforest(d1$y[1:200], d1[1:200, 1:12], mtry = 7, ntree = 50)
+v10 <- infforest(r10, d1$y[1:200], d1[1:200, 1:12])
+v10[is.nan(v10)] <- NA
+v10 <- v10[complete.cases(v10),]
 
-
-
-```{r infforestDist, echo=FALSE, message=FALSE, warning=FALSE}
-
-b <- data.frame("variable" = names(as.data.frame(inf11)),
-                  "median" = sapply(as.data.frame(inf11), median),
-                 "betas" = bts)
-
-kable(b)
-
-#inff1 <- melt(as.data.frame(inf11)) 
-#inff2 <- melt(as.data.frame(inf2)) 
-#inff3 <- melt(as.data.frame(inf3)) 
-```
-
-```{r mtrycom, echo=FALSE, warning=FALSE, message=FALSE}
-
-b$variable <- factor(b$variable, levels = b$variable)
-
-
-c <- data.frame("variable" = names(as.data.frame(v12)),
-                  "median" = sapply(as.data.frame(v12), median),
-                  "iqr" = sapply(as.data.frame(v12), IQR),
-                 "betas" = bts)
-d <- data.frame("variable" = names(as.data.frame(v13)),
-                  "median" = sapply(as.data.frame(v13), median),
-                  "iqr" = sapply(as.data.frame(v13), IQR),
-                 "betas" = bts)
-
-
-c$variable <- factor(c$variable, levels = c$variable)
-
-d$variable <- factor(d$variable, levels = d$variable)
-
-
-b$q1 <- rep(0,12)
-b$q3 <- rep(0,12)
-for(i in 1:12){
-  b$q1[i] <- quantile(inf11[,i], 1/4)
-  b$q3[i] <- quantile(inf11[,i], 3/4)
+v10.d1 <-  c(rep(0,12))
+for (i in 1:12){
+  v10.d1[i] <- median(v10[,i])
 }
+pval <- rep(0,12)
 
-c$q1 <- rep(0,12)
-c$q3 <- rep(0,12)
-for(i in 1:12){
-  c$q1[i] <- quantile(v12[,i], 1/4)
-  c$q3[i] <- quantile(v12[,i], 3/4)
+for(i in 1:12) { 
+  pval[i] <- sum(v10[,i] == 0)/nrow(v10)  
 }
-d$q1 <- rep(0,12)
-d$q3 <- rep(0,12)
-for(i in 1:12){
-  d$q1[i] <- quantile(v13[,i], 1/4)
-  d$q3[i] <- quantile(v13[,i], 3/4)
-}
-p <- ggplot(data = b, aes( x = variable, y = median, group = 1)) +
-  geom_point() +
-   ylab(" ")+
-  xlab(" ")+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
-  geom_line()+
-  geom_ribbon(ymin = b$q1 , ymax = b$q3, data = b, alpha = .4)+
-  scale_y_continuous(limits = c(0,30))
+v10.d1 <- data.frame("median" = v10.d1)
+v10.d1$pval <- as.vector(pval)
 
-
-q<- ggplot(data = c, aes( x = variable, y = median, group = 1)) +
-  geom_point() +
-  ylab(" ")+
-  xlab(" ")+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
-  geom_line()+
-  geom_ribbon(aes(ymin = c$q1, ymax = c$q3), alpha = .4)+
-  scale_y_continuous(limits = c(0,30))
-
-r <- ggplot(data = d, aes( x = variable, y = median, group = 1)) +
-  geom_point()+
-  ylab(" ")+
-  xlab(" ")+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
-  geom_line()+
-  geom_ribbon(aes(ymin = d$q1, ymax = d$q3), alpha = .4)+
-  scale_y_continuous(limits = c(0,30))
- 
 ```
 
-```{r figmtry, warning=FALSE, echo=FALSE, message = FALSE, fig.cap="Median Values of INFFOREST Variable Importance for mtry = 4,6 and 8"}
-grid.arrange(p,q,r, ncol=3)
-```
+```{r n75, echo=FALSE, message=FALSE, warnings = FALSE, cache=TRUE}
+set.seed(1)
+r75 <- rforest(d1$y[1:200], d1[1:200, 1:12], mtry = 7, ntree = 200)
+v75 <- infforest(r75, d1$y[1:200], d1[1:200, 1:12])
+v75[is.nan(v75)] <- NA
+v75 <- v75[complete.cases(v75),]
 
-As in (ref Strobl et al 2008), the median INFFOREST variable importance scores are reported here for the dataset $D_1$. [^4]
-
-[^6]: INFFOREST, like any random forest method involving tree- level calculations is a computationally intensive function. The forests are large, unpruned at any level, and INFFOREST takes time to compute. Because of this reason the datasets discussed in CH2 have been altered so that instead of 1000 x 13 dimensional datasets they are 200 x 13. This decreases computation time immensely.
-
-As noted in several publications (Strobl et al, Breiman, Intro to Stat Learning), random forests structure is dependent on the value of `mtry`.[^5] INFFOREST variable importance remains fairly consistent as `mtry` fluctuates.  
-
-[^7]: `mtry` indicates the number of predictors to be considered at each split and can range from 2 to the $p$
-
-
-
-
-
-#INFFOREST Comparisons With Other Methods
-
-```{r comparisons, echo=FALSE, cache=TRUE, message=FALSE, warning=FALSE}
-set.seed(3)
-
-rf1 <- rforest(d1$y[1:200],d1[1:200, 1:12],mtry = 3,ntree = 100)
-
-set.seed(3)
-
-inf1 <- infforest(rf1, d1$y[1:200],d1[1:200, 1:12])
-inf1[inf1 == "NaN"] <- NA
-inf1[inf1 == "Inf"] <- NA
-inf11 <- inf1[complete.cases(inf1),]
-
-set.seed(2)
-condinf1 <- conditional.inf(rf1, d1$y[1:200],d1[1:200, 1:12])
-
-set.seed(2)
-
-perminf <- permuted.inf(rf1, d1$y[1:200],d1[1:200, 1:12])
-```
-
-```{r morecomputation, echo=FALSE, message=FALSE, warning=FALSE}
-
-b <- data.frame("variable" = names(as.data.frame(inf11)),
-                  "median" = sapply(as.data.frame(inf11), median),
-                  "iqr" = sapply(as.data.frame(inf11), IQR),
-                 "betas" = bts)
-
-c <- data.frame("variable" = names(as.data.frame(condinf1)),
-                  "median" = sapply(as.data.frame(condinf1), median),
-                  "iqr" = sapply(as.data.frame(condinf1), IQR),
-                 "betas" = bts)
-d <- data.frame("variable" = names(as.data.frame(perminf)),
-                  "median" = sapply(as.data.frame(perminf), median),
-                  "iqr" = sapply(as.data.frame(perminf), IQR),
-                 "betas" = bts)
-b$variable <- factor(b$variable, levels = b$variable)
-c$variable <- factor(c$variable, levels = c$variable)
-d$variable <- factor(d$variable, levels = d$variable)
-
-b$q1 <- rep(0,12)
-b$q3 <- rep(0,12)
-for(i in 1:12){
-  b$q1[i] <- quantile(inf11[,i], 1/4)
-  b$q3[i] <- quantile(inf11[,i], 3/4)
+v75.d1 <-  c(rep(0,12))
+for (i in 1:12){
+  v75.d1[i] <- median(v75[,i])
 }
+pval <- rep(0,12)
 
-c$q1 <- rep(0,12)
-c$q3 <- rep(0,12)
-for(i in 1:12){
-  c$q1[i] <- quantile(condinf1[,i], 1/4)
-  c$q3[i] <- quantile(condinf1[,i], 3/4)
+for(i in 1:12) {
+  pval[i] <- sum(v75[,i] == 0)/nrow(v75)  
 }
-d$q1 <- rep(0,12)
-d$q3 <- rep(0,12)
-for(i in 1:12){
-  d$q1[i] <- quantile(perminf[,i], 1/4)
-  d$q3[i] <- quantile(perminf[,i], 3/4)
-}
-p <- ggplot(data = b, aes( x = variable, y = median, group = 1)) +
-  geom_point() +
-   ylab(" ")+
-  xlab(" ")+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
-  geom_line()+
-  geom_ribbon(ymin = b$q1 , ymax = b$q3, data = b, alpha = .4)+
-  scale_y_continuous(limits = c(0,1))
+v75.d1 <- data.frame("median" = v75.d1)
+v75.d1$pval <- as.vector(pval)
 
-q<- ggplot(data = c, aes( x = variable, y = median, group = 1)) +
-  geom_point() +
-  ylab(" ")+
-  xlab(" ")+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
-  geom_line()+
-  geom_ribbon(aes(ymin = c$q1, ymax = c$q3), alpha = .4)+
-  scale_y_continuous(limits = c(0,1))
+vi.d1 <- vi.d1[,c(1,3)]
+names(vi.d1) <- c("median", "pval")
 
-r <- ggplot(data = d, aes( x = variable, y = median, group = 1)) +
-  geom_point()+
-  ylab(" ")+
-  xlab(" ")+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
-  geom_line()+
-  geom_ribbon(aes(ymin = d$q1, ymax = d$q3), alpha = .4)+
-  scale_y_continuous(limits = c(0,1))
 ```
 
-```{r figcomparisons, warning=FALSE, echo=FALSE, message = FALSE, fig.cap="Median Values of INFFOREST, Conditionally Permuted, and Permuted Variable Importance"}
-grid.arrange(p,q,r, ncol=3)
+```{r , echo=FALSE, message=FALSE, fig.pos='H'}
+row.names(vi.d1) <- NULL
+row.names(v10.d1) <- names(d1[,1:12])
+vi.d1$pval <- round(vi.d1$pval, 2)
+v10.d1$pval <- round(v10.d1$pval, 2)
+v75.d1$pval <- round(v75.d1$pval, 2)
+vi.d1$median <- round(vi.d1$median, 2)
+v10.d1$median <- round(v10.d1$median, 2)
+v75.d1$median <- round(v75.d1$median, 2)
+
+kable(list(v10.d1, vi.d1, v75.d1), caption = "\\label{tab:tabntree}INFFOREST Variable Importance for random forests with 50, 100, and 200 trees")
 ```
 
-
-INFFOREST holds its own amongst the other methods described in Chapter 4. The conditional permuted variable importance, when ran on the same random forest, had more difficulty parsing out the situation with paired variables than INFFOREST, only selecting the first two variables to be important. Permuted variable importance does not pick up on the correlation structure within the predictors and deems $V2$ and $V6$ unimportant.  
-
-
-INNFOREST and conditional permuted variable importance both ignored the unfluential predictors that were not correlated with $V1,V2,V3$ and $V4$. This is a situation that also occured in the simulation run in Strobl et al (2008b). 
-
+The p-values for each random forest with $50,100,200$ trees vary slightly, but ultimately the same variables are considered significant. INFForest variable importance allows for consistent statistical inference with random forests. 
 
 
 
