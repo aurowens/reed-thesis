@@ -246,8 +246,9 @@ The CART tree representing the model $Y \sim X$ in figure \ref{fig:figcarts} is 
 \end{algorithm}
 
 
-Note that $n$ is the number of observations in  $D_{1, test}^i$, $y_j \in D_{2, test}^i, \hat{y_j} \in  T^i(D_{2, test}^i)$ for $1 \leq j \leq n$ This produces one distribution of $MSE_{test}$ for CART. This simulation scheme will be repeated for the linear model and the random forest and the $MSE_{test}$ distributions are compared in figure \ref{fig:baggedvcartvforest}. Note that the scales on the x-axis are drastically different for each of these models. The $MSE_{test}$ distribution for the random forest has such low variance, and low $MSE_{test}$ it would be difficult to display it on the same plot as the other two. 
+Note that $n$ is the number of observations in  $D_{1, test}^i$, $y_j \in D_{2, test}^i, \hat{y_j} \in  T^i(D_{2, test}^i)$ for $1 \leq j \leq n$ This produces one distribution of $MSE_{test}$ for CART. This simulation scheme will be repeated for the linear model and the random forest and the $MSE_{test}$ distributions are compared in figure \ref{fig:baggedvcartvforest}.[^6] Note that the scales on the x-axis are drastically different for each of these models. The $MSE_{test}$ distribution for the random forest has such low variance, and low $MSE_{test}$ it would be difficult to display it on the same plot as the other two. 
 
+[^6]: Usually, of the procedure described in Simulation Scheme 2.1, the random forest test error is estimated using the out of bag error for the forest. We use the same method for estimating prediction error for random forests as we do for CART and the linear model so that the results are as comparable as possible.
 
 ```{r fig10,echo=FALSE, error=FALSE, warning=FALSE, message=FALSE,cache=TRUE}
 testmseC <- rep(0,1000)
@@ -326,6 +327,6 @@ grid.arrange(a,b,c, ncol=3)
 ```
 
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The linear model is characteristically less flexible and less prone to over-fitting than either of the tree-based methods, CART and random forests, and has a $MSE_{test}$ distribution that is quite peaked. CART is flexible and suffers from high variance. The random forest models perform much better on average than either the CART or the linear model, due to both the non-linear relationships between $Y$ and the predictors and the random forest's ability to decorrelate each of the trees by restricting the variables available on each split. See chapter 3 for more discussion on the enforced heterogeneity of trees in the random forest. As $MSE_{test}$ is a test of *predictive* accuracy it is not surprising that the random forest performed admirably. On a certain level, that is what they are designed to do. The linear model is not popular in predictive situations but it is ubiquitous in inferential ones.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The linear model is characteristically less flexible and less prone to over-fitting than either of the tree-based methods, CART and random forests, and has a $MSE_{test}$ distribution that is quite peaked. CART is flexible and suffers from high variance. The random forest models perform much better on average than either the CART or the linear model, due to both the non-linear relationships between $Y$ and the predictors and the random forest's ability to decorrelate each of the trees by restricting the variables available on each split. See chapter 3 for more discussion on the enforced heterogeneity of trees in the random forest. As $MSE_{test}$ is a test of *predictive* accuracy it is not surprising that the random forest performed admirably. On a certain level, that is what they are designed to do. The linear model is not always popular in predictive situations but it is ubiquitous in inferential ones.
 
 
