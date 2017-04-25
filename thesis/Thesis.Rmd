@@ -18,7 +18,7 @@ dedication: >
   . 
 #preface: >
  # This is an example of a thesis setup to use the reed thesis document class.
-#bibliography: bib/thesis.bib
+bibliography: bib/thesis.bib
 # Download your specific bibliography database file and refer to it in the line above.
 csl: csl/apa.csl
 # Download your specific csl file and refer to it in the line above.
@@ -26,6 +26,8 @@ output:
   thesisdown::thesis_pdf:
 #  reedtemplates::reed_thesis:
     toc: true
+    includes:
+      in_header: preamble-latex.tex
 #    toc_depth: 5
 # Delete the # in line 28 to specify the depth of your table of contents
 # Default is set to 3 (chapter, section, subsection)
@@ -34,14 +36,7 @@ lof: true
 #space_between_paragraphs: true
 # Delete the # at the beginning of the previous line if you'd like
 # to have a blank new line between each paragraph
-header-includes:
-- \usepackage{amssymb,amsthm,amsmath}
-- \usepackage{chemarr}
-- \usepackage{algorithm}
-- \usepackage{algpseudocode}
-- \usepackage{pifont}
-- \usepackage{float}
-- \usepackage{tikz}
+
 ---
 
 <!--
@@ -53,17 +48,17 @@ If you'd like to include a comment that won't be produced in your resulting PDF 
 -->
 
 ```{r include_packages, include=FALSE}
-# This chunk ensures that the reedtemplates package is
-# installed and loaded. This reedtemplates package includes
-# the template files for the thesis and also two functions
-# used for labeling and referencing
+knitr::opts_chunk$set(fig.pos='H')
+```
+
+```{r include=FALSE}
 if(!require(devtools))
   install.packages("devtools", repos = "http://cran.rstudio.com")
 if(!require(reedtemplates)){
   library(devtools)
-  devtools::install_github("ismayc/reedtemplates")
+  devtools::install_github("ismayc/thesisdown")
 }
-library(reedtemplates)
+library(thesisdown)
 ```
 
 <!--
@@ -87,19 +82,21 @@ Immediately below is the chunk for Chapter 2.
 ```{r chapter2, child = 'chap2.Rmd', fig.pos='H'}
 ```
 
-```{r chapter3, child = 'chap3.Rmd', fig.pos='H'}
-```
+<!--
+{r chapter3, child = 'chap3.Rmd', fig.pos='H'}
+-->
 
-```{r chapter4, child = 'chap4.Rmd', fig.pos='H'}
-```
+<!--
+{r chapter4, child = 'chap4.Rmd', fig.pos='H'}
+-->
 
 
 <!--
 Add other chunks here for other chapters in your thesis.  Note that if you use the `child =` parameter, you can't include anything else in your chunk.
 -->
-
-```{r conclusion, child = 'conclusion.Rmd', fig.pos='H'}
-```
+<!--
+{r conclusion, child = 'conclusion.Rmd', fig.pos='H'}
+---
 
 <!--
 The bib chunk below must go last in this document according to how R Markdown renders.  More info is at http://rmarkdown.rstudio.com/authoring_bibliographies_and_citations.html

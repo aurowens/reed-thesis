@@ -41,9 +41,9 @@ thesis <- c("#245e67", "#90bd98", "#cfd0a0", "#c49e46", "#d28383")
 
 #Simulations and Comparisons
 
-Our goal for this chapter is to compare trees, random forests, and linear models. In this chapter, we will use simulated data instead of the orange data set. One reason for this is theoretical consistency. One hopes that one's results will not be rendered null and void by any misstep in the data collection that comes to light. This also ensures that these simulations can be repeated by later researchers, but, granted, it does not make for the most exciting analysis. For now, consider $Y$ to be our response variable. In the first simulation, $V$ will be the set of our predictors, and $V_j$ to be a predictor in $V$. The formula will be the same for each model: $Y \sim V$. In our second simulation, our set of predictors will be denoted as $X$ and $X_j$ will be a member of $X$. The formula in this case is $Y \sim X$. 
+Our goal for this chapter is to compare trees, random forests, and linear models. In this chapter, we will use simulated data instead of the orange data set. One reason for this is theoretical consistency. One hopes that one's results will not be rendered null and void by any misstep in the data collection that comes to light. This also ensures that these simulations can be repeated by later researchers, but, granted, it does not make for the most exciting analysis. For now, consider $Y$ to be our response variable. In the first simulation, $V$ will be the set of our predictors, and $V_j$ to be a predictor in $V$. The formula will be the same for each model: $Y \sim V$. In our second simulation, our set of predictors will be denoted as $X$ and $X_j$ will be a member of $X$. The formula in this case is $Y \sim X$. A single row in $D_1$ will be denoted as $v$, and a single row in $D_2$ as $x$. 
 
-###Simulated Data
+##Simulated Data
 
 Random forests excel in predicting outcomes with correlated predictors, although these situations can make it difficult to perform intelligible inference. In a situation in which the correlated predictors are $X_1$ and $X_2$ and the formula we're estimating is $Y \sim X_1 + X_2$, it can be difficult to say if $X_1$ or $X_2$ is truly the better predictor. To illustrate this idea, compare a few existing methods, and explore methods of inference on tree based models, we will simulate two data sets with different correlation structures. We will focus more on the correlation structure between the predictors than on their relationships with the response and this will be reflected in the simulations.  
 
@@ -131,10 +131,10 @@ a
 ```
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The densities of $V_1,...,V_4$ in figure \ref{fig:figdenv1v5} are all very similar due to the way they were generated. $D_1$ represents the case where some of the predictors are linearly correlated with each other, but that is not the only possible correlation structure. The data set $D_2$ is simulated similarly to $D_2$ in that $D_2$ contains twelve predictors and one response variable. The first four variables are generated in the following way: 
-$$X_1 \sim N(1,0)$$
-$$X_2 = log(X_1) + E, E \sim N(1,0)$$
-$$X_3 = log(X_2) + E, E \sim N(1,0)$$
-$$X_4 = log(X_4) + E, E \sim N(1,0)$$
+$$X_1 \sim N(0,1)$$
+$$X_2 = log(X_1) + E, E \sim N(0,1)$$
+$$X_3 = log(X_2) + E, E \sim N(0,1)$$
+$$X_4 = log(X_4) + E, E \sim N(0,1)$$
 
 This simulation scheme leads to the first four variables having an obvious relationship between each other, but relatively low linear correlations, as seen in figure \ref{fig:corstructd2}. Predictors are sampled by $X_5,...,X_{12} \sim N(0,1)$. The $Y$ values are generated according to the following formula:
 
@@ -203,8 +203,6 @@ cord2 <- cbind(cord2, "beta"= bts[1:7])
 kable(cord2, caption="\\label{tab:tabcorSim2}Empirical correlations and coefficients of the first seven predictors and the response using the second simulated dataset")
 ```
 
-
-
 ##Models and Comparisons
 
 ####CART: Regression Trees
@@ -239,7 +237,7 @@ The CART tree representing the model $Y \sim X$ in figure \ref{fig:figcarts} is 
 \label{sim2.1}
 \begin{algorithmic}[1]
 \For{$i \leq 1000$ }
-\State Randomly sample $\frac 2 3$  of the observations in  $D_1$  to a training set,  $D_{1, train}^i$. The other observations,  $x \in D_2, x \notin D_{2, train}^i$ form the testing set $D_{2, test}^i$
+\State Randomly sample $\frac 2 3$  of the observations in  $D_2$  to a training set,  $D_{2, train}^i$. The other observations,  $x \in D_2, x \notin D_{2, train}^i$ form the testing set $D_{2, test}^i$
 \State Fit a tree, $T^i$, to the data under the model $Y \sim X_1,...,X_2$ using the observations in $D_{2}^i$
 \State Calculate the $MSE_{test}$ of the model using the equation:
     $MSE_{test} = \frac 1 n \sum (y_j - \hat{y_j})^2$
@@ -248,7 +246,7 @@ The CART tree representing the model $Y \sim X$ in figure \ref{fig:figcarts} is 
 \end{algorithm}
 
 
-Note that $n$ is the number of observations in  $D_{1, test}^i$, $y_j \in D_{2, test}^i, \hat{y_j} \in  T^i(D_{2, test}^i)$ for $1 \leq j \leq n$ This produces one distribution of $MSE_{test}$ for CART. This simulation scheme will be repeated for the linear model and the random forest and the $MSE_{test}$ distributions are compared in figure \ref{fig:baggedvcartvforest}. 
+Note that $n$ is the number of observations in  $D_{1, test}^i$, $y_j \in D_{2, test}^i, \hat{y_j} \in  T^i(D_{2, test}^i)$ for $1 \leq j \leq n$ This produces one distribution of $MSE_{test}$ for CART. This simulation scheme will be repeated for the linear model and the random forest and the $MSE_{test}$ distributions are compared in figure \ref{fig:baggedvcartvforest}. Note that the scales on the x-axis are drastically different for each of these models. The $MSE_{test}$ distribution for the random forest has such low variance, and low $MSE_{test}$ it would be difficult to display it on the same plot as the other two. 
 
 
 ```{r fig10,echo=FALSE, error=FALSE, warning=FALSE, message=FALSE,cache=TRUE}
@@ -276,7 +274,6 @@ a <- ggplot(aes(x = value), data = tmse) +
   ylab(" ")
 ```
 
-
 ```{r fig11, echo=FALSE,error=FALSE, warning=FALSE, message=FALSE,cache=TRUE}
 mselm <- rep(0,1000)
 
@@ -297,7 +294,6 @@ b <- ggplot(aes(x = value), data = mselm) +
   ylab(" ")
 
 ```
-
 
 ```{r fig12, echo=FALSE,error=FALSE, warning=FALSE, message=FALSE,cache=TRUE}
 
@@ -330,6 +326,6 @@ grid.arrange(a,b,c, ncol=3)
 ```
 
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The linear model is characteristically less flexible and less prone to over-fitting than either of the tree-based methods, CART and random forests, and has a $MSE_{test}$ distribution that is quite peaked. CART is flexible and suffers from high variance. The random forest models perform much better on average than either the CART or the linear model, due to both the non-linear relationships between $Y$ and the predictors and the random forest's ability to decorrelate each of the trees by restricting the variables available on each split. See chapter 3 for more discussion on the enforced heterogeneity of trees in the random forest. As, $MSE_{test}$, is a test of *predictive* accuracy it is not surprising that the random forest performed admirably. On a certain level, that is what they are designed to do. The linear model is not popular in predictive situations but it is ubiquitous in inferential ones.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The linear model is characteristically less flexible and less prone to over-fitting than either of the tree-based methods, CART and random forests, and has a $MSE_{test}$ distribution that is quite peaked. CART is flexible and suffers from high variance. The random forest models perform much better on average than either the CART or the linear model, due to both the non-linear relationships between $Y$ and the predictors and the random forest's ability to decorrelate each of the trees by restricting the variables available on each split. See chapter 3 for more discussion on the enforced heterogeneity of trees in the random forest. As $MSE_{test}$ is a test of *predictive* accuracy it is not surprising that the random forest performed admirably. On a certain level, that is what they are designed to do. The linear model is not popular in predictive situations but it is ubiquitous in inferential ones.
 
 
