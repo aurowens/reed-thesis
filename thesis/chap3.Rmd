@@ -80,42 +80,55 @@ max.cor <- function(yy,sxs){
   
   cors[is.na(cors[,1]), 1] <- 0
   
-  if (sum(cors[,1] == max(abs(cors[,1]), na.rm = TRUE), na.rm = TRUE) > 1) {
-    
-    if(sum(abs(cors[,1])) == 0){
+  if(sum(abs(cors[,1])) == 0){
       
       return(NULL)
     }
-    max1 <- sample(as.numeric(cors[,1] == max(abs(cors[,1]), na.rm = TRUE)), 1)  
+  
+  if (sum(cors[,1] == max(abs(cors[,1]), na.rm = TRUE), na.rm = TRUE) > 1) {
+    
+    maxes <- cors[(as.numeric(cors[,1] == max(abs(cors[,1]), na.rm = TRUE),1)),]
+    max1 <- maxes[maxes[,1] == max(maxes[,1]),2]
     
   } else {
     
     max1 <- cors[abs(cors[,1]) == max(abs(cors[,1]), na.rm = TRUE),2]
   }
   
-  
+  if(is.null(ncol(sxs[,max1]))){
   max[[length(max)+1]] <- sxs[,max1]
   max[[length(max)+1]] <- names(sxs)[max1]
   return(max)
+  }else{
+    #print(sxs[,max1])
+  }
   
 }
 
-split.rf <- function(y,x, min, parent_rss) {
-  
+split.rf <- function(y,x, min) {
+  parent.rss <- rss.leaf(y)
   sp <- list()
-  if(length(x) <= min) {
-    
+   if(length(x) <= min) {
     return(NULL)
   } else {
+  if(sd(y) < .05){
+      return(NULL)
+  }
+  if(sd(as.vector(x)) < .05){
+      return(NULL)
+    }
+ 
     
     #gives a warning if it cannot find an optimal solution and instead gives the max point
     op.partition <- suppressWarnings(optimise(rss.node, interval = range(x), 
                                               upper = max(x), y=y,x=x, maximum = FALSE))
+    leaf.rssl <- rss.leaf(y[x < op.partition[[1]]])
+    leaf.rssr <-rss.leaf(y[x < op.partition[[1]]])
+    if(parent.rss < leaf.rssl | parent.rss < leaf.rssr){
+       return(NULL)
+     }
+       
     
-    # if(parent_rss < rss.leaf( y[x < op.partition[[1]]])){
-    #   return(NULL)
-    # }
-    # 
     if (length(x[x < op.partition[[1]]]) < min | length(x[x >= op.partition[[1]]]) < min){
       
       return(NULL)
@@ -215,7 +228,9 @@ tree.rf <- function(y,xs, mtry, bootsampled, min = 5){
       } else {
         maxxr <- max.cor(yy = y,sxs= xssrd)
       }
-      sprd <- split.rf(y, maxxr[[1]], min, parent_rss = rss.leaf(y))
+     if(is.null(dim(maxxr[[1]]))){
+      sprd <- split.rf(y, maxxr[[1]], min)
+     }
       if(is.null(sprd)) {
         frame[1,] <- c("<leaf>",nrow(xssrd),rss.leaf(y),  mean(y), 0)
         
@@ -763,6 +778,7 @@ condinf1 <- conditional.inf(rf1, d1$y[1:200],d1[1:200, 1:12])
 set.seed(2)
 perminf <- permuted.inf(rf1, d1$y[1:200],d1[1:200, 1:12])
 ```
+
 ```{r weremelting, echo=FALSE, message=FALSE, warning=FALSE}
 c1 <- melt(as.data.frame(condinf1[,1:6], names = names(d2[,-13])))
 p1 <- melt(as.data.frame(perminf[,1:6], names = names(d2[,-13])))
@@ -797,15 +813,15 @@ t$split.cutleft <- round(as.numeric(t$split.cutleft),2)
 kable(t, caption="\\label{tab:tabhomegrowntree}t, a home-grown tree grown on the first four columns and the first 140 rows of D2")
 ```
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;There are several ways to display a tree, but when it is displayed as in table \ref{tab:tabhomegrowntree} it is read in the following way: each row corresponds to a node of the tree which contains a certain number, `n` observations. This number of observations, or rows in the data set is naturally a subset of both the original data set and the subsets above the node on the tree. Here our predictions, `ypred`, are the mean of the $Y$ values included in the node. If there is an optimal and allowable split, [^6] then the chosen variable, `var`, and the $RSS_{node}$, `dev`, are recorded.[^7] The value of the variable in question that acts as the split point is recorded as `split.cutleft`. If there is no split on the node in question, then `var` will be recorded as `<leaf>` and the `dev` value will be the value of $RSS_{leaf}$ at this node. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;There are several ways to display a tree, but when it is displayed as in table \ref{tab:tabhomegrowntree} it is read in the following way: each row corresponds to a node of the tree which contains a certain number, `n` observations. This number of observations, or rows in the data set is naturally a subset of both the original data set and the subsets above the node on the tree. Here our predictions, `ypred`, are the mean of the $Y$ values included in the node. If there is an optimal and allowable split, [^7] then the chosen variable, `var`, and the $RSS_{node}$, `dev`, are recorded.[^8] The value of the variable in question that acts as the split point is recorded as `split.cutleft`. If there is no split on the node in question, then `var` will be recorded as `<leaf>` and the `dev` value will be the value of $RSS_{leaf}$ at this node. 
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The tree output is read roughly from top to bottom, with a coda in the middle. The first row corresponds to the first node, or the node that includes the entire data set. The second row is the beginning of the right subtree or the right daughter of the first node. This pattern continues, favoring the right daughter, until a leaf is reached. The left daughter of the first node is found after all of the splits off of the right daughter have finished but is easily identified as the row with a value of `n` that is exactly the difference between the `n` values of the first two rows. In the case where the right daughter contained many more observations of the original data set, there may be a node within the right subtree that contains the same number of observations as the left daughter of the first node.[^8] In this case, the left daughter is simply the second row with this property. The pattern of following the right daughter until a leaf is reached continues with the left subtree. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The tree output is read roughly from top to bottom, with a coda in the middle. The first row corresponds to the first node, or the node that includes the entire data set. The second row is the beginning of the right subtree or the right daughter of the first node. This pattern continues, favoring the right daughter, until a leaf is reached. The left daughter of the first node is found after all of the splits off of the right daughter have finished but is easily identified as the row with a value of `n` that is exactly the difference between the `n` values of the first two rows. In the case where the right daughter contained many more observations of the original data set, there may be a node within the right subtree that contains the same number of observations as the left daughter of the first node.[^9] In this case, the left daughter is simply the second row with this property. The pattern of following the right daughter until a leaf is reached continues with the left subtree. 
 
-[^6]: Recall that we only allow splits to take place that split the data into two groups, each with more than five members. 
+[^7]: Recall that we only allow splits to take place that split the data into two groups, each with more than five members. 
 
-[^7]: It's the convention to call the $RSS_{node}$ the deviance at a node $N$, but, of course, this only makes sense when the node is a leaf. 
+[^8]: It's the convention to call the $RSS_{node}$ the deviance at a node $N$, but, of course, this only makes sense when the node is a leaf. 
 
-[^8]: This occurs when the variable in question has a group of values that are, 1) larger in magnitude than the mean, and 2) are seperated from the general trend. Essentially this occurs when we have unscaled data with outliers. 
+[^9]: This occurs when the variable in question has a group of values that are, 1) larger in magnitude than the mean, and 2) are seperated from the general trend. Essentially this occurs when we have unscaled data with outliers. 
 
 ##Breiman et al. Introduce Permuted Variable Importance (1984)
 
@@ -853,9 +869,9 @@ kable(v.des, caption="\\label{tab:tabbvi}The number of splits on each variable i
 \end{tikzpicture}
 \end{center}
     
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The data sets $D_{N_L}$ and $D_{N_R}$ are subsets of $D_N$ and when combined, they equal $D_N$. They are determined by the rule: if a row of observations has a value of $X_j < a$ then it is a member of $D_{N_L}$, if the value of $X_j$ in that row is greater than or equal to $a$ then it belongs to $D_{N_R}$. $X_j$ was chosen to split on in node $N$ because the correlation between the subsets of $X_j$ and $Y$ in $D_N$ was stronger than the correlations between $Y$ and any of the other predictors in that subset of the original data. Imagine, however, that split on $X_i$ would lead to very similar[^9] left and right daughter nodes to the daughter nodes generated by the split on $X_j$. This occurs even though $X_i$ and $Y$ had a lower correlation than $Y$ and $X_j$. This would be considered a surrogate split for our original split on $N$. Now define variable importance for a predictor $X_j$ across the tree $t$ as the decrease in $RSS_{node}$ according to the split on $X_j$, whether *surrogate* or not. This allows $X_j$ and $X_i$ to share the importance measure, if both $X_j$ and $X_i$ would have provided a similar, valuable split on node $N$. In *Classification and Regression Trees*, Breiman et al, outline several potential problems with this method that they do not attempt to solve. First, that this is only one of a number of reasonable ways to define variable importance. Second, the variable importances for variables $X_1,..,X_p$ can be affected by outliers or random fluctuations within the data. (Ch 5.3). The second problem is mitigated when we move from single trees to a random forest, but the first is a problem with variable importance in general. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The data sets $D_{N_L}$ and $D_{N_R}$ are subsets of $D_N$ and when combined, they equal $D_N$. They are determined by the rule: if a row of observations has a value of $X_j < a$ then it is a member of $D_{N_L}$, if the value of $X_j$ in that row is greater than or equal to $a$ then it belongs to $D_{N_R}$. $X_j$ was chosen to split on in node $N$ because the correlation between the subsets of $X_j$ and $Y$ in $D_N$ was stronger than the correlations between $Y$ and any of the other predictors in that subset of the original data. Imagine, however, that split on $X_i$ would lead to very similar[^10] left and right daughter nodes to the daughter nodes generated by the split on $X_j$. This occurs even though $X_i$ and $Y$ had a lower correlation than $Y$ and $X_j$. This would be considered a surrogate split for our original split on $N$. Now define variable importance for a predictor $X_j$ across the tree $t$ as the decrease in $RSS_{node}$ according to the split on $X_j$, whether *surrogate* or not. This allows $X_j$ and $X_i$ to share the importance measure, if both $X_j$ and $X_i$ would have provided a similar, valuable split on node $N$. In *Classification and Regression Trees*, Breiman et al, outline several potential problems with this method that they do not attempt to solve. First, that this is only one of a number of reasonable ways to define variable importance. Second, the variable importances for variables $X_1,..,X_p$ can be affected by outliers or random fluctuations within the data. (Ch 5.3). The second problem is mitigated when we move from single trees to a random forest, but the first is a problem with variable importance in general. 
 
-[^9]: This is intentionally vague. The level of similarity considered "similar enough" depends on the properties of the data set and there's no guarantee that suitable surrogate splits exist. [@bibCART]
+[^11]: This is intentionally vague. The level of similarity considered "similar enough" depends on the properties of the data set and there's no guarantee that suitable surrogate splits exist. [@bibCART]
 
 
 ###Variable Importance for a Random Forest
@@ -888,9 +904,9 @@ $$VI_{\alpha}(X_j, R) =  \sum_{t \in t_{x_j}^c} \frac 1 {\nu_t} RSS(t,\bar{B}_t)
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;In other words, we start with one tree in the random forest, $t_u$, and one variable, $X_j$, where $1 \leq u \leq ntree$ and $1 \leq j \leq p$. There are two subsets of the original data associated with $t_u$, one is the subset used to generate the tree ${B}^t$ and the other is the rest of the original data set, notated as $\bar{B}_t$. We calculate the residual sum of squares for $t_u$ on the new (to $t_u$) data, $\bar{B}_t$. Then we alter $\bar{B}_t$ by randomly shuffling $X_j$. This means that in one row of $\bar{B}_t$, the values are the same as they were before, except the values for $X_j$ may be interchanged with the values in other rows. Then RSS is calculated again and compared with the RSS before the shuffling took place. As each tree in the random forest is fit to a bootstrapped sample of the original data set and splits on a fraction of the possible predictors, the tree-wise computation gives an estimate of the distribution of $VI_{\beta}(X_j)$.  
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;To visualize the output, the permuted variable importance distribution, of this algorithm on a random forest we will fit a random forest to the data set $D_1$ from the chapter 2. When fitting a random forest, one considers the formula, the data, the number of trees to fit, ($ntree$), and the number of variables to consider at each split, ($mtry$). We have fit the random forest for the formula $Y \ sim V$ on the data set $D_1$, with $mtry = 7$ and $ntree = 300$. The distributions of permuted variable importance in figure \ref{fig:figpermDist} are for the first six variables in $D_2$. Recall that these were the only variables used to create $Y$. The permuted variable importance values for variables $V_7,V_8,V_{10},V_{11},V_{12}$ are zero for each of the 300 trees. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;To visualize the output, the permuted variable importance distribution, of this algorithm on a random forest we will fit a random forest to the data set $D_1$ from the chapter 2. When fitting a random forest, one considers the formula, the data, the number of trees to fit, ($ntree$), and the number of variables to consider at each split, ($mtry$). We have fit the random forest for the formula $Y \ sim V$ on the data set $D_1$, with $mtry = 7$ and $ntree = 300$. The distributions of permuted variable importance in figure \ref{fig:figpermDist} are for the first six variables in $D_1$. Recall that these were the only variables used to create $Y$. The permuted variable importance values for variables $V_7,V_8,V_{10},V_{11},V_{12}$ are zero for each of the 300 trees. 
 
-```{r, echo = FALSE, fig.pos = 'H', fig.cap="\\label{fig:figpermDist}The distribution of permuted variable importance for the first six variables in D2."}
+```{r, echo = FALSE, fig.pos = 'H', fig.cap="\\label{fig:figpermDist}The distribution of permuted variable importance for the first six variables in D1."}
 ggplot(data = p1, aes(fill = variable, group = variable, x = value)) +
   stat_density(alpha = .9)+
   ylab("")+
@@ -922,13 +938,13 @@ Strobl et al respond to Breiman's method with one main argument: the null hypoth
 \end{algorithm}
 
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;This method is fairly similar to permuted variable importance, but there are a few key differences. Given a tree $t_u$ and a variable $X_j$, first we find the out of bag RSS, then we permute. In this case, however, our permutations or shuffling of $X_j$ is not always done blindly. If $X_j$ has no (or low) empirical correlation with each of its fellow predictors, then $X_j$ is shuffled exactly as in permuted variable importance. If that is not the case, then we select the set, $Z$, of the predictors with the strongest empirical correlation [^10] to $X_j$. Recall that our tree $t_u$ contains many nodes, and each node contains a subset of the data along with a split that determines the subsets of the daughter nodes. We feed the out of bag sample for $t_u$ into $t_u$ and look at all the subsets of data in nodes that split on a predictor in $Z$. This time when we shuffle $X_j$ it will only be in these subsets. The union of these subsets is called $\bar{B}_t^*$ and is used to calculate the permuted RSS. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;This method is fairly similar to permuted variable importance, but there are a few key differences. Given a tree $t_u$ and a variable $X_j$, first we find the out of bag RSS, then we permute. In this case, however, our permutations or shuffling of $X_j$ is not always done blindly. If $X_j$ has no (or low) empirical correlation with each of its fellow predictors, then $X_j$ is shuffled exactly as in permuted variable importance. If that is not the case, then we select the set, $Z$, of the predictors with the strongest empirical correlation [^12] to $X_j$. Recall that our tree $t_u$ contains many nodes, and each node contains a subset of the data along with a split that determines the subsets of the daughter nodes. We feed the out of bag sample for $t_u$ into $t_u$ and look at all the subsets of data in nodes that split on a predictor in $Z$. This time when we shuffle $X_j$ it will only be in these subsets. The union of these subsets is called $\bar{B}_t^*$ and is used to calculate the permuted RSS. 
 
-[^10]: The authors behind @bibstrobl2008 recommend constructing the set $Z$ from prior information about the data or as the set of predictors where each one has empirical correlation greater than or equal to .2 with $X_j$. 
+[^12]: The authors behind @bibstrobl2008 recommend constructing the set $Z$ from prior information about the data or as the set of predictors where each one has empirical correlation greater than or equal to .2 with $X_j$. 
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;To visualize the output from algorithm \ref{alg:strobl}, conditional permuted variable importance was calculated for the same random forest from \ref{fig:figpermDist}. The distribution of conditional permuted variable importance on the random forest fit on $D_2$, is represented in \ref{fig:figconDist}. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;To visualize the output from algorithm \ref{alg:strobl}, conditional permuted variable importance was calculated for the same random forest from \ref{fig:figpermDist}. The distribution of conditional permuted variable importance on the random forest fit on $D_1$, is represented in \ref{fig:figconDist}. 
 
-```{r,fig.pos = 'H', echo=FALSE, fig.cap="\\label{fig:figconDist}The distribution of conditional permuted variable importance for the first six variables in D2."}
+```{r,fig.pos = 'H', echo=FALSE, fig.cap="\\label{fig:figconDist}The distribution of conditional permuted variable importance for the first six variables in D1."}
 ggplot(data = c1, aes(fill = variable, group = variable, x = value)) +
   stat_density(alpha = .9)+
   ylab("")+
@@ -936,7 +952,6 @@ ggplot(data = c1, aes(fill = variable, group = variable, x = value)) +
   labs(fill="")+
   scale_fill_manual(values=wes_palette(n=6, name="BottleRocket"))
 ```
-
 
 
 

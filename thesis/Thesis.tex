@@ -70,7 +70,7 @@
 
 
 % To pass between YAML and LaTeX the dollar signs are added by CII
-\title{INFFOREST Variable Importance on Random Forests}
+\title{INFFOREST Variable Importance for Random Forests}
 \author{Aurora Owens}
 % The month and year that you submit your FINAL draft TO THE LIBRARY (May or December)
 \date{May 2017}
@@ -115,11 +115,11 @@
   \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
 
 \Acknowledgements{
-.
+--- title: ``ack'' output: pdf\_document ---
 }
 
 \Dedication{
-.
+For Nick.
 }
 
 \Preface{
@@ -171,7 +171,7 @@ from the exiting methods and creates some interesting implications.\par
   \pagestyle{empty} % this removes page numbers from the frontmatter
 
       \begin{acknowledgements}
-      .
+      --- title: ``ack'' output: pdf\_document ---
     \end{acknowledgements}
   
   
@@ -198,7 +198,7 @@ from the exiting methods and creates some interesting implications.\par
     \end{abstract}
   
       \begin{dedication}
-      .
+      For Nick.
     \end{dedication}
   
   \mainmatter % here the regular arabic numbering starts
@@ -241,8 +241,8 @@ from the exiting methods and creates some interesting implications.\par
   \end{tabular}
   \end{table}
   
-  ~~~~~Let's pretend we are interested in the following question: knowing
-  only the circumference of the orange tree, can we predict the age of the
+  ~~~~~Suppose we are interested in the following question: knowing only
+  the circumference of the orange tree, can we predict the age of the
   tree? This question can be translated into a formula. Formulas represent
   guesses of way the data was generated. We often refer to formulas using
   the following notation:
@@ -264,8 +264,8 @@ from the exiting methods and creates some interesting implications.\par
   
   ~~~~~Returning to the original orange tree data set, we can begin to
   assess the structure in the data set by plotting the data and observing
-  the relationship between the variables in figure
-  \ref{fig:figOrangeTree1}.
+  the relationship between the variables (figure
+  \ref{fig:figOrangeTree1}).
   
   \begin{figure}[H]
   
@@ -324,8 +324,8 @@ from the exiting methods and creates some interesting implications.\par
   is the average value of Y (age) within the partition that X falls
   into.\footnote{While any curve can be approximated in a step-wise manner
     when the number of steps approaches \(\infty\), a tree model does not
-    converge to the linear model as the number of splits approaches the
-    number of observations, even when the data is linear.}
+    always converge to the linear model as the number of splits approaches
+    the number of observations.}
   
   ~~~~~Tree methods get their name from a common way of representing them
   in higher dimensions, when there is more than one predictor. Figure
@@ -502,9 +502,9 @@ from the exiting methods and creates some interesting implications.\par
   forests}\label{mathematical-notation-for-bagged-and-random-forests}
   
   Given a data set, \(D\), and a formula \(Y \sim X\), where \(Y\) and
-  \(X\) are columns in \(D\), a forest, \(R\), collection of trees from
-  \(X\) to \(Y\). As \(R\) is a collection of trees from \(X\) to \(Y\),
-  it is also a stepwise function from \(X\) to \(Y\).
+  \(X\) are columns in \(D\), a forest, \(R\), is a collection of trees
+  from \(X\) to \(Y\). As \(R\) is a collection of trees from \(X\) to
+  \(Y\), it is also a stepwise function from \(X\) to \(Y\).
   
   \[R:X \rightarrow Y\]
   
@@ -520,22 +520,26 @@ from the exiting methods and creates some interesting implications.\par
   of each tree on \(X\).
   
   These are \emph{bagged forests}. \emph{Random forests} are a variation
-  on bagged forests, and the main focus of this paper. There is no
+  on bagged forests, and are the main focus of this paper. There is no
   difference between bagged and random forests when there is only one
   predictor in the data set, but, in cases with more than one predictor,
   the trees are generated in a slightly different way. Usually, to make a
-  split all the predictors are considered. (Recall that splits are rules
-  on certain predictors; rules like ``if circumference is less than 113.5
-  go left, if not go right.'' The statement ``circumference \textless{}
-  113.5'' from figure \ref{fig:figorangeTree} is a split at 113.5 on the
-  variable circumference). If we had a larger version of the orange tree
-  data set that included the heights of each tree, then the tree would
-  always consider both height and circumference as possible candidates for
-  splits. In a random forest on this expanded orange tree data set, it is
-  possible that only one predictor, height or circumference, would be
-  considered at a time. The splitting procedure is discussed at length in
-  chapter 3 and this property of random forests is discussed in chapter 4.
-  For now only a cursory understanding is needed.
+  split all the predictors are considered.\footnote{A brief note on
+    uncertainty is needed here. It's true that in this setting we can say
+    that \(V_4\) is actually unimportant to understanding \(Y\), but in
+    situations with real data this is profoundly more difficult to parse.
+    Often like in the social science situations that Morgan and Sonquist
+    encountered, the real relationship between correlated predictors is
+    complicated and often there is some theoretical backing or other
+    insight that is gained to include variables that may not be important
+    to the model.} If we had a larger version of the orange tree data set
+  that included the heights of each tree, then the tree would always
+  consider both height and circumference as possible candidates for
+  splits. In a random forest tree, it is possible that only one predictor,
+  height or circumference, would be considered at a time. The splitting
+  procedure is discussed at length in chapter 3 and this property of
+  random forests is discussed in chapter 4. For now only a cursory
+  understanding is needed.
   
   \subsection{Inferential vs Descriptive
   Statistics}\label{inferential-vs-descriptive-statistics}
@@ -648,8 +652,8 @@ from the exiting methods and creates some interesting implications.\par
   
   \[VI^t(X_j) = \frac{\sum_{i \in |\bar{B}_t|} ({y} - \hat{y})^2}{|\bar{B}_t|} - \frac{\sum_{i \in |\bar{B}_t^*} ({y} - \hat{y}^*)^2}{|\bar{B}_t^*|} \]
   
-  ~~~~~ Where \(\bar{B}^t\) is the out of bag sample for tree t, \(|B|\)
-  is the number of observations in that sample, \(\bar{B}_p^t\) is with
+  ~~~~~ Where \(\bar{B}_t\) is the out of bag sample for tree t, \(|B|\)
+  is the number of observations in that sample, \(\bar{B}_t^*\) is with
   \(X_j\) permuted, \(\hat{y}\) is the predicted outcome, and
   \(\hat{y}^*\) is the predicted outcomes after variable \(X_j\) has been
   permuted. This value is averaged over all the trees. It is important to
@@ -1230,7 +1234,7 @@ from the exiting methods and creates some interesting implications.\par
   (\(mtry\)). We have fit the random forest for the formula \(Y \ sim V\)
   on the data set \(D_1\), with \(mtry = 7\) and \(ntree = 300\). The
   distributions of permuted variable importance in figure
-  \ref{fig:figpermDist} are for the first six variables in \(D_2\). Recall
+  \ref{fig:figpermDist} are for the first six variables in \(D_1\). Recall
   that these were the only variables used to create \(Y\). The permuted
   variable importance values for variables
   \(V_7,V_8,V_{10},V_{11},V_{12}\) are zero for each of the 300 trees.
@@ -1239,7 +1243,7 @@ from the exiting methods and creates some interesting implications.\par
   \centering
   \includegraphics{Thesis_files/figure-latex/unnamed-chunk-25-1.pdf}
   \caption{\label{fig:unnamed-chunk-25}\label{fig:figpermDist}The distribution
-  of permuted variable importance for the first six variables in D2.}
+  of permuted variable importance for the first six variables in D1.}
   \end{figure}
   
   \section{Strobl et al Respond (2008)}\label{strobl-et-al-respond-2008}
@@ -1298,15 +1302,209 @@ from the exiting methods and creates some interesting implications.\par
   conditional permuted variable importance was calculated for the same
   random forest from \ref{fig:figpermDist}. The distribution of
   conditional permuted variable importance on the random forest fit on
-  \(D_2\), is represented in \ref{fig:figconDist}.
+  \(D_1\), is represented in \ref{fig:figconDist}.
   
   \begin{figure}[htbp]
   \centering
   \includegraphics{Thesis_files/figure-latex/unnamed-chunk-26-1.pdf}
   \caption{\label{fig:unnamed-chunk-26}\label{fig:figconDist}The distribution
   of conditional permuted variable importance for the first six variables
-  in D2.}
+  in D1.}
   \end{figure}
+  
+  \chapter{Conclusion}\label{conclusion}
+  
+  \section{INFFOREST Comparisons With Other
+  Methods}\label{infforest-comparisons-with-other-methods}
+  
+  As discussed in the beginning of chapter 4, each type of permuted
+  variable importance, permuted, conditionally permuted, and INFFOREST,
+  operates on a slightly different null hypothesis. This explains the
+  differences in the results when each method is run on the same random
+  forest.
+  
+  ~~~~~INFFOREST variable importance is not alone in methods that conduct
+  statistical inference on random forests.To compare the results from
+  INFFOREST, conditional variable importance, and permuted variable
+  importance, a random forest was generated on the first 200 rows of the
+  data set \(D_1\), following the formula \(Y \sim V\). This random forest
+  considered \(7\) of the \(12\) predictors at each split and contained
+  \(200\) trees. Then the INFFOREST, conditional permuted, and permuted
+  variable importance distributions were calculated for each variable.
+  These distributions are represented below in figure
+  \ref{fig:figcomparisons}.
+  
+  \begin{figure}[htbp]
+  \centering
+  \includegraphics{Thesis_files/figure-latex/unnamed-chunk-28-1.pdf}
+  \caption{\label{fig:unnamed-chunk-28}\label{fig:figcomparisons}Median Values
+  of INFFOREST, Conditionally Permuted, and Permuted Variable Importance}
+  \end{figure}
+  
+  ~~~~~Mimicking the construction of the plot in chapter 4, the ribbon
+  surrounding the average values is the 95\% confidence interval
+  constructed around the average importance values. The first main
+  difference visible between INFFOREST and the other methods in figure
+  \ref{fig:figcomparisons} is that the median INFFOREST values are above
+  zero, even for the variables that are not considered significant. The
+  random forest is conducted in such a way that even predictors that may
+  not be important in the overall model are important in a few trees.
+  These are three different methods, following three different permutation
+  schemes, and they are based on three different null hypotheses.
+  
+  \section{INFFOREST Conclusions}\label{infforest-conclusions}
+  
+  Using INFFOREST variable importance, we were able to demonstrate
+  significance for all of the five predictors used to generate the
+  response. More precisely, we were able to demonstrate that the INFFOREST
+  values for \(V_1,...,V_6\) were significantly different from zero. Given
+  the null hypothesis we considered, this allows us to claim that
+  \(V_1,...,V_6\) are significant predictors of \(Y\), given the other
+  variables included in the model. We found one predictor to be
+  significant, \(V_4\), when it was not used to generate \(Y\), and so did
+  not quite achieve the original goal. For comparisons, these are the
+  predictors deemed significant by the analogous linear model:
+  
+  \begin{table}
+  
+  \caption{\label{tab:unnamed-chunk-30}\label{tab:tablmD1}The estimated coefficients and p-values for a linear model on the formula Y \~ V, D1}
+  \centering
+  \begin{tabular}[t]{l|r|r|r|r}
+  \hline
+    & Estimate & Std. Error & t value & Pr(>|t|)\\
+  \hline
+  (Intercept) & -0.01 & 0.04 & -0.42 & 0.68\\
+  \hline
+  V1 & 4.83 & 0.11 & 44.85 & 0.00\\
+  \hline
+  V2 & 5.20 & 0.12 & 44.44 & 0.00\\
+  \hline
+  V3 & 2.07 & 0.10 & 19.91 & 0.00\\
+  \hline
+  V4 & -0.09 & 0.09 & -0.95 & 0.34\\
+  \hline
+  V5 & -5.02 & 0.04 & -131.79 & 0.00\\
+  \hline
+  V6 & -5.01 & 0.04 & -131.10 & 0.00\\
+  \hline
+  V7 & 0.03 & 0.03 & 1.05 & 0.30\\
+  \hline
+  V8 & -0.04 & 0.04 & -1.10 & 0.27\\
+  \hline
+  V9 & 0.07 & 0.04 & 1.84 & 0.07\\
+  \hline
+  V10 & -0.01 & 0.03 & -0.22 & 0.83\\
+  \hline
+  V11 & 0.04 & 0.03 & 1.28 & 0.20\\
+  \hline
+  V12 & -0.05 & 0.04 & -1.31 & 0.19\\
+  \hline
+  \end{tabular}
+  \end{table}
+  
+  ~~~~~These results may not be as surprising as one would think. The
+  response in the data set \(D_1\) was generated linearly from the
+  predictors. The relationship between the response and the predictors is
+  better represented by the linear model, as it is a linear relationship.
+  When the same procedure is repeated on \(D_2\), seen in the table below,
+  we do not find that the linear model is a better fit,\footnote{\subsection{Areas
+    for further study}\label{areas-for-further-study}} as the structure in
+  \(D_2\) is not linear.
+  
+  \begin{table}
+  \caption{\label{tab:unnamed-chunk-33}\label{tab:tabntree}INFFOREST Variable Importance (left) for a random forest on the data set D2 with 300 trees is compared to the coefficeints of the linear model (right)}
+  
+  \centering
+  \begin{tabular}[t]{l|r|r}
+  \hline
+    & median & pval\\
+  \hline
+  V1 & 0.54 & 0.13\\
+  \hline
+  V2 & 0.40 & 0.00\\
+  \hline
+  V3 & 0.41 & 0.02\\
+  \hline
+  V4 & 0.43 & 0.01\\
+  \hline
+  V5 & 0.54 & 0.07\\
+  \hline
+  V6 & 0.47 & 0.11\\
+  \hline
+  V7 & 0.52 & 0.09\\
+  \hline
+  V8 & 0.50 & 0.10\\
+  \hline
+  V9 & 0.49 & 0.14\\
+  \hline
+  V10 & 0.50 & 0.11\\
+  \hline
+  V11 & 0.55 & 0.10\\
+  \hline
+  V12 & 0.56 & 0.06\\
+  \hline
+  \end{tabular}
+  \centering
+  \begin{tabular}[t]{r|r|r|r}
+  \hline
+  Estimate & Std. Error & t value & Pr(>|t|)\\
+  \hline
+  -4.54 & 3.45 & -1.32 & 0.19\\
+  \hline
+  -13.98 & 1.94 & -7.22 & 0.00\\
+  \hline
+  2.59 & 1.60 & 1.62 & 0.11\\
+  \hline
+  6.48 & 1.46 & 4.44 & 0.00\\
+  \hline
+  -5.88 & 3.45 & -1.71 & 0.09\\
+  \hline
+  -8.94 & 3.28 & -2.72 & 0.01\\
+  \hline
+  -4.72 & 3.27 & -1.44 & 0.15\\
+  \hline
+  -6.39 & 3.47 & -1.84 & 0.07\\
+  \hline
+  2.06 & 3.38 & 0.61 & 0.54\\
+  \hline
+  -0.56 & 3.14 & -0.18 & 0.86\\
+  \hline
+  -1.50 & 3.70 & -0.41 & 0.69\\
+  \hline
+  4.46 & 3.36 & 1.33 & 0.19\\
+  \hline
+  \end{tabular}
+  \end{table}
+  
+  There is clearly work to be done to recover the inferential and
+  interpretable properties of the linear model in machine learning. As
+  mentioned briefly in the introduction, random forests of CART trees may
+  be biased. Hothorn et al. demonstrated that CART is biased toward
+  variables with a great number of possible splits. An interesting follow
+  up to this paper would be to apply INFFOREST variable importance to
+  forests of the unbiased conditional inference trees, as discussed in
+  Hothorn et al. As the \texttt{party} package in R created by Hothorn et
+  al. that implements conditional inference trees, contains functions for
+  accessing and creating custom random forests, this could be relatively
+  simple.
+  
+  ~~~~~On a theoretical level it would be interesting to see a proof that
+  in the case where the linear model is appropriate, that CART does or
+  does not approximate the linear model. From my reading and from my
+  simulations, it does not seem like CART fits linear data very well, but
+  a formalization of this phenomenon would be welcome.
+  
+  ~~~~~Another area for further study is testing the INFFOREST code on
+  situations with lots of data and lots of trees in the random forest. As
+  \(ntree\) and \(n\), the number of rows in the data set, increase,
+  variance in the INFFOREST distribution seems to decrease. When \(n\) is
+  increased, the average tree size increases. When \(ntree\) is increased,
+  the size of our forests is increased. As it is written now, however, the
+  random forest object requires quite a lot of memory and the code to
+  perform operations on the trees is quite intensive. This would most
+  likely require rewriting significant parts of the code, potentially in a
+  language other than R. A full look at this property was unfortunately
+  not possible in the given time frame due to these constraints.
   
   \backmatter
   

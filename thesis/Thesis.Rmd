@@ -6,7 +6,7 @@ advisor: 'Andrew Bray'
 #altadvisor: 'Your Other Advisor'
 # Delete line 6 if you only have one advisor
 department: 'Mathematics'
-title: 'INFFOREST Variable Importance on Random Forests'
+title: 'INFFOREST Variable Importance for Random Forests'
 abstract: >
   `r paste(readLines('abstract.Rmd'), collapse = ' ')`
 # If you'd rather include the preliminary content infiles instead of inline
@@ -93,9 +93,9 @@ Immediately below is the chunk for Chapter 2.
 <!--
 Add other chunks here for other chapters in your thesis.  Note that if you use the `child =` parameter, you can't include anything else in your chunk.
 -->
-<!--
-{r conclusion, child = 'conclusion.Rmd', fig.pos='H'}
----
+
+```{r conclusion, child = 'conclusion.Rmd', fig.pos='H'}
+```
 
 <!--
 The bib chunk below must go last in this document according to how R Markdown renders.  More info is at http://rmarkdown.rstudio.com/authoring_bibliographies_and_citations.html

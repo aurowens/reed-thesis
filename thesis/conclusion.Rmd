@@ -697,6 +697,10 @@ x3 <- 2*log(abs(x2)) + rnorm(1000)
 
 x4 <- 2*log(abs(x3)) + rnorm(1000)
 
+sigma <- diag(8)
+
+mu <- rep(0,8)
+
 mvrnorm(n =n, mu = mu, Sigma = sigma) -> simx5x12
 
 data.frame(x1,x2,x3,x4,simx5x12) -> d2
@@ -726,13 +730,13 @@ d2$y <- ys
 ```
 
 
-#INFFOREST Comparisons With Other Methods
+##INFFOREST Comparisons With Other Methods
 
 As discussed in the beginning of chapter 4, each type of permuted variable importance, permuted, conditionally permuted, and INFFOREST, operates on a slightly different null hypothesis. This explains the differences in the results when each method is run on the same random forest. 
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;INFFOREST variable importance is not alone in methods that conduct statistical inference on random forests.To compare the results from INFFOREST, conditional variable importance, and permuted variable importance, a random forest was generated on the first 200 rows of the data set $D_1$, following the formula $Y \sim V$. This random forest considered $7$ of the $12$ predictors at each split and contained $200$ trees. Then the INFFOREST, conditional permuted, and permuted variable importance distributions were calculated for each variable. These distributions are represented below in figure \ref{fig:figcomparisons}. 
 
-```{r comparisons, echo=FALSE, cache=TRUE, message=FALSE, warning=FALSE}
+```{r, echo=FALSE, cache=TRUE, message=FALSE, warning=FALSE}
 set.seed(2)
 rf1 <- rforest(d1$y[1:200],d1[1:200, 1:12],mtry = 7,ntree = 100)
 inf1 <- infforest(rf1, d1$y[1:200],d1[1:200, 1:12])
@@ -810,25 +814,13 @@ r <- ggplot(data = d, aes( x = variable, y = median, group = 1)) +
   scale_y_continuous(limits = c(0,1))
 ```
 
-```{r, warning=FALSE, echo=FALSE, message = FALSE, fig.cap="\\label{fig:figcomparisons}Median Values of INFFOREST, Conditionally Permuted, and Permuted Variable Importance"}
+```{r, warning=FALSE, echo=FALSE, fig.pos='H',message = FALSE, fi.height = 3, fig.cap="\\label{fig:figcomparisons}Median Values of INFFOREST, Conditionally Permuted, and Permuted Variable Importance"}
 grid.arrange(p,q,r, ncol=3)
 ```
 
-&nbsp;&nbsp;&nbsp;&nbsp;&Mimicking the construction of the plot in chapter 4, the ribbon surrounding the average values is the 95% confidence interval constructed around the average importance values. The first main difference visible between INFFOREST and the other methods in figure \ref{fig:figcomparisons} is that the median INFFOREST values are above zero, even for the variables that are not considered significant. The random forest is conducted in such a way that even predictors that may not be important in the overall model are important in a few trees. These are three different methods, following three different permutation schemes, and they are based on three different null hypotheses. Table \ref{tab:tabVIties} demonstrates the implications of each permutation scheme. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Mimicking the construction of the plot in chapter 4, the ribbon surrounding the average values is the 95% confidence interval constructed around the average importance values. The first main difference visible between INFFOREST and the other methods in figure \ref{fig:figcomparisons} is that the median INFFOREST values are above zero, even for the variables that are not considered significant. The random forest is conducted in such a way that even predictors that may not be important in the overall model are important in a few trees. These are three different methods, following three different permutation schemes, and they are based on three different null hypotheses. 
 
-\begin{table}[H]
-\begin{tabular}{|c|c|c|c|}
-\hline
-Variable Importance Method & Ties between $X_j$ and $Y$ & Ties between $X_j$ and $X_{-j}$ & Ties between $X_{-j}$ and $Y$ \\ \hline
-Permuted                   & Broken                     & Broken                          & Maintained                    \\ \hline
-Conditional Permuted       & Broken                     & Maintained                      & Maintained                    \\ \hline
-INFFOREST                  & Broken                     & Maintained                      & Broken                        \\ \hline
-\end{tabular}
-\caption{The permutation structure in each variable importance method functions to break one or more ties between the predictors and the response.}
-\label{tab:tabVIties}
-\end{table}
-
-#INFFOREST Conclusions
+##INFFOREST Conclusions
 
 Using INFFOREST variable importance, we were able to demonstrate significance for all of the five predictors used to generate the response. More precisely, we were able to demonstrate that the INFFOREST values for $V_1,...,V_6$ were significantly different from zero. Given the null hypothesis we considered, this allows us to claim that $V_1,...,V_6$ are significant predictors of $Y$, given the other variables included in the model. We found one predictor to be significant, $V_4$, when it was not used to generate $Y$, and so did not quite achieve the original goal. For comparisons, these are the predictors deemed significant by the analogous linear model:
 
@@ -841,7 +833,55 @@ cffs <- round(summary(lm1)[[4]],2)
 kable(cffs, caption= "\\label{tab:tablmD1}The estimated coefficients and p-values for a linear model on the formula Y \\~ V, D1")
 ```
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;There is clearly work to be done to recover the inferential and interpretable properties of the linear model in machine learning. As mentioned briefly in the introduction, random forests of CART trees may be biased. As demonstrated by Hothorn et al., CART is biased toward variables with a great number of possible splits. This could explain our results in the following way: if a predictor has a strong relationship with another predictor, then it could make it a more attractive candidate for the splitting criteria. An interesting follow up to this paper would be to apply INFFOREST variable importance to forests of the unbiased conditional inference trees, as discussed in Hothorn et al. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;These results may not be as surprising as one would think. The response in the data set $D_1$ was generated linearly from the predictors. The relationship between the response and the predictors is better represented by the linear model, as it is a linear relationship. When the same procedure is repeated on $D_2$, seen in the table below, we do not find that the linear model is a better fit,[^12] as the structure in $D_2$ is not linear.
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Breiman et al., in *Classification and Regression Trees*, begin an early chapter with: "the question raised in this section is: what is truth and how can it be estimated?" [@bibCART, p. 9]. This textbook was written in 1984, far before machine learning methods were used to analyze large amounts of data on private citizens across nearly every industry and even by the U.S. government. [@bibNYer]. The question of truth and the limits we face in estimating it, has ramifications far beyond what Breiman et al. could have envisioned. 
+```{r, echo=FALSE, message=FALSE, cache=TRUE}
+r2 <- rforest(d2$y[1:200], d2[1:200,1:12], mtry = 4, ntree = 300)
+in2 <- infforest(r2, d2$y[1:200], d2[1:200,1:12])
+in2[is.nan(in2)] <- NA
+in2 <- in2[complete.cases(in2),]
+
+in2.d1 <-  c(rep(0,12))
+for (i in 1:12){
+  in2.d1[i] <- median(in2[,i])
+}
+pval <- rep(0,12)
+
+for(i in 1:12) { 
+  pval[i] <- sum(in2[,i] == 0)/nrow(in2)  
+}
+in2.d1 <- data.frame("median" = in2.d1)
+in2.d1$pval <- as.vector(pval)
+```
+
+```{r, echo=FALSE, message=FALSE}
+
+lm2 <- lm(y ~., data = d2[1:200,])
+cffs2 <- round(summary(lm2)[[4]],2)
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE,error=FALSE}
+
+row.names(in2.d1) <- names(d1[,1:12])
+row.names(cffs2) <-NULL
+in2.d1$pval <- round(in2.d1$pval, 2)
+
+in2.d1$median <- round(in2.d1$median, 2)
+
+cffs2 <- cffs2[-1,]
+
+kable(list(in2.d1, cffs2), caption = "\\label{tab:tabntree}INFFOREST Variable Importance (left) for a random forest on the data set D2 with 300 trees is compared to the coefficeints of the linear model (right)")
+```
+
+[^12]:
+
+###Areas for further study
+
+There is clearly work to be done to recover the inferential and interpretable properties of the linear model in machine learning. As mentioned briefly in the introduction, random forests of CART trees may be biased. Hothorn et al. demonstrated that CART is biased toward variables with a great number of possible splits. An interesting follow up to this paper would be to apply INFFOREST variable importance to forests of the unbiased conditional inference trees, as discussed in Hothorn et al. As the `party` package in R created by Hothorn et al. that implements conditional inference trees, contains functions for accessing and creating custom random forests, this could be relatively simple. 
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;On a theoretical level it would be interesting to see a proof that in the case where the linear model is appropriate, that CART does or does not approximate the linear model. From my reading and from my simulations, it does not seem like CART fits linear data very well, but a formalization of this phenomenon would be welcome. 
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Another area for further study is testing the INFFOREST code on situations with lots of data and lots of trees in the random forest. As $ntree$ and $n$, the number of rows in the data set, increase, variance in the INFFOREST distribution seems to decrease. When $n$ is increased, the average tree size increases. When $ntree$ is increased, the size of our forests is increased. As it is written now, however, the random forest object requires quite a lot of memory and the code to perform operations on the trees is quite intensive. This would most likely require rewriting significant parts of the code, potentially in a language other than R. A full look at this property was unfortunately not possible in the given time frame due to these constraints. 
+
+
 

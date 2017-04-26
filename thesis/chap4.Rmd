@@ -747,7 +747,7 @@ d2$y <- ys
 
 #INFFOREST Variable Importance
 
-Variable importance measures must contend with the following relationships in the data, for each $V_j$ in $V$: first, there is the relationship between $Y$ and $V_j$, then the relationship between $V_j$ and the other predictors, $V_{-j}$, and finally the relationship between $Y$ and the other predictors $V_{-j}$. 
+Variable importance measures must contend with the following relationships in the data: for each $V_j$ in $V$, first, there is the relationship between $Y$ and $V_j$, secondly, the relationship between $V_j$ and the other predictors, $V_{-j}$, and thirdly, the relationship between $Y$ and the other predictors $V_{-j}$. 
 
 \usetikzlibrary{positioning}
 \begin{center}
@@ -1105,11 +1105,74 @@ v75.d1$median <- round(v75.d1$median, 2)
 kable(list(v10.d1, vi.d1, v75.d1), caption = "\\label{tab:tabntree}INFFOREST Variable Importance for random forests with 50, 100, and 200 trees")
 ```
 
-The p-values for each random forest with $50,100,200$ trees vary slightly, but ultimately the same variables are considered significant. INFForest variable importance allows for consistent statistical inference with random forests. 
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;In the first we found $V_8$ to be significant and in the second forest, with 100 trees we found that $V_9$ was significant. Neither of these variables were used to generate $Y$ and are roughly uncorrelated with the other predictors. As $ntree \rightarrow \infty$, the INFFOREST values become more consistant. Consider table \ref{tab:tabntree500}, that represents the INFFOREST values from a random forest fit on $Y \sim V$ with $mtry = 7$ and $ntree = 500$.
+
+```{r n500, echo=FALSE, message=FALSE, cache=TRUE, warning=FALSE}
+set.seed(1)
+r500 <- rforest(d1$y[1:200], d1[1:200, 1:12], mtry = 7, ntree = 500)
+v500 <- infforest(r500, d1$y[1:200], d1[1:200, 1:12])
+v500[is.nan(v500)] <- NA
+v500 <- v500[complete.cases(v500),]
+
+v500.d1 <-  c(rep(0,12))
+for (i in 1:12){
+  v500.d1[i] <- median(v500[,i])
+}
+pval <- rep(0,12)
+
+for(i in 1:12) { 
+  pval[i] <- sum(v500[,i] == 0)/nrow(v500)  
+}
+v500.d1 <- data.frame("median" = v500.d1)
+v500.d1$pval <- as.vector(pval)
+```
+
+```{r tab500, echo=FALSE, warning=FALSE, message=FALSE,error=FALSE}
+
+row.names(v500.d1) <- names(d1[,1:12])
+
+v500.d1$pval <- round(v500.d1$pval, 2)
+
+v500.d1$median <- round(v500.d1$median, 2)
 
 
+kable(v500.d1, caption = "\\label{tab:tabntree500}INFFOREST Variable Importance for a random forest on the data set D1 with 500 trees")
+```
 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;There are some slight differences between the INFFOREST values for the forests with 200 and 500 trees, but the same variables are found to be significant. We note that the confidence intervals also decrease. Compare the intervals in INFFOREST when $ntree = 50$ (repeated from figure \ref{fig:figmtry}), to the intervals when $ntree = 500$ in the figure \ref{fig:500tree} below:
 
+```{r, echo=FALSE, warning=FALSE, message=FALSE,error=FALSE}
+q1 <- rep(0,12)
+
+for(i in 1:12) {
+  q1[i] <- quantile(v500[,i], .05)
+}
+
+q3 <- rep(0,12)
+
+for(i in 1:12) {
+  q3[i] <- quantile(v500[,i], .95)
+}
+
+v500.d1$q1 <- q1
+v500.d1$q3 <- q3
+
+v500.d1$variable <- factor(c(names(d1[,-13])),levels = names(d1[,-13]))
+
+s <- ggplot(data = v500.d1, aes( x = variable, y =  median, group = 1)) +
+  geom_point() +
+  ylab(" ")+
+  xlab(" ")+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  geom_line()+
+  geom_ribbon(ymin = v500.d1$q1, ymax = v500.d1$q3, data = v500.d1, alpha = .4)+
+  scale_y_continuous(limits = c(0,1))
+```
+
+```{r , warnings=FALSE, echo=FALSE, message = FALSE, fig.pos='H', fig.height=3, fig.cap="\\label{fig:500tree}Distribution of INFFOREST variable importance values for data set D1 in random forests with 50 and 500 trees."}
+grid.arrange(q,s, ncol=2)
+```
 
 
 
