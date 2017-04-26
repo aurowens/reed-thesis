@@ -12,3 +12,6 @@ maptree
 knitr
 GGally
 reshape
+plotly
+gridExtra
+wesanderson
